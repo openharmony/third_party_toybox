@@ -648,7 +648,7 @@
 #undef FLAG_P
 #endif
 
-// diff <2>2(color)(strip-trailing-cr)B(ignore-blank-lines)d(minimal)b(ignore-space-change)ut(expand-tabs)w(ignore-all-space)i(ignore-case)T(initial-tab)s(report-identical-files)q(brief)a(text)L(label)*S(starting-file):N(new-file)r(recursive)U(unified)#<0=3 <2>2(color)(strip-trailing-cr)B(ignore-blank-lines)d(minimal)b(ignore-space-change)ut(expand-tabs)w(ignore-all-space)i(ignore-case)T(initial-tab)s(report-identical-files)q(brief)a(text)L(label)*S(starting-file):N(new-file)r(recursive)U(unified)#<0=3
+// diff   <2>2(color)(strip-trailing-cr)B(ignore-blank-lines)d(minimal)b(ignore-space-change)ut(expand-tabs)w(ignore-all-space)i(ignore-case)T(initial-tab)s(report-identical-files)q(brief)a(text)L(label)*S(starting-file):N(new-file)r(recursive)U(unified)#<0=3
 #undef OPTSTR_diff
 #define OPTSTR_diff "<2>2(color)(strip-trailing-cr)B(ignore-blank-lines)d(minimal)b(ignore-space-change)ut(expand-tabs)w(ignore-all-space)i(ignore-case)T(initial-tab)s(report-identical-files)q(brief)a(text)L(label)*S(starting-file):N(new-file)r(recursive)U(unified)#<0=3"
 #ifdef CLEANUP_diff
@@ -1717,7 +1717,7 @@
 #undef FLAG_b
 #endif
 
-// mdev   s
+// mdev s s
 #undef OPTSTR_mdev
 #define OPTSTR_mdev "s"
 #ifdef CLEANUP_mdev
@@ -3918,24 +3918,24 @@
 #ifndef TT
 #define TT this.diff
 #endif
-#define FLAG_U (1<<0)
-#define FLAG_r (1<<1)
-#define FLAG_N (1<<2)
-#define FLAG_S (1<<3)
-#define FLAG_L (1<<4)
-#define FLAG_a (1<<5)
-#define FLAG_q (1<<6)
-#define FLAG_s (1<<7)
-#define FLAG_T (1<<8)
-#define FLAG_i (1<<9)
-#define FLAG_w (1<<10)
-#define FLAG_t (1<<11)
-#define FLAG_u (1<<12)
-#define FLAG_b (1<<13)
-#define FLAG_d (1<<14)
-#define FLAG_B (1<<15)
-#define FLAG_strip_trailing_cr (1<<16)
-#define FLAG_color (1<<17)
+#define FLAG_U (FORCED_FLAG<<0)
+#define FLAG_r (FORCED_FLAG<<1)
+#define FLAG_N (FORCED_FLAG<<2)
+#define FLAG_S (FORCED_FLAG<<3)
+#define FLAG_L (FORCED_FLAG<<4)
+#define FLAG_a (FORCED_FLAG<<5)
+#define FLAG_q (FORCED_FLAG<<6)
+#define FLAG_s (FORCED_FLAG<<7)
+#define FLAG_T (FORCED_FLAG<<8)
+#define FLAG_i (FORCED_FLAG<<9)
+#define FLAG_w (FORCED_FLAG<<10)
+#define FLAG_t (FORCED_FLAG<<11)
+#define FLAG_u (FORCED_FLAG<<12)
+#define FLAG_b (FORCED_FLAG<<13)
+#define FLAG_d (FORCED_FLAG<<14)
+#define FLAG_B (FORCED_FLAG<<15)
+#define FLAG_strip_trailing_cr (FORCED_FLAG<<16)
+#define FLAG_color (FORCED_FLAG<<17)
 #endif
 
 #ifdef FOR_dirname
@@ -4811,7 +4811,7 @@
 #ifndef TT
 #define TT this.mdev
 #endif
-#define FLAG_s (FORCED_FLAG<<0)
+#define FLAG_s (1<<0)
 #endif
 
 #ifdef FOR_microcom
