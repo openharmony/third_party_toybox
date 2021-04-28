@@ -18,8 +18,8 @@
 #define USE_TOYBOX_FORK(...) __VA_ARGS__
 #define CFG_TOYBOX_PRLIMIT 1
 #define USE_TOYBOX_PRLIMIT(...) __VA_ARGS__
-#define CFG_TOYBOX_GETRANDOM 0
-#define USE_TOYBOX_GETRANDOM(...)
+#define CFG_TOYBOX_GETRANDOM 1
+#define USE_TOYBOX_GETRANDOM(...) __VA_ARGS__
 #define CFG_BASENAME 1
 #define USE_BASENAME(...) __VA_ARGS__
 #define CFG_CAL 1
@@ -204,8 +204,8 @@
 #define USE_ARPING(...)
 #define CFG_BC 0
 #define USE_BC(...)
-#define CFG_BOOTCHARTD 1
-#define USE_BOOTCHARTD(...) __VA_ARGS__
+#define CFG_BOOTCHARTD 0
+#define USE_BOOTCHARTD(...)
 #define CFG_BRCTL 0
 #define USE_BRCTL(...)
 #define CFG_CROND 0
@@ -222,8 +222,8 @@
 #define USE_DHCPD(...)
 #define CFG_DEBUG_DHCP 0
 #define USE_DEBUG_DHCP(...)
-#define CFG_DIFF 1
-#define USE_DIFF(...) __VA_ARGS__
+#define CFG_DIFF 0
+#define USE_DIFF(...)
 #define CFG_DUMPLEASES 0
 #define USE_DUMPLEASES(...)
 #define CFG_EXPR 0
@@ -262,10 +262,10 @@
 #define USE_LSOF(...)
 #define CFG_MAN 0
 #define USE_MAN(...)
-#define CFG_MDEV 0
-#define USE_MDEV(...)
-#define CFG_MDEV_CONF 0
-#define USE_MDEV_CONF(...)
+#define CFG_MDEV 1
+#define USE_MDEV(...) __VA_ARGS__
+#define CFG_MDEV_CONF 1
+#define USE_MDEV_CONF(...) __VA_ARGS__
 #define CFG_MKE2FS 0
 #define USE_MKE2FS(...)
 #define CFG_MKE2FS_JOURNAL 0
@@ -278,8 +278,8 @@
 #define USE_MKE2FS_EXTENDED(...)
 #define CFG_MODPROBE 0
 #define USE_MODPROBE(...)
-#define CFG_MORE 1
-#define USE_MORE(...) __VA_ARGS__
+#define CFG_MORE 0
+#define USE_MORE(...)
 #define CFG_OPENVT 0
 #define USE_OPENVT(...)
 #define CFG_DEALLOCVT 0
