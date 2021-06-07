@@ -17,7 +17,7 @@ config IFCONFIG
   bool "ifconfig"
   default y
   help
-    usage: ifconfig [-aS] [INTERFACE [ACTION...]]
+    usage: ifconfig [-a] [INTERFACE [ACTION...]]
 
     Display or configure network interface.
 
@@ -25,7 +25,6 @@ config IFCONFIG
     to operate on, one argument by itself displays that interface.
 
     -a	All interfaces displayed, not just active ones
-    -S	Short view, one line per interface
 
     Standard ACTIONs to perform on an INTERFACE:
 
@@ -374,13 +373,27 @@ void ifconfig_main(void)
 {
   char **argv = toys.optargs;
   struct ifreq ifre;
-  int i;
+  int i = 0;
+  int len = 0;
+  char *cmdline = NULL;
 
-  TT.sockfd = xsocket(AF_INET, SOCK_DGRAM, 0);
-  if(toys.optc < 2) {
-    show_iface(*argv);
+  while (toys.argv[i]) {
+    len += strlen(toys.argv[i++]);
+  }
+  cmdline = (char *)malloc(len + i);
+  if (!cmdline) {
     return;
   }
+  memset(cmdline, 0, len + i);
+  i = 0;
+  while (toys.argv[i]) {
+    strcat(cmdline, toys.argv[i++]);
+    strcat(cmdline, " ");
+  }
+
+  (void)syscall(__NR_shellexec, toys.argv[0], cmdline);
+  free(cmdline);
+  return;
 
   // Open interface
   memset(&ifre, 0, sizeof(struct ifreq));

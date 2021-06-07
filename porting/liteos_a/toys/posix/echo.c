@@ -24,7 +24,6 @@ config ECHO
     -E	Print escape sequences literally (default)
     -e	Process the following escape sequences:
     	\\	Backslash
-    	\0NNN	Octal values (1 to 3 digits)
     	\a	Alert (beep/flash)
     	\b	Backspace
     	\c	Stop output here (avoids trailing newline)
@@ -33,7 +32,6 @@ config ECHO
     	\r	Carriage return
     	\t	Horizontal tab
     	\v	Vertical tab
-    	\xHH	Hexadecimal values (1 to 2 digits)
 */
 
 #define FOR_echo

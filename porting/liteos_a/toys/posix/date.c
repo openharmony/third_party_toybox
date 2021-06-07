@@ -13,13 +13,10 @@ config DATE
   bool "date"
   default y
   help
-    usage: date [-u] [-r FILE] [-d DATE] [+DISPLAY_FORMAT] [-D SET_FORMAT] [SET]
+    usage: date [-u]
 
     Set/get the current date/time. With no SET shows the current date.
 
-    -d	Show DATE instead of current time (convert date format)
-    -D	+FORMAT for SET or -d (instead of MMDDhhmm[[CC]YY][.ss])
-    -r	Use modification time of FILE instead of current date
     -u	Use UTC instead of current timezone
 
     Supported input formats:

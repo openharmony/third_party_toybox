@@ -13,17 +13,10 @@ config TOUCH
   bool "touch"
   default y
   help
-    usage: touch [-amch] [-d DATE] [-t TIME] [-r FILE] FILE...
+    usage: touch FILE...
 
     Update the access and modification times of each FILE to the current time.
 
-    -a	Change access time
-    -m	Change modification time
-    -c	Don't create file
-    -h	Change symlink
-    -d	Set time to DATE (in YYYY-MM-DDThh:mm:SS[.frac][tz] format)
-    -t	Set time to TIME (in [[CC]YY]MMDDhhmm[.ss][frac] format)
-    -r	Set time same as reference FILE
 */
 
 #define FOR_touch

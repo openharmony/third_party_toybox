@@ -157,6 +157,8 @@ static int do_du(struct dirtree *node)
 void du_main(void)
 {
   char *noargs[] = {".", 0}, **args;
+   if (!strcmp(*toys.optargs, ".") || !strncmp("./" ,*toys.optargs, 2))
+    help_exit("Directory size statistics are not supported");
 
   // Loop over command line arguments, recursing through children
   for (args = toys.optc ? toys.optargs : noargs; *args; args++)

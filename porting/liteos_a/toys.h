@@ -7,6 +7,7 @@
 
 #include "generated/config.h"
 #include "lib/portability.h"
+#include "syscall.h"
 
 // General posix-2008 headers
 #include <ctype.h>
@@ -34,7 +35,9 @@
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
+#include <sys/statfs.h>
 #include <sys/statvfs.h>
+#include <sys/sysinfo.h>
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/utsname.h>
