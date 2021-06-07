@@ -31,13 +31,8 @@ config PING
     -c CNT		Send CNT many packets (default 3, 0 = infinite)
     -f		Flood (print . and \b to show drops, default -c 15 -i 0.2)
     -i TIME		Interval between packets (default 1, need root for < .2)
-    -I IFACE/IP	Source interface or address
-    -m MARK		Tag outgoing packets using SO_MARK
     -q		Quiet (stops after one returns true if host is alive)
     -s SIZE		Data SIZE in bytes (default 56)
-    -t TTL		Set Time To Live (number of hops)
-    -W SEC		Seconds to wait for response after last -c packet (default 3)
-    -w SEC		Exit after this many seconds
 */
 
 #define FOR_ping 
@@ -71,17 +66,23 @@ static void summary(int sig)
 // assumes aligned and can read even number of bytes
 static unsigned short pingchksum(unsigned short *data, int len)
 {
-  unsigned short u = 0, d;
+  u_int32_t sum = 0;
+  int nwords = len >> 1;
 
-  // circular carry is endian independent: bits from high byte go to low byte
-  while (len>0) {
-    d = *data++;
-    if (len == 1) d &= 255<<IS_BIG_ENDIAN;
-    if (d >= (u += d)) u++;
-    len -= 2;
+  while (nwords-- != 0) sum += *data++;
+  if (len & 1) {
+    union {
+      u_int16_t w;
+      u_int8_t c[2];
+    } u;
+    u.c[0] = *(u_char *) data;
+    u.c[1] = 0;
+    sum += u.w;
   }
-
-  return u;
+  // end-around-carry
+  sum = (sum >> 16) + (sum & 0xffff);
+  sum += (sum >> 16);
+  return (~sum);
 }
 
 void ping_main(void)
@@ -93,7 +94,8 @@ void ping_main(void)
   struct sockaddr *sa = (void *)&srcaddr;
   int family = 0, len;
   long long tnext, tW, tnow, tw;
-  unsigned short seq = 0, pkttime;
+  unsigned short seq = 0 ,pkttime;
+  long long tmp_tnow;
 
   // Set nonstatic default values
   if (!(toys.optflags&FLAG_i)) TT.i = (toys.optflags&FLAG_f) ? 200 : 1000;
@@ -145,8 +147,9 @@ void ping_main(void)
 
   // Open DGRAM socket
   sa->sa_family = ai->ai_family;
-  TT.sock = socket(ai->ai_family, SOCK_DGRAM,
+  TT.sock = socket(ai->ai_family, SOCK_RAW,
     len = (ai->ai_family == AF_INET) ? IPPROTO_ICMP : IPPROTO_ICMPV6);
+
   if (TT.sock == -1) {
     perror_msg("socket SOCK_DGRAM %x", len);
     if (errno == EACCES) {
@@ -186,8 +189,6 @@ void ping_main(void)
   tnext = millitime();
   if (TT.w) tw = TT.w*1000+tnext;
 
-  sigatexit(summary);
-
   // Send/receive packets
   for (;;) {
     int waitms = INT_MAX;
@@ -212,7 +213,7 @@ void ping_main(void)
       ih->type = (ai->ai_family == AF_INET) ? 8 : 128;
       ih->un.echo.id = getpid();
       ih->un.echo.sequence = ++seq;
-      if (TT.s >= 4) *(unsigned *)(ih+1) = tnow;
+      if (TT.s >= 4) tmp_tnow = tnow;
 
       ih->checksum = 0;
       ih->checksum = pingchksum((void *)toybuf, TT.s+sizeof(*ih));
@@ -237,8 +238,7 @@ void ping_main(void)
       continue;
 
     TT.recv++;
-    TT.fugit += (pkttime = millitime()-*(unsigned *)(ih+1));
-
+    TT.fugit += (pkttime = millitime()-tmp_tnow);
     // reply id == 0 for ipv4, 129 for ipv6
 
     if (!(toys.optflags&FLAG_q)) {
@@ -255,7 +255,6 @@ void ping_main(void)
     toys.exitval = 0;
   }
 
-  sigatexit(0);
   summary(0);
 
   if (CFG_TOYBOX_FREE) {

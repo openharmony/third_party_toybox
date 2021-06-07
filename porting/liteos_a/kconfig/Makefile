@@ -2,8 +2,10 @@
 # Kernel configuration targets
 # These targets are used from top-level makefile
 
+CUSTOM_DIR := $(shell pwd)
 KCONFIG_TOP = Config.in
 KCONFIG_PROJECT = ToyBox
+CUSTOM_NAME = $(CUSTOM_DIR)/../liteos_a_custom.config
 obj = ./kconfig
 PHONY += clean help oldconfig menuconfig config silentoldconfig \
 	randconfig allyesconfig allnoconfig allmodconfig defconfig
@@ -28,6 +30,9 @@ allyesconfig: $(obj)/conf $(KCONFIG_TOP)
 
 allnoconfig: $(obj)/conf $(KCONFIG_TOP)
 	$< -n $(KCONFIG_TOP) > /dev/null
+
+customconfig: $(obj)/conf $(KCONFIG_TOP)
+	$< -D $(CUSTOM_NAME) $(KCONFIG_TOP) > /dev/null
 
 defconfig: $(obj)/conf $(KCONFIG_TOP)
 	$< -D /dev/null $(KCONFIG_TOP) > /dev/null

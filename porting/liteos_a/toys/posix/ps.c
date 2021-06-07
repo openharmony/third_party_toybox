@@ -44,11 +44,11 @@
  * TODO: top: thread support and SMP
  * TODO: pgrep -f only searches the amount of cmdline that fits in toybuf.
 
-USE_PS(NEWTOY(ps, "k(sort)*P(ppid)*aAdeflMno*O*p(pid)*s*t*Tu*U*g*G*wZ[!ol][+Ae][!oO]", TOYFLAG_BIN|TOYFLAG_LOCALE))
+USE_PS(NEWTOY(ps, "k(sort)*P(ppid)*aAdeflMno*O*p(pid)*s*t*Tu*U*g*G*wZ#<1a[!ol][+Ae][!oO]", TOYFLAG_BIN|TOYFLAG_LOCALE))
 // stayroot because iotop needs root to read other process' proc/$$/io
 // TOP and IOTOP have a large common option block used for common processing,
 // the default values are different but the flags are in the same order.
-USE_TOP(NEWTOY(top, ">0O*" "Hk*o*p*u*s#<1d%<100=3000m#n#<1bq[!oO]", TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_LOCALE))
+USE_TOP(NEWTOY(top, ">0O*" "Hk*o*p*u*s#<1d%<100=3000m#n#<1abq[!oO]", TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_LOCALE))
 USE_IOTOP(NEWTOY(iotop, ">0AaKO" "Hk*o*p*u*s#<1=7d%<100=3000m#n#<1bq", TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_STAYROOT|TOYFLAG_LOCALE))
 USE_PGREP(NEWTOY(pgrep, "?cld:u*U*t*s*P*g*G*fnovxL:[-no]", TOYFLAG_USR|TOYFLAG_BIN))
 USE_PKILL(NEWTOY(pkill,    "?Vu*U*t*s*P*g*G*fnovxl:[-no]", TOYFLAG_USR|TOYFLAG_BIN))
@@ -1279,125 +1279,25 @@ static void default_ko(char *s, void *fields, char *err, struct arg_list *arg)
   if (x) help_help();
 }
 
+// There link ps & top to shell cmd "task".
+static void link_shell_cmd_task()
+{
+  const char *cmdName = "task";
+  char *cmdLine = NULL;
+
+  if ( toys.argv[1] && !strcmp(toys.argv[1], "-a")) {
+    cmdLine = "task -a";
+    (void)syscall(__NR_shellexec, cmdName, cmdLine);
+  }
+  else
+  {
+    cmdLine = "task";
+    (void)syscall(__NR_shellexec, cmdName, cmdLine);
+  }
+}
 void ps_main(void)
 {
-  char **arg;
-  struct dirtree *dt;
-  char *not_o;
-  int i;
-
-  TT.ticks = sysconf(_SC_CLK_TCK); // units for starttime/uptime
-
-  if (-1 != (i = tty_fd())) {
-    struct stat st;
-
-    if (!fstat(i, &st)) TT.tty = st.st_rdev;
-  }
-
-  // If we can't query terminal size pad to 80 but do -w
-  TT.width = 80;
-  if (!isatty(1) || !terminal_size(&TT.width, 0)) toys.optflags |= FLAG_w;
-  if (FLAG(w)) TT.width = 99999;
-
-  // parse command line options other than -o
-  comma_args(TT.ps.P, &TT.PP, "bad -P", parse_rest);
-  comma_args(TT.ps.p, &TT.pp, "bad -p", parse_rest);
-  comma_args(TT.ps.t, &TT.tt, "bad -t", parse_rest);
-  comma_args(TT.ps.s, &TT.ss, "bad -s", parse_rest);
-  comma_args(TT.ps.u, &TT.uu, "bad -u", parse_rest);
-  comma_args(TT.ps.U, &TT.UU, "bad -U", parse_rest);
-  comma_args(TT.ps.g, &TT.gg, "bad -g", parse_rest);
-  comma_args(TT.ps.G, &TT.GG, "bad -G", parse_rest);
-  comma_args(TT.ps.k, &TT.kfields, "bad -k", parse_ko);
-  dlist_terminate(TT.kfields);
-
-  // It's undocumented, but traditionally extra arguments are extra -p args
-  for (arg = toys.optargs; *arg; arg++)
-    if (parse_rest(&TT.pp, *arg, strlen(*arg))) error_exit("bad %s", *arg);
-
-  // Figure out which fields to display
-  not_o = "%sTTY,TIME,CMD";
-  if (FLAG(f))
-    sprintf(not_o = toybuf+128,
-      "USER:12=UID,%%sPPID,%s,STIME,TTY,TIME,ARGS=CMD", FLAG(T) ? "TCNT" :"C");
-  else if (FLAG(l))
-    not_o = "F,S,UID,%sPPID,C,PRI,NI,BIT,SZ,WCHAN,TTY,TIME,CMD";
-  else if (CFG_TOYBOX_ON_ANDROID)
-    sprintf(not_o = toybuf+128,
-            "USER,%%sPPID,VSIZE,RSS,WCHAN:10,ADDR:10,S,%s",
-            FLAG(T) ? "CMD" : "NAME");
-  sprintf(toybuf, not_o, FLAG(T) ? "PID,TID," : "PID,");
-
-  // Init TT.fields. This only uses toybuf if TT.ps.o is NULL
-  if (FLAG(Z)) default_ko("LABEL", &TT.fields, 0, 0);
-  default_ko(toybuf, &TT.fields, "bad -o", TT.ps.o);
-
-  if (TT.ps.O) {
-    if (TT.fields) TT.fields = ((struct ofields *)TT.fields)->prev;
-    comma_args(TT.ps.O, &TT.fields, "bad -O", parse_ko);
-    if (TT.fields) TT.fields = ((struct ofields *)TT.fields)->next;
-  }
-  dlist_terminate(TT.fields);
-
-  // -f and -n change the meaning of some fields
-  if (FLAG(f)||FLAG(n)) {
-    struct ofields *field;
-
-    for (field = TT.fields; field; field = field->next) {
-      if (FLAG(n) && field->which>=PS_UID
-        && field->which<=PS_RGROUP && (typos[field->which].slot&XX))
-          field->which--;
-    }
-  }
-
-  // Calculate seen fields bit array, and if we aren't deferring printing
-  // print headers now (for low memory/nommu systems).
-  TT.bits = get_headers(TT.fields, toybuf, sizeof(toybuf));
-  if (!FLAG(M)) printf("%.*s\n", TT.width, toybuf);
-  if (!(FLAG(k)||FLAG(M))) TT.show_process = show_ps;
-  TT.match_process = ps_match_process;
-  dt = dirtree_flagread("/proc", DIRTREE_SHUTUP|DIRTREE_PROC,
-    (FLAG(T) || (TT.bits&(_PS_TID|_PS_TCNT)))
-      ? get_threads : get_ps);
-
-  if ((dt != DIRTREE_ABORTVAL) && (FLAG(k)||FLAG(M))) {
-    struct procpid **tbsort = collate(TT.kcount, dt);
-
-    if (FLAG(M)) {
-      for (i = 0; i<TT.kcount; i++) {
-        struct ofields *field;
-
-        for (field = TT.fields; field; field = field->next) {
-          int len = strlen(string_field(tbsort[i], field));
-
-          if (abs(field->len)<len) field->len = (field->len<0) ? -len : len;
-        }
-      }
-
-      // Now that we've recalculated field widths, re-pad headers again
-      get_headers(TT.fields, toybuf, sizeof(toybuf));
-      printf("%.*s\n", TT.width, toybuf);
-    }
-
-    if (FLAG(k)) qsort(tbsort, TT.kcount, sizeof(void *), (void *)ksort);
-    for (i = 0; i<TT.kcount; i++) {
-      show_ps(tbsort[i]);
-      free(tbsort[i]);
-    }
-    if (CFG_TOYBOX_FREE) free(tbsort);
-  }
-
-  if (CFG_TOYBOX_FREE) {
-    free(TT.gg.ptr);
-    free(TT.GG.ptr);
-    free(TT.pp.ptr);
-    free(TT.PP.ptr);
-    free(TT.ss.ptr);
-    free(TT.tt.ptr);
-    free(TT.uu.ptr);
-    free(TT.UU.ptr);
-    llist_traverse(TT.fields, free);
-  }
+  link_shell_cmd_task();
 }
 
 #define CLEANUP_ps
@@ -1758,21 +1658,10 @@ static void top_setup(char *defo, char *defk)
   setsort(TT.top.s-1);
 }
 
+
 void top_main(void)
 {
-  sprintf(toybuf, "%cID,USER,%s%%CPU,%%MEM,TIME+,%s", FLAG(H) ? 'T' : 'P',
-    TT.top.O ? "" : "PR,NI,VIRT,RES,SHR,S,",
-    FLAG(H) ? "CMD:15=THREAD,NAME=PROCESS" : "ARGS");
-  if (!TT.top.s) TT.top.s = TT.top.O ? 3 : 9;
-  top_setup(toybuf, "-%CPU,-ETIME,-PID");
-  if (TT.top.O) {
-    struct ofields *field = TT.fields;
-
-    field = field->next->next;
-    comma_args(TT.top.O, &field, "bad -O", parse_ko);
-  }
-
-  top_common(merge_deltas);
+  link_shell_cmd_task();
 }
 
 #define CLEANUP_top

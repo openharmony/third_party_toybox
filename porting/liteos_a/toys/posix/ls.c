@@ -18,7 +18,7 @@ config LS
   bool "ls"
   default y
   help
-    usage: ls [-ACFHLRSZacdfhiklmnpqrstux1] [--color[=auto]] [directory...]
+    usage: ls [-ACFHLSZacdfhiklmnpqrstux1] [--color[=auto]] [directory...]
 
     List files.
 
@@ -29,7 +29,6 @@ config LS
     -q  unprintable chars as '?'       -s  storage used (1024 byte units)
     -u  use access time for timestamps -A  list all files but . and ..
     -H  follow command line symlinks   -L  follow symlinks
-    -R  recursively list in subdirs    -F  append /dir *exe @sym |FIFO
     -Z  security context
 
     output formats:
@@ -319,8 +318,7 @@ static void listfiles(int dirfd, struct dirtree *indir)
     dt = indir->child;
     if (dt && S_ISDIR(dt->st.st_mode) && !dt->next && !(flags&(FLAG_d|FLAG_R)))
     {
-      listfiles(open(dt->name, 0), TT.singledir = dt);
-
+      listfiles(open(dt->name, O_DIRECTORY), TT.singledir = dt);
       return;
     }
 
@@ -410,8 +408,7 @@ static void listfiles(int dirfd, struct dirtree *indir)
     char et = endtype(st), *ss;
 
     // If we couldn't stat, output ? for most fields
-    zap = !st->st_blksize && !st->st_dev && !st->st_ino;
-
+    zap = 0;
     // Skip directories at the top of the tree when -d isn't set
     if (S_ISDIR(mode) && !indir->parent && !(flags & FLAG_d)) continue;
     TT.nl_title=1;

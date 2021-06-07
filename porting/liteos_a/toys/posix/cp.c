@@ -23,27 +23,11 @@ config CP
   bool "cp"
   default y
   help
-    usage: cp [-adlnrsvfipRHLP] SOURCE... DEST
+    usage: cp file SOURCE... DEST
 
     Copy files from SOURCE to DEST.  If more than one SOURCE, DEST must
     be a directory.
 
-    -D	Create leading dirs under DEST (--parents)
-    -f	Delete destination files we can't write to
-    -F	Delete any existing destination file first (--remove-destination)
-    -i	Interactive, prompt before overwriting existing DEST
-    -p	Preserve timestamps, ownership, and mode
-    -R	Recurse into subdirectories (DEST must be a directory)
-    -H	Follow symlinks listed on command line
-    -L	Follow all symlinks
-    -P	Do not follow symlinks [default]
-    -a	Same as -dpr
-    -d	Don't dereference symlinks
-    -l	Hard link instead of copy
-    -n	No clobber (don't overwrite DEST)
-    -r	Synonym for -R
-    -s	Symlink instead of copy
-    -v	Verbose
 
 config CP_PRESERVE
   bool "cp --preserve support"

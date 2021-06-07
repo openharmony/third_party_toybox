@@ -14,18 +14,12 @@ config UMOUNT
   bool "umount"
   default y
   help
-    usage: umount [-a [-t TYPE[,TYPE...]]] [-vrfD] [DIR...]
+    usage: umount [-a [-t TYPE[,TYPE...]]] [-f] [DIR...]
 
     Unmount the listed filesystems.
 
     -a	Unmount all mounts in /proc/mounts instead of command line list
-    -D	Don't free loopback device(s)
-    -f	Force unmount
-    -l	Lazy unmount (detach from filesystem now, close when last user does)
-    -n	Don't use /proc/mounts
-    -r	Remount read only if unmounting fails
     -t	Restrict "all" to mounts of TYPE (or use "noTYPE" to skip)
-    -v	Verbose
 */
 
 #define FOR_umount
@@ -50,31 +44,6 @@ GLOBALS(
 
 static void do_umount(char *dir, char *dev, int flags)
 {
-  // is it ok for this user to umount this mount?
-  if (CFG_TOYBOX_SUID && getuid()) {
-    struct mtab_list *mt = dlist_terminate(xgetmountlist("/etc/fstab"));
-    int len, user = 0;
-
-    while (mt) {
-      struct mtab_list *mtemp = mt;
-      char *s;
-
-      if (!strcmp(mt->dir, dir)) while ((s = comma_iterate(&mt->opts, &len))) {
-        if (len == 4 && strncmp(s, "user", 4)) user = 1;
-        else if (len == 6 && strncmp(s, "nouser", 6)) user = 0;  
-      }
-
-      mt = mt->next;
-      free(mtemp);
-    }
-
-    if (!user) {
-      error_msg("not root");
-
-      return;
-    }
-  }
-
   if (!umount2(dir, flags)) {
     if (toys.optflags & FLAG_v) xprintf("%s unmounted\n", dir);
 
@@ -111,7 +80,7 @@ void umount_main(void)
   int flags=0;
 
   if (!toys.optc && !(toys.optflags & FLAG_a))
-    error_exit("Need 1 arg or -a");
+    help_exit("Need 1 arg or -a");
 
   if (toys.optflags & FLAG_f) flags |= MNT_FORCE;
   if (toys.optflags & FLAG_l) flags |= MNT_DETACH;

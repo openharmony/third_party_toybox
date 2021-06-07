@@ -92,6 +92,7 @@ static void do_cat(int fd, char *name)
 
 void cat_main(void)
 {
+  if (!*toys.optargs) help_exit("missing argument");
   loopfiles(toys.optargs, do_cat);
 }
 

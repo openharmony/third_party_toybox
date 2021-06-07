@@ -10,13 +10,12 @@ config RM
   bool "rm"
   default y
   help
-    usage: rm [-fiRrv] FILE...
+    usage: rm [-fiv] FILE...
 
     Remove each argument from the filesystem.
 
     -f	Force: remove without confirmation, no error if it doesn't exist
     -i	Interactive: prompt for confirmation
-    -rR	Recursive: remove directory contents
     -v	Verbose
 */
 

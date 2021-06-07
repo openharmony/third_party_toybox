@@ -20,13 +20,8 @@ config MOUNT
     Mount new filesystem(s) on directories. With no arguments, display existing
     mounts.
 
-    -a	Mount all entries in /etc/fstab (with -t, only entries of that TYPE)
-    -O	Only mount -a entries that have this option
     -f	Fake it (don't actually mount)
-    -r	Read only (same as -o ro)
-    -w	Read/write (default, same as -o rw)
     -t	Specify filesystem type
-    -v	Verbose
 
     OPTIONS is a comma separated list of options, which can also be supplied
     as --longopts.
@@ -173,15 +168,6 @@ static void mount_filesystem(char *dev, char *dir, char *type,
 
   if (FLAG(f)) return;
 
-  if (getuid()) {
-    if (TT.okuser) TT.okuser = 0;
-    else {
-      error_msg("'%s' not user mountable in fstab", dev);
-
-      return;
-    }
-  }
-
   if (strstart(&dev, "UUID=")) {
     char *s = tortoise(0, (char *[]){"blkid", "-U", dev, 0});
 
@@ -300,6 +286,9 @@ void mount_main(void)
 
   // First pass; just accumulate string, don't parse flags yet. (This is so
   // we can modify fstab entries with -a, or mtab with remount.)
+  if (!*toys.optargs)
+    help_exit("missing argument");
+
   for (o = TT.optlist; o; o = o->next) comma_collate(&opts, o->arg);
   if (FLAG(r)) comma_collate(&opts, "ro");
   if (FLAG(w)) comma_collate(&opts, "rw");
@@ -329,63 +318,7 @@ void mount_main(void)
 
   // Do we need to do an /etc/fstab trawl?
   // This covers -a, -o remount, one argument, all user mounts
-  if (FLAG(a) || (dev && (!dir || getuid() || remount))) {
-    if (!remount) dlist_terminate(mtl = xgetmountlist("/etc/fstab"));
-
-    for (mm = remount ? remount : mtl; mm; mm = (remount ? mm->prev : mm->next))
-    {
-      char *aopts = 0;
-      struct mtab_list *mmm = 0;
-      int aflags, noauto, len;
-
-      // Check for noauto and get it out of the option list. (Unknown options
-      // that make it to the kernel give filesystem drivers indigestion.)
-      noauto = comma_scan(mm->opts, "noauto", 1);
-
-      if (FLAG(a)) {
-        // "mount -a /path" to mount all entries under /path
-        if (dev) {
-           len = strlen(dev);
-           if (strncmp(dev, mm->dir, len)
-               || (mm->dir[len] && mm->dir[len] != '/')) continue;
-        } else if (noauto) continue; // never present in the remount case
-        if (!mountlist_istype(mm,TT.type) || !comma_scanall(mm->opts,TT.bigO))
-          continue;
-      } else {
-        if (dir && strcmp(dir, mm->dir)) continue;
-        if (dev && strcmp(dev, mm->device) && (dir || strcmp(dev, mm->dir)))
-          continue;
-      }
-
-      // Don't overmount the same dev on the same directory
-      // (Unless root explicitly says to in non -a mode.)
-      if (mtl2 && !remount)
-        for (mmm = mtl2; mmm; mmm = mmm->next)
-          if (!strcmp(mm->dir, mmm->dir) && !strcmp(mm->device, mmm->device))
-            break;
- 
-      // user only counts from fstab, not opts.
-      if (!mmm) {
-        TT.okuser = comma_scan(mm->opts, "user", 1);
-        aflags = flag_opts(mm->opts, flags, &aopts);
-        aflags = flag_opts(opts, aflags, &aopts);
-
-        mount_filesystem(mm->device, mm->dir, mm->type, aflags, aopts);
-      } // TODO else if (getuid()) error_msg("already there") ?
-      free(aopts);
-
-      if (!FLAG(a)) break;
-    }
-    if (CFG_TOYBOX_FREE) {
-      llist_traverse(mtl, free);
-      llist_traverse(mtl2, free);
-    }
-    if (!mm && !FLAG(a))
-      error_exit("'%s' not in %s", dir ? dir : dev,
-                 remount ? "/proc/mounts" : "fstab");
-
-  // show mounts from /proc/mounts
-  } else if (!dev) {
+  if (!dev) {
     for (mtl = xgetmountlist(0); mtl && (mm = dlist_pop(&mtl)); free(mm)) {
       char *s = 0;
 
