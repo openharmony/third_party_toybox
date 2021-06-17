@@ -2839,7 +2839,7 @@
 #undef FOR_telnet
 #endif
 
-// telnetd   w#<0b:p#<0>65535=23f:l:FSKi[!wi]
+// telnetd w#<0b:p#<0>65535=23f:l:FSKi[!wi] w#<0b:p#<0>65535=23f:l:FSKi[!wi]
 #undef OPTSTR_telnetd
 #define OPTSTR_telnetd "w#<0b:p#<0>65535=23f:l:FSKi[!wi]"
 #ifdef CLEANUP_telnetd

@@ -302,8 +302,8 @@
 #define USE_TCPSVD(...)
 #define CFG_TELNET 0
 #define USE_TELNET(...)
-#define CFG_TELNETD 0
-#define USE_TELNETD(...)
+#define CFG_TELNETD 1
+#define USE_TELNETD(...) __VA_ARGS__
 #define CFG_TFTP 0
 #define USE_TFTP(...)
 #define CFG_TFTPD 0
