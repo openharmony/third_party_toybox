@@ -15,13 +15,14 @@ config MOUNT
   bool "mount"
   default y
   help
-    usage: mount [-afFrsvw] [-t TYPE] [-o OPTION,] [[DEVICE] DIR]
+    usage: mount [-f] [-t TYPE] [-o OPTION,] [[DEVICE] DIR]
 
     Mount new filesystem(s) on directories. With no arguments, display existing
     mounts.
 
     -f	Fake it (don't actually mount)
     -t	Specify filesystem type
+    -o	Mount options
 
     OPTIONS is a comma separated list of options, which can also be supplied
     as --longopts.
@@ -286,8 +287,6 @@ void mount_main(void)
 
   // First pass; just accumulate string, don't parse flags yet. (This is so
   // we can modify fstab entries with -a, or mtab with remount.)
-  if (!*toys.optargs)
-    help_exit("missing argument");
 
   for (o = TT.optlist; o; o = o->next) comma_collate(&opts, o->arg);
   if (FLAG(r)) comma_collate(&opts, "ro");
@@ -318,14 +317,14 @@ void mount_main(void)
 
   // Do we need to do an /etc/fstab trawl?
   // This covers -a, -o remount, one argument, all user mounts
-  if (!dev) {
+  if (!dev && !toys.argv[1]) {
     for (mtl = xgetmountlist(0); mtl && (mm = dlist_pop(&mtl)); free(mm)) {
       char *s = 0;
 
       if (TT.type && strcmp(TT.type, mm->type)) continue;
       if (*mm->device == '/') s = xabspath(mm->device, 0);
-      xprintf("%s on %s type %s (%s)\n",
-              s ? s : mm->device, mm->dir, mm->type, mm->opts);
+      xprintf("%s on %s type %s\n",
+              s ? s : mm->device, mm->dir, mm->type);
       free(s);
     }
 
@@ -334,7 +333,7 @@ void mount_main(void)
     char *more = 0;
 
     flags = flag_opts(opts, flags, &more);
-    mount_filesystem(dev, dir, TT.type, flags, more);
+    if (dir) mount_filesystem(dev, dir, TT.type, flags, more);
     if (CFG_TOYBOX_FREE) free(more);
   }
 }
