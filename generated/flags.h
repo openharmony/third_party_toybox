@@ -2391,7 +2391,7 @@
 #undef FLAG_w
 #endif
 
-// route   ?neA:
+// route   ?neA: ?neA:
 #undef OPTSTR_route
 #define OPTSTR_route "?neA:"
 #ifdef CLEANUP_route
@@ -2839,7 +2839,7 @@
 #undef FOR_telnet
 #endif
 
-// telnetd   w#<0b:p#<0>65535=23f:l:FSKi[!wi]
+// telnetd w#<0b:p#<0>65535=23f:l:FSKi[!wi] w#<0b:p#<0>65535=23f:l:FSKi[!wi]
 #undef OPTSTR_telnetd
 #define OPTSTR_telnetd "w#<0b:p#<0>65535=23f:l:FSKi[!wi]"
 #ifdef CLEANUP_telnetd
@@ -5377,9 +5377,9 @@
 #ifndef TT
 #define TT this.route
 #endif
-#define FLAG_A (FORCED_FLAG<<0)
-#define FLAG_e (FORCED_FLAG<<1)
-#define FLAG_n (FORCED_FLAG<<2)
+#define FLAG_A (1<<0)
+#define FLAG_e (1<<1)
+#define FLAG_n (1<<2)
 #endif
 
 #ifdef FOR_runcon
@@ -5755,15 +5755,15 @@
 #ifndef TT
 #define TT this.telnetd
 #endif
-#define FLAG_i (FORCED_FLAG<<0)
-#define FLAG_K (FORCED_FLAG<<1)
-#define FLAG_S (FORCED_FLAG<<2)
-#define FLAG_F (FORCED_FLAG<<3)
-#define FLAG_l (FORCED_FLAG<<4)
-#define FLAG_f (FORCED_FLAG<<5)
-#define FLAG_p (FORCED_FLAG<<6)
-#define FLAG_b (FORCED_FLAG<<7)
-#define FLAG_w (FORCED_FLAG<<8)
+#define FLAG_i (1<<0)
+#define FLAG_K (1<<1)
+#define FLAG_S (1<<2)
+#define FLAG_F (1<<3)
+#define FLAG_l (1<<4)
+#define FLAG_f (1<<5)
+#define FLAG_p (1<<6)
+#define FLAG_b (1<<7)
+#define FLAG_w (1<<8)
 #endif
 
 #ifdef FOR_test
