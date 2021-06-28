@@ -284,8 +284,8 @@
 #define USE_OPENVT(...)
 #define CFG_DEALLOCVT 0
 #define USE_DEALLOCVT(...)
-#define CFG_ROUTE 0
-#define USE_ROUTE(...)
+#define CFG_ROUTE 1
+#define USE_ROUTE(...) __VA_ARGS__
 #define CFG_SH 0
 #define USE_SH(...)
 #define CFG_CD 0

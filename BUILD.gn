@@ -205,7 +205,8 @@ executable("toybox") {
     "toys/posix/who.c",
     "toys/posix/xargs.c",
     "toys/pending/mdev.c",
-    "toys/pending/telnetd.c"
+    "toys/pending/telnetd.c",
+    "toys/pending/route.c"
   ]
 
   include_dirs = [ "./" ]
@@ -439,7 +440,8 @@ cmd_long_path = [
   "bin/yes",
   "bin/zcat",
   "bin/mdev",
-  "bin/telnetd"
+  "bin/telnetd",
+  "bin/route"
 ]
 
 foreach(path, cmd_long_path) {
