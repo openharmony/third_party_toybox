@@ -10,10 +10,11 @@ config RM
   bool "rm"
   default y
   help
-    usage: rm [-fiv] FILE...
+    usage: rm [-fiv] FILE or rm [-rv] [PATH]...
 
     Remove each argument from the filesystem.
 
+    -r	Remove empty or non empty directory
     -f	Force: remove without confirmation, no error if it doesn't exist
     -i	Interactive: prompt for confirmation
     -v	Verbose
@@ -22,12 +23,62 @@ config RM
 #define FOR_rm
 #include "toys.h"
 
+static int toybox_cmd_do_rmdir(const char *pathname)
+{
+  struct dirent *dirent = NULL;
+  struct stat stat_info;
+  DIR *dir = NULL;
+  char *fullpath = NULL;
+  int ret;
+
+  (void)memset(&stat_info,  0, sizeof(struct stat));
+  if (stat(pathname, &stat_info) != 0) return -1;
+
+  if (S_ISREG(stat_info.st_mode) || S_ISLNK(stat_info.st_mode)) {
+    return remove(pathname);
+  }
+
+  dir = opendir(pathname);
+  if (dir == NULL) return -1;
+
+  while (1) {
+    dirent = readdir(dir);
+    if (dirent == NULL) break;
+
+    size_t fullpath_buf_size = strlen(pathname) + strlen(dirent->d_name) + 2;
+    if (fullpath_buf_size <= 0) {
+        (void)closedir(dir);
+        return -1;
+      }
+    fullpath = (char *)malloc(fullpath_buf_size);
+    if (fullpath == NULL) {
+        (void)closedir(dir);
+        return -1;
+      }
+    ret = snprintf(fullpath, fullpath_buf_size, "%s/%s", pathname, dirent->d_name);
+    if (ret < 0) {
+        xprintf("name is too long!\n");
+        free(fullpath);
+        (void)closedir(dir);
+        return -1;
+      }
+    (void)toybox_cmd_do_rmdir(fullpath);
+    free(fullpath);
+    }
+  (void)closedir(dir);
+  return rmdir(pathname);
+}
+
 static int do_rm(struct dirtree *try)
 {
-  int fd=dirtree_parentfd(try), dir=S_ISDIR(try->st.st_mode), or=0, using=0;
+  int ret;
+  int fd=dirtree_parentfd(try), dir=S_ISDIR(try->st.st_mode), or=0;
 
   // Skip . and .. (yes, even explicitly on the command line: posix says to)
-  if (isdotdot(try->name)) return 0;
+  if (isdotdot(try->name)) {
+    xprintf("refusing to remove '.' or '..'!\n");
+    return 0;
+  }
 
   // Intentionally fail non-recursive attempts to remove even an empty dir
   // (via wrong flags to unlinkat) because POSIX says to.
@@ -39,15 +90,11 @@ static int do_rm(struct dirtree *try)
   if (!(dir && try->again) && ((or && isatty(0)) || FLAG(i))) {
     char *s = dirtree_path(try, 0);
 
-    fprintf(stderr, "rm %s%s%s", or ? "ro " : "", dir ? "dir " : "", s);
+    fprintf(stderr, "rm %s%s%s\n", or ? "ro " : "", dir ? "dir " : "", s);
     free(s);
-    or = yesno(0);
-    if (!or) goto nodelete;
   }
-
   // handle directory recursion
   if (dir) {
-    using = AT_REMOVEDIR;
     // Handle chmod 000 directories when -f
     if (faccessat(fd, try->name, R_OK, 0)) {
       if (FLAG(f)) wfchmodat(fd, try->name, 0700);
@@ -61,24 +108,23 @@ static int do_rm(struct dirtree *try)
       // This is the section 2(d) prompt. (Yes, posix says to prompt twice.)
       fprintf(stderr, "rmdir %s", s);
       free(s);
-      or = yesno(0);
-      if (!or) goto nodelete;
     }
   }
 
 skip:
-  if (!unlinkat(fd, try->name, using)) {
+
+  // Remove dir or files
+  if (FLAG(r)) ret = toybox_cmd_do_rmdir(try->name);
+  else ret = unlink(try->name);
+  if (!ret) {
     if (FLAG(v)) {
       char *s = dirtree_path(try, 0);
-      printf("%s%s '%s'\n", toys.which->name, dir ? "dir" : "", s);
+      xprintf("%s%s '%s'\n", toys.which->name, dir ? "dir" : "", s);
       free(s);
     }
   } else {
     if (!dir || try->symlink != (char *)2) perror_msg_raw(try->name);
-nodelete:
-    if (try->parent) try->parent->symlink = (char *)2;
   }
-
   return 0;
 }
 

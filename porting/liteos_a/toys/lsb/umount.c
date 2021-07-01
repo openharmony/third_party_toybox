@@ -59,7 +59,7 @@ static void do_umount(char *dir, char *dev, int flags)
         close(lfd);
       }
     }
-
+    xprintf("umount ok\n");
     return;
   }
 
