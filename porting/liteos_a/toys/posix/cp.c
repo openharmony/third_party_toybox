@@ -31,7 +31,7 @@ config CP
 
 config CP_PRESERVE
   bool "cp --preserve support"
-  default y
+  default n
   depends on CP
   help
     usage: cp [--preserve=motcxa]
@@ -59,7 +59,7 @@ config MV
 
 config INSTALL
   bool "install"
-  default y
+  default n
   help
     usage: install [-dDpsv] [-o USER] [-g GROUP] [-m MODE] [SOURCE...] DEST
 
@@ -128,17 +128,6 @@ static int cp_node(struct dirtree *try)
 
     // Detect recursive copies via repeated top node (cp -R .. .) or
     // identical source/target (fun with hardlinks).
-    if ((TT.top.st_dev == try->st.st_dev && TT.top.st_ino == try->st.st_ino
-         && (catch = TT.destname))
-        || (!fstatat(cfd, catch, &cst, 0) && cst.st_dev == try->st.st_dev
-         && cst.st_ino == try->st.st_ino))
-    {
-      error_msg("'%s' is '%s'", catch, err = dirtree_path(try, 0));
-      free(err);
-
-      return 0;
-    }
-
     // Handle -invF
 
     if (!faccessat(cfd, catch, F_OK, 0) && !S_ISDIR(cst.st_mode)) {

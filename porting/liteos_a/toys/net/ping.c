@@ -12,8 +12,7 @@
 
 // -s > 4088 = sizeof(toybuf)-sizeof(struct icmphdr), then kernel adds 20 bytes
 USE_PING(NEWTOY(ping, "<1>1m#t#<0>255=64c#<0=3s#<0>4088=56i%W#<0=3w#<0qf46I:[-46]", TOYFLAG_USR|TOYFLAG_BIN))
-USE_PING(OLDTOY(ping6, ping, TOYFLAG_USR|TOYFLAG_BIN))
- 
+
 config PING
   bool "ping"
   default y
@@ -27,7 +26,7 @@ config PING
     echo it receives back, with round trip time. Returns true if host alive.
 
     Options:
-    -4, -6		Force IPv4 or IPv6
+    -4,		Force IPv4
     -c CNT		Send CNT many packets (default 3, 0 = infinite)
     -f		Flood (print . and \b to show drops, default -c 15 -i 0.2)
     -i TIME		Interval between packets (default 1, need root for < .2)
