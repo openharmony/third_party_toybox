@@ -83,6 +83,9 @@
 
 // These live in main.c
 
+#define USER_PRIVILEGE_PROCESS_GROUP 1U
+#define KERNEL_PROCESS_GROUP         2U
+
 struct toy_list *toy_find(char *name);
 void toy_init(struct toy_list *which, char *argv[]);
 void toy_exec(char *argv[]);
