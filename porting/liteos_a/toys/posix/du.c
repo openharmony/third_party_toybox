@@ -12,25 +12,15 @@ config DU
   bool "du"
   default y
   help
-    usage: du [-d N] [-askxHLlmc] [file...]
+    usage: du [-kKmh] [file...]
 
-    Show disk usage, space consumed by files and directories.
+    Show disk usage, space consumed by files.
 
     Size in:
     -k	1024 byte blocks (default)
     -K	512 byte blocks (posix)
     -m	Megabytes
     -h	Human readable (e.g., 1K 243M 2G)
-
-    What to show:
-    -a	All files, not just directories
-    -H	Follow symlinks on cmdline
-    -L	Follow all symlinks
-    -s	Only total size of each argument
-    -x	Don't leave this filesystem
-    -c	Cumulative total
-    -d N	Only depth < N
-    -l	Disable hardlink filter
 */
 
 #define FOR_du
@@ -106,8 +96,6 @@ static int seen_inode(void **list, struct stat *st)
 // dirtree callback, compute/display size of node
 static int do_du(struct dirtree *node)
 {
-  unsigned long blocks;
-
   if (!node->parent) TT.st_dev = node->st.st_dev;
   else if (!dirtree_notdotdot(node)) return 0;
 
@@ -138,27 +126,22 @@ static int do_du(struct dirtree *node)
 
   // Modern compilers' optimizers are insane and think signed overflow
   // behaves differently than unsigned overflow. Sigh. Big hammer.
-  blocks = node->st.st_blocks + (unsigned long)node->extra;
-  node->extra = blocks;
-  if (node->parent)
-    node->parent->extra = (unsigned long)node->parent->extra+blocks;
-  else TT.total += node->extra;
 
   if ((toys.optflags & FLAG_a) || !node->parent
-      || (S_ISDIR(node->st.st_mode) && !(toys.optflags & FLAG_s)))
-  {
-    blocks = node->extra;
-    print(blocks*512LL, node);
+      || (S_ISDIR(node->st.st_mode) && !(toys.optflags & FLAG_s))) {
+    print(node->st.st_size, node);
   }
-
   return 0;
 }
 
 void du_main(void)
 {
   char *noargs[] = {".", 0}, **args;
-   if (!strcmp(*toys.optargs, ".") || !strncmp("./" ,*toys.optargs, 2))
+  if (toys.optc < 1) help_exit(0);
+
+  if (!strcmp(*toys.optargs, ".") || !strncmp("./" ,*toys.optargs, 2))
     help_exit("Directory size statistics are not supported");
+
 
   // Loop over command line arguments, recursing through children
   for (args = toys.optc ? toys.optargs : noargs; *args; args++)

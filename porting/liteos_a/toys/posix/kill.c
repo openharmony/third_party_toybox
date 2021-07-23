@@ -27,7 +27,7 @@ config KILL
 
 config KILLALL5
   bool "killall5"
-  default y
+  default n
   depends on KILL
   help
     usage: killall5 [-l [SIGNAL]] [-SIGNAL|-s SIGNAL] [-o PID]...

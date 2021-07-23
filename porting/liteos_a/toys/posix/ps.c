@@ -57,61 +57,18 @@ config PS
   bool "ps"
   default y
   help
-    usage: ps [-AadefLlnwZ] [-gG GROUP,] [-k FIELD,] [-o FIELD,] [-p PID,] [-t TTY,] [-uU USER,]
-
-    List processes.
-
-    Which processes to show (-gGuUpPt selections may be comma separated lists):
-
-    -A  All					-a  Has terminal not session leader
-    -d  All but session leaders		-e  Synonym for -A
-    -g  In GROUPs				-G  In real GROUPs (before sgid)
-    -p  PIDs (--pid)			-P  Parent PIDs (--ppid)
-    -s  In session IDs			-t  Attached to selected TTYs
-    -T  Show threads also			-u  Owned by selected USERs
-    -U  Real USERs (before suid)
-
-    Output modifiers:
-
-    -k  Sort FIELDs (-FIELD to reverse)	-M  Measure/pad future field widths
-    -n  Show numeric USER and GROUP		-w  Wide output (don't truncate fields)
-
-    Which FIELDs to show. (-o HELP for list, default = -o PID,TTY,TIME,CMD)
-
-    -f  Full listing (-o USER:12=UID,PID,PPID,C,STIME,TTY,TIME,ARGS=CMD)
-    -l  Long listing (-o F,S,UID,PID,PPID,C,PRI,NI,ADDR,SZ,WCHAN,TTY,TIME,CMD)
-    -o  Output FIELDs instead of defaults, each with optional :size and =title
-    -O  Add FIELDS to defaults
-    -Z  Include LABEL
+    usage: ps
 
 config TOP
   bool "top"
   default y
   help
-    usage: top [-Hbq] [-k FIELD,] [-o FIELD,] [-s SORT] [-n NUMBER] [-m LINES] [-d SECONDS] [-p PID,] [-u USER,]
-
-    Show process activity in real time.
-
-    -H	Show threads
-    -k	Fallback sort FIELDS (default -S,-%CPU,-ETIME,-PID)
-    -o	Show FIELDS (def PID,USER,PR,NI,VIRT,RES,SHR,S,%CPU,%MEM,TIME+,CMDLINE)
-    -O	Add FIELDS (replacing PR,NI,VIRT,RES,SHR,S from default)
-    -s	Sort by field number (1-X, default 9)
-    -b	Batch mode (no tty)
-    -d	Delay SECONDS between each cycle (default 3)
-    -m	Maximum number of tasks to show
-    -n	Exit after NUMBER iterations
-    -p	Show these PIDs
-    -u	Show these USERs
-    -q	Quiet (no header lines)
-
-    Cursor LEFT/RIGHT to change sort, UP/DOWN move list, space to force
-    update, R to reverse sort, Q to exit.
+    usage: top
 
 # Requires CONFIG_IRQ_TIME_ACCOUNTING in the kernel for /proc/$$/io
 config IOTOP
   bool "iotop"
-  default y
+  default n
   help
     usage: iotop [-AaKObq] [-n NUMBER] [-d SECONDS] [-p PID,] [-u USER,]
 
@@ -138,7 +95,7 @@ config IOTOP
 
 config PGREP
   bool "pgrep"
-  default y
+  default n
   help
     usage: pgrep [-clfnovx] [-d DELIM] [-L SIGNAL] [PATTERN] [-G GID,] [-g PGRP,] [-P PPID,] [-s SID,] [-t TERM,] [-U UID,] [-u EUID,]
 
@@ -164,7 +121,7 @@ config PGREP
 
 config PKILL
   bool "pkill"
-  default y
+  default n
   help
     usage: pkill [-fnovx] [-SIGNAL|-l SIGNAL] [PATTERN] [-G GID,] [-g PGRP,] [-P PPID,] [-s SID,] [-t TERM,] [-U UID,] [-u EUID,]
 

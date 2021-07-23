@@ -5,6 +5,14 @@
 
 #include "toys.h"
 
+
+int isdot(char *name)
+{
+  if (name[0]=='.' && (!name[1] || (name[1]=='/' && !name[2]))) return 1;
+
+  return 0;
+}
+
 int isdotdot(char *name)
 {
   if (name[0]=='.' && (!name[1] || (name[1]=='.' && !name[2]))) return 1;

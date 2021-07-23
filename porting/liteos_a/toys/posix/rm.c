@@ -10,13 +10,12 @@ config RM
   bool "rm"
   default y
   help
-    usage: rm [-fiv] FILE or rm [-rv] [PATH]...
+    usage: rm [-fv] FILE or rm [-rv] [PATH]...
 
     Remove each argument from the filesystem.
 
     -r	Remove empty or non empty directory
     -f	Force: remove without confirmation, no error if it doesn't exist
-    -i	Interactive: prompt for confirmation
     -v	Verbose
 */
 
@@ -82,7 +81,7 @@ static int do_rm(struct dirtree *try)
 
   // Intentionally fail non-recursive attempts to remove even an empty dir
   // (via wrong flags to unlinkat) because POSIX says to.
-  if (dir && !(toys.optflags & (FLAG_r|FLAG_R))) goto skip;
+  if (dir && (toys.optflags & (FLAG_r|FLAG_R))) goto skip;
 
   // This is either the posix section 2(b) prompt or the section 3 prompt.
   if (!FLAG(f)
