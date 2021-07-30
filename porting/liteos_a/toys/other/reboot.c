@@ -2,7 +2,7 @@
  *
  * Copyright 2013 Elie De Brauwer <eliedebrauwer@gmail.com>
 
-USE_RESET(NEWTOY(reboot, "n", TOYFLAG_SBIN|TOYFLAG_NEEDROOT))
+USE_REBOOT(NEWTOY(reboot, "", TOYFLAG_SBIN|TOYFLAG_NEEDROOT))
 
 config REBOOT
   bool "reboot"
@@ -22,9 +22,6 @@ void reboot_main(void)
   int types[] = {RB_AUTOBOOT, RB_HALT_SYSTEM, RB_POWER_OFF},
       sigs[] = {SIGTERM, SIGUSR1, SIGUSR2}, idx;
 
-  if (!*toys.optargs) help_exit("missing argument");
-  if (!(toys.optflags & FLAG_n)) sync();
-  
   idx = stridx("hp", *toys.which->name)+1;
   toys.exitval = reboot(types[idx]);
 }
