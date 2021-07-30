@@ -57,13 +57,13 @@ config PS
   bool "ps"
   default y
   help
-    usage: ps
+    usage: ps or ps -a
 
 config TOP
   bool "top"
   default y
   help
-    usage: top
+    usage: top or top -a
 
 # Requires CONFIG_IRQ_TIME_ACCOUNTING in the kernel for /proc/$$/io
 config IOTOP

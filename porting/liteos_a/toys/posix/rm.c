@@ -71,6 +71,7 @@ static int toybox_cmd_do_rmdir(const char *pathname)
 static int do_rm(struct dirtree *try)
 {
   int ret;
+  int len;
   int fd=dirtree_parentfd(try), dir=S_ISDIR(try->st.st_mode), or=0;
 
   // Skip . and .. (yes, even explicitly on the command line: posix says to)
@@ -111,6 +112,11 @@ static int do_rm(struct dirtree *try)
   }
 
 skip:
+
+  // Delete the last '/' of pathname.
+  len = strlen(try->name);
+  while (len > 0 && try->name[len-1] == '/') len--;
+  try->name[len] = '\0';
 
   // Remove dir or files
   if (FLAG(r)) ret = toybox_cmd_do_rmdir(try->name);

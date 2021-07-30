@@ -10,7 +10,7 @@ config CHMOD
   bool "chmod"
   default y
   help
-    usage: chmod [-R] MODE FILE...
+    usage: chmod MODE FILE...
 
     Change mode of listed file[s] (recursively with -R).
 

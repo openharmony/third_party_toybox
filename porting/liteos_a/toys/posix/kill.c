@@ -18,12 +18,11 @@ config KILL
   bool "kill"
   default y
   help
-    usage: kill [-l [SIGNAL] | -s SIGNAL | -SIGNAL] pid...
+    usage: kill [-l [SIGNAL] | SIGNAL | -SIGNAL] pid...
 
     Send signal to process(es).
 
     -l	List signal name(s) and number(s)
-    -s	Send SIGNAL (default SIGTERM)
 
 config KILLALL5
   bool "killall5"
