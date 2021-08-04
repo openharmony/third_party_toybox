@@ -808,7 +808,6 @@ if (defined(ohos_lite)) {
       "zcat",
     ]
     part_name = "init"
-    module_install_dir = "bin"
     install_images = [ "system", "updater" ]
     install_enable = true
   }
