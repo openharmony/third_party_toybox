@@ -339,10 +339,31 @@ static int cp_node(struct dirtree *try)
 void cp_main(void)
 {
   char *destname = toys.optargs[--toys.optc];
-  int i, destdir = !stat(destname, &TT.top) && S_ISDIR(TT.top.st_mode);
+  char *srcname = toys.optargs[0];
+  int i, destdir;
+  int ret;
+  struct stat cst;
+
+  if (!*destname)
+    error_exit("Invalid argument: empty or null dest");
+
+  destdir = !stat(destname, &TT.top) && S_ISDIR(TT.top.st_mode);
 
   if ((toys.optc>1 || FLAG(D)) && !destdir)
     error_exit("'%s' not directory", destname);
+
+  // cp: Detect the validity of destination address.
+  ret = stat(srcname, &cst);
+  // Does the source file exist
+  if (ret < 0 && errno == ENOENT) {
+    perror_msg("'%s'", srcname);
+    return;
+  }
+  // Copying directories is not supported.
+  if (S_ISDIR(cst.st_mode)) {
+    xprintf("cp %s error: Source file can't be a directory.\n", srcname);
+    return;
+  }
 
   if (FLAG(a)||FLAG(p)) TT.pflags = _CP_mode|_CP_ownership|_CP_timestamps;
 
@@ -397,6 +418,15 @@ void cp_main(void)
         mkpath(TT.destname);
       }
     } else TT.destname = destname;
+
+    ret = fstatat(AT_FDCWD, destname, &cst, 0);
+    if (ret < 0) {
+      /* Is dest path a directory? */
+      if (destname[strlen(destname) - 1] == '/') {
+        xprintf("cp error: %s, %s.\n", destname, strerror(errno));
+        return;
+      }
+    }
 
     errno = EXDEV;
     if (CFG_MV && toys.which->name[0] == 'm') {
