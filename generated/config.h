@@ -90,8 +90,13 @@
 #define USE_ICONV(...) __VA_ARGS__
 #define CFG_ID 1
 #define USE_ID(...) __VA_ARGS__
-#define CFG_ID_Z 0
-#define USE_ID_Z(...)
+#ifdef WITH_SELINUX
+# define CFG_ID_Z 1
+# define USE_ID_Z(...) __VA_ARGS__
+#else
+# define CFG_ID_Z 0
+# define USE_ID_Z(...)
+#endif // WITH_SELINUX
 #define CFG_GROUPS 1
 #define USE_GROUPS(...) __VA_ARGS__
 #define CFG_LOGNAME 1
@@ -112,12 +117,22 @@
 #define USE_LS(...) __VA_ARGS__
 #define CFG_MKDIR 1
 #define USE_MKDIR(...) __VA_ARGS__
-#define CFG_MKDIR_Z 0
-#define USE_MKDIR_Z(...)
+#ifdef WITH_SELINUX
+# define CFG_MKDIR_Z 1
+# define USE_MKDIR_Z(...) __VA_ARGS__
+#else
+# define CFG_MKDIR_Z 0
+# define USE_MKDIR_Z(...)
+#endif // WITH_SELINUX
 #define CFG_MKFIFO 1
 #define USE_MKFIFO(...) __VA_ARGS__
-#define CFG_MKFIFO_Z 0
-#define USE_MKFIFO_Z(...)
+#ifdef WITH_SELINUX
+# define CFG_MKFIFO_Z 1
+# define USE_MKFIFO_Z(...) __VA_ARGS__
+#else
+# define CFG_MKFIFO_Z 0
+# define USE_MKFIFO_Z(...)
+#endif // WITH_SELINUX
 #define CFG_NICE 1
 #define USE_NICE(...) __VA_ARGS__
 #define CFG_NL 1
@@ -236,8 +251,13 @@
 #define USE_FSCK(...)
 #define CFG_GETFATTR 0
 #define USE_GETFATTR(...)
-#define CFG_GETTY 1
-#define USE_GETTY(...) __VA_ARGS__
+#ifdef WITH_SELINUX
+# define CFG_GETTY 0
+# define USE_GETTY(...)
+#else
+# define CFG_GETTY 1
+# define USE_GETTY(...) __VA_ARGS__
+#endif // WITH_SELINUX
 #define CFG_GROUPADD 0
 #define USE_GROUPADD(...)
 #define CFG_GROUPDEL 0
@@ -262,10 +282,17 @@
 #define USE_LSOF(...)
 #define CFG_MAN 0
 #define USE_MAN(...)
-#define CFG_MDEV 1
-#define USE_MDEV(...) __VA_ARGS__
-#define CFG_MDEV_CONF 1
-#define USE_MDEV_CONF(...) __VA_ARGS__
+#ifdef WITH_SELINUX
+# define CFG_MDEV 0
+# define USE_MDEV(...)
+# define CFG_MDEV_CONF 0
+# define USE_MDEV_CONF(...)
+#else
+# define CFG_MDEV 1
+# define USE_MDEV(...) __VA_ARGS__
+# define CFG_MDEV_CONF 1
+# define USE_MDEV_CONF(...) __VA_ARGS__
+#endif // WITH_SELINUX
 #define CFG_MKE2FS 0
 #define USE_MKE2FS(...)
 #define CFG_MKE2FS_JOURNAL 0
@@ -284,8 +311,13 @@
 #define USE_OPENVT(...)
 #define CFG_DEALLOCVT 0
 #define USE_DEALLOCVT(...)
-#define CFG_ROUTE 1
-#define USE_ROUTE(...) __VA_ARGS__
+#ifdef WITH_SELINUX
+# define CFG_ROUTE 0
+# define USE_ROUTE(...)
+#else
+# define CFG_ROUTE 1
+# define USE_ROUTE(...) __VA_ARGS__
+#endif // WITH_SELINUX
 #define CFG_SH 0
 #define USE_SH(...)
 #define CFG_CD 0
@@ -302,8 +334,13 @@
 #define USE_TCPSVD(...)
 #define CFG_TELNET 0
 #define USE_TELNET(...)
-#define CFG_TELNETD 1
-#define USE_TELNETD(...) __VA_ARGS__
+#ifdef WITH_SELINUX
+# define CFG_TELNETD 0
+# define USE_TELNETD(...)
+#else
+# define CFG_TELNETD 1
+# define USE_TELNETD(...) __VA_ARGS__
+#endif // WITH_SELINUX
 #define CFG_TFTP 0
 #define USE_TFTP(...)
 #define CFG_TFTPD 0
@@ -338,8 +375,13 @@
 #define USE_BUNZIP2(...) __VA_ARGS__
 #define CFG_BZCAT 1
 #define USE_BZCAT(...) __VA_ARGS__
-#define CFG_CHCON 0
-#define USE_CHCON(...)
+#ifdef WITH_SELINUX
+# define CFG_CHCON 1
+# define USE_CHCON(...) __VA_ARGS__
+#else
+# define CFG_CHCON 0
+# define USE_CHCON(...)
+#endif // WITH_SELINUX
 #define CFG_CHROOT 1
 #define USE_CHROOT(...) __VA_ARGS__
 #define CFG_CHRT 1
@@ -556,8 +598,13 @@
 #define USE_SHA512SUM(...)
 #define CFG_MKNOD 1
 #define USE_MKNOD(...) __VA_ARGS__
-#define CFG_MKNOD_Z 0
-#define USE_MKNOD_Z(...)
+#ifdef WITH_SELINUX
+# define CFG_MKNOD_Z 1
+# define USE_MKNOD_Z(...) __VA_ARGS__
+#else
+# define CFG_MKNOD_Z 0
+# define USE_MKNOD_Z(...)
+#endif // WITH_SELINUX
 #define CFG_MKTEMP 1
 #define USE_MKTEMP(...) __VA_ARGS__
 #define CFG_MOUNT 1
@@ -612,10 +659,17 @@
 #define USE_TOYBOX(...) __VA_ARGS__
 #define CFG_TOYBOX_SUID 1
 #define USE_TOYBOX_SUID(...) __VA_ARGS__
-#define CFG_TOYBOX_LSM_NONE 1
-#define USE_TOYBOX_LSM_NONE(...) __VA_ARGS__
-#define CFG_TOYBOX_SELINUX 0
-#define USE_TOYBOX_SELINUX(...)
+#ifdef WITH_SELINUX
+# define CFG_TOYBOX_LSM_NONE 0
+# define USE_TOYBOX_LSM_NONE(...)
+# define CFG_TOYBOX_SELINUX 1
+# define USE_TOYBOX_SELINUX(...) __VA_ARGS__
+#else
+# define CFG_TOYBOX_LSM_NONE 1
+# define USE_TOYBOX_LSM_NONE(...) __VA_ARGS__
+# define CFG_TOYBOX_SELINUX 0
+# define USE_TOYBOX_SELINUX(...)
+#endif // WITH_SELINUX
 #define CFG_TOYBOX_SMACK 0
 #define USE_TOYBOX_SMACK(...)
 #define CFG_TOYBOX_LIBCRYPTO 0

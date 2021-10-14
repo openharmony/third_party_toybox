@@ -652,6 +652,14 @@ if (defined(ohos_lite)) {
 
     include_dirs = [ "./" ]
 
+    deps = []
+
+    if (build_selinux) {
+      sources += [ "toys/other/chcon.c" ]
+      include_dirs += [ "//third_party/selinux/libselinux/include" ]
+      deps += [ "//third_party/selinux:libselinux" ]
+    }
+
     defines = [ "_DEFAULT_SOURCE" ]
 
     cflags_c = [
@@ -686,6 +694,17 @@ if (defined(ohos_lite)) {
       "-lm",
       "-lcrypt",
     ]
+
+    if (build_selinux) {
+      cflags_c += [
+        "-D_GUN_SOURCE",
+        "-DUSE_PCRE2",
+        "-w",
+        "-DWITH_SELINUX",
+        "-DCUSTOM_GET_CONTEXT",
+      ]
+    }
+
     symlink_target_name = [
       "base64",
       "basename",
@@ -899,6 +918,9 @@ if (defined(ohos_lite)) {
       "yes",
       "zcat",
     ]
+    if (build_selinux) {
+      symlink_target_name -= [ "restorecon" ]
+    }
     part_name = "init"
     install_images = [
       "system",
