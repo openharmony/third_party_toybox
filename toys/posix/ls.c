@@ -190,7 +190,13 @@ static int filter(struct dirtree *new)
 
   if (flags & FLAG_Z) {
     if (!CFG_TOYBOX_LSM_NONE) {
+#ifdef CUSTOM_GET_CONTEXT
+        const char * const path = dirtree_path(new, 0);
 
+        if (path) {
+            lsm_get_context(path, (char **)&new->extra);
+        }
+#else
       // (Wouldn't it be nice if the lsm functions worked like openat(),
       // fchmodat(), mknodat(), readlinkat() so we could do this without
       // even O_PATH? But no, this is 1990's tech.)
@@ -213,6 +219,7 @@ static int filter(struct dirtree *new)
         }
         close(fd);
       }
+#endif
     }
     if (CFG_TOYBOX_LSM_NONE || !new->extra) new->extra = (long)xstrdup("?");
   }
