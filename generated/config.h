@@ -212,8 +212,8 @@
 #define USE_CROND(...)
 #define CFG_CRONTAB 0
 #define USE_CRONTAB(...)
-#define CFG_DD 0
-#define USE_DD(...)
+#define CFG_DD 1
+#define USE_DD(...) __VA_ARGS__
 #define CFG_DHCP6 0
 #define USE_DHCP6(...)
 #define CFG_DHCP 0
