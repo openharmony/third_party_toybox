@@ -572,8 +572,8 @@
 #define USE_TUNCTL(...) __VA_ARGS__
 #define CFG_DMESG 1
 #define USE_DMESG(...) __VA_ARGS__
-#define CFG_GZIP 0
-#define USE_GZIP(...)
+#define CFG_GZIP 1
+#define USE_GZIP(...) __VA_ARGS__
 #define CFG_GUNZIP 1
 #define USE_GUNZIP(...) __VA_ARGS__
 #define CFG_ZCAT 1
