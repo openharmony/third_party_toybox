@@ -1,0 +1,39 @@
+{
+    "name": "@ohos/toybox",
+    "version": "",
+    "description": "all-in-one Linux command line",
+    "homePage": "https://gitee.com/openharmony",
+    "license": "Public Domain",
+    "repository": "https://gitee.com/openharmony/third_party_toybox",
+    "domain": "os",
+    "language": "",
+    "publishAs": "code-segment",
+    "private": false,
+    "scripts": {},
+    "tags": [
+        "third_party"
+    ],
+    "keywords": [
+        "third-party",
+        "toybox"
+    ],
+    "envs": {},
+    "dirs": {},
+    "segment": {
+        "destPath": "third_party/toybox"
+    },
+    "component": {
+        "name": "thirdparty_toybox",
+        "subsystem": "",
+        "syscap": [],
+        "features": [],
+        "adapted_system_type": [],
+        "rom": "",
+        "ram": "",
+        "build": {
+            "sub_component": [],
+            "inner_kits": [],
+            "test": []
+        }
+    }
+}
