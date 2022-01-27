@@ -927,7 +927,6 @@ if (defined(ohos_lite)) {
     install_images = [
       "system",
       "updater",
-      "ramdisk",
     ]
     install_enable = true
   }
