@@ -1610,7 +1610,10 @@ static void top_common(
           // If a processor goes idle it's powered down and its idle ticks don't
           // advance, so calculate idle time as potential time - used.
           if (mix.count) up = mix.tb[0]->slot[SLOT_upticks];
-          if (!up) up = 1;
+          if (!up) {
+            up = 1;
+            memset(stats, 0, sizeof(stats));
+          }
           now = up*i;
           ll = stats[3] = stats[11] = 0;
           for (i = 0; i<8; i++) ll += stats[i]-stats[i+8];
