@@ -169,7 +169,7 @@ Coversions between signal names and numbers now include all the Linux signals,
 not just posix ones. The functions sig_to_num() and num_to_sig() moved into
 lib/portability.h, because MacOS has different signals.
 TOYFLAG_MAYFORK allows commands to run in toysh's process without forking,
-but also makes them accessable from the toybox multiplexer or standalone.
+but also makes them accessible from the toybox multiplexer or standalone.
 A MAYFORK command has to clean up after itself (even in error paths) and
 can't discard anything we need to keep (such as closing stdout).</p>
 
