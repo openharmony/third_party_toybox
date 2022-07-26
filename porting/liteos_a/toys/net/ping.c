@@ -52,10 +52,12 @@ GLOBALS(
 // Print a summary. Called as a single handler or at exit.
 static void summary(int sig)
 {
+  unsigned long lostret = 0;
+  lostret = TT.sent > TT.recv ? ((TT.sent-TT.recv)*100)/(TT.sent?TT.sent:1) : 0;
   if (!(toys.optflags&FLAG_q) && TT.sent && TT.sa) {
     printf("\n--- %s ping statistics ---\n", ntop(TT.sa));
-    printf("%lu packets transmitted, %lu received, %ld%% packet loss\n",
-      TT.sent, TT.recv, ((TT.sent-TT.recv)*100)/(TT.sent?TT.sent:1));
+    printf("%lu packets transmitted, %lu received, %lu%% packet loss\n",
+      TT.sent, TT.recv, lostret);
     printf("round-trip min/avg/max = %lu/%lu/%lu ms\n",
       TT.min, TT.max, TT.fugit/(TT.recv?TT.recv:1));
   }
@@ -92,6 +94,7 @@ void ping_main(void)
   union socksaddr srcaddr, srcaddr2;
   struct sockaddr *sa = (void *)&srcaddr;
   int family = 0, len;
+  int recvLen = 0;
   long long tnext, tW, tnow, tw;
   unsigned short seq = 0 ,pkttime;
   long long tmp_tnow;
@@ -231,26 +234,27 @@ void ping_main(void)
     if (!tW && waitms>tnext-tnow) waitms = tnext-tnow;
 
     // wait for next packet or timeout
-
     if (waitms<0) waitms = 0;
-    if (!(len = xrecvwait(TT.sock, toybuf, sizeof(toybuf), &srcaddr2, waitms)))
-      continue;
+    len = xrecvwait(TT.sock, toybuf, sizeof(toybuf), &srcaddr2, waitms);
+    recvLen += len;
+    if (len == 0) {
+      TT.recv++;
 
-    TT.recv++;
-    TT.fugit += (pkttime = millitime()-tmp_tnow);
-    // reply id == 0 for ipv4, 129 for ipv6
-
-    if (!(toys.optflags&FLAG_q)) {
-      if (toys.optflags&FLAG_f) xputc('\b');
-      else {
-        printf("%d bytes from %s: icmp_seq=%d ttl=%d", len, ntop(&srcaddr2.s),
-               ih->un.echo.sequence, 0);
-        if (len >= sizeof(*ih)+4)
-          printf(" time=%u ms", pkttime);
-        xputc('\n');
+      // reply id == 0 for ipv4, 129 for ipv6
+      if (!(toys.optflags&FLAG_q)) {
+        if (toys.optflags&FLAG_f) xputc('\b');
+        else {
+          printf("len %d bytes from %s: icmp_seq=%d ttl=%d", recvLen, ntop(&srcaddr2.s),
+                 ih->un.echo.sequence, 0);
+          if (len >= sizeof(*ih)+4)
+            printf(" time=%u ms", pkttime);
+          xputc('\n');
+        }
       }
+      recvLen = 0;
+      continue;
     }
-
+    TT.fugit += (pkttime = millitime()-tmp_tnow);
     toys.exitval = 0;
   }
 
