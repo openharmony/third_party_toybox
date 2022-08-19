@@ -237,7 +237,7 @@ void ping_main(void)
     if (waitms<0) waitms = 0;
     len = xrecvwait(TT.sock, toybuf, sizeof(toybuf), &srcaddr2, waitms);
     recvLen += len;
-    if (len == 0) {
+    if ((len == 0) && (recvLen != 0)) {
       TT.recv++;
 
       // reply id == 0 for ipv4, 129 for ipv6
