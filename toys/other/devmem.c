@@ -10,9 +10,8 @@ config DEVMEM
   help
     usage: devmem ADDR [WIDTH [DATA]]
 
-    Read/write physical address via /dev/mem.
-
-    WIDTH is 1, 2, 4, or 8 bytes (default 4).
+    Read/write physical address. WIDTH is 1, 2, 4, or 8 bytes (default 4).
+    Prefix ADDR with 0x for hexadecimal, output is in same base as address.
 */
 
 #define FOR_devmem

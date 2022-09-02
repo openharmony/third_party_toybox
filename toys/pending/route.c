@@ -2,6 +2,7 @@
  *
  * Copyright 2012 Ranjan Kumar <ranjankumar.bth@gmail.com>
  * Copyright 2013 Kyungwan Han <asura321@gmail.com>
+ * Copyright 2020 Eric Molitor <eric@molitor.org>
  *
  * No Standard
  *

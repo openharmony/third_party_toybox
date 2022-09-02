@@ -1,12 +1,13 @@
-/* md5sum.c - Calculate RFC 1321 md5 hash and sha1 hash.
+/* md5sum.c - Calculate hashes md5, sha1, sha224, sha256, sha384, sha512.
  *
- * Copyright 2012 Rob Landley <rob@landley.net>
+ * Copyright 2012, 2021 Rob Landley <rob@landley.net>
  *
  * See http://refspecs.linuxfoundation.org/LSB_4.1.0/LSB-Core-generic/LSB-Core-generic/md5sum.html
  * and http://www.ietf.org/rfc/rfc1321.txt
+ * and http://www.ietf.org/rfc/rfc4634.txt
  *
  * They're combined this way to share infrastructure, and because md5sum is
- * and LSB standard command (but sha1sum and newer hashes are a good idea,
+ * a LSB standard command (but sha1sum and newer hashes are a good idea,
  * see http://valerieaurora.org/hash.html).
  *
  * We optionally use openssl (or equivalent) to access assembly optimized
