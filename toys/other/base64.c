@@ -2,7 +2,7 @@
  *
  * Copyright 2014 Rob Landley <rob@landley.net>
  *
- * No standard
+ * See https://tools.ietf.org/html/rfc4648
 
 USE_BASE64(NEWTOY(base64, "diw#<0=76[!dw]", TOYFLAG_USR|TOYFLAG_BIN))
 
