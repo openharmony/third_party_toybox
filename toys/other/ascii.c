@@ -4,6 +4,12 @@
  *
  * Technically 7-bit ASCII is ANSI X3.4-1986, a standard available as
  * INCITS 4-1986[R2012] on ansi.org, but they charge for it.
+ *
+ * unicode.c - convert between Unicode and UTF-8
+ *
+ * Copyright 2020 The Android Open Source Project.
+ *
+ * Loosely based on the Plan9/Inferno unicode(1).
 
 USE_ASCII(NEWTOY(ascii, 0, TOYFLAG_USR|TOYFLAG_BIN))
 

@@ -1,7 +1,30 @@
-/* wget.c - Simple downloader to get the resource file in HTTP server
+/* wget.c - Simple downloader to get the resource file from a HTTP server
  *
  * Copyright 2016 Lipi C.H. Lee <lipisoft@gmail.com>
+ * Copyright 2021 Eric Molitor <eric@molitor.org>
  *
+ * Relevant sources of information
+ * -------------------------------
+ * HTTP 1.1: https://www.rfc-editor.org/rfc/rfc7230
+ * Chunked Encoding: https://www.rfc-editor.org/rfc/rfc7230#section-4.1
+ * UTF-8 Encoded Header Values https://www.rfc-editor.org/rfc/rfc5987
+ *
+ * Test URLs
+ * ---------
+ * Chunked Encoding: https://jigsaw.w3.org/HTTP/ChunkedScript
+ * Redirect 301: https://jigsaw.w3.org/HTTP/300/301.html
+ * Redirect 302: https://jigsaw.w3.org/HTTP/300/302.html
+ * TLS 1.0: https://tls-v1-0.badssl.com:1010/
+ * TLS 1.1: https://tls-v1-1.badssl.com:1011/
+ * TLS 1.2: https://tls-v1-2.badssl.com:1012/
+ * TLS 1.3: https://tls13.1d.pw/
+ * Transfer Encoding [gzip|deflate]: https://jigsaw.w3.org/HTTP/TE/bar.txt
+ *
+ *
+ * todo: Add support for configurable TLS versions
+ * todo: Add support for ftp
+ * todo: Add support for Transfer Encoding (gzip|deflate)
+ * todo: Add support for RFC5987
 
 USE_WGET(NEWTOY(wget, "(no-check-certificate)O:", TOYFLAG_USR|TOYFLAG_BIN))
 
