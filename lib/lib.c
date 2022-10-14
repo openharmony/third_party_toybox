@@ -345,7 +345,7 @@ int stridx(char *haystack, char needle)
 }
 
 // Convert utf8 sequence to a unicode wide character
-int utf8towc(wchar_t *wc, char *str, unsigned len)
+int utf8towc(unsigned *wc, char *str, unsigned len)
 {
   unsigned result, mask, first;
   char *s, c;
@@ -385,7 +385,7 @@ char *strlower(char *s)
     try = new = xmalloc(strlen(s)*2+1);
 
     while (*s) {
-      wchar_t c;
+      unsigned c;
       int len = utf8towc(&c, s, MB_CUR_MAX);
 
       if (len < 1) *(new++) = *(s++);
@@ -685,7 +685,7 @@ void loopfiles(char **argv, void (*function)(int fd, char *name))
   loopfiles_rw(argv, O_RDONLY|O_CLOEXEC|WARN_ONLY, 0, function);
 }
 
-// glue to call dl_lines() from loopfiles
+// glue to call do_lines() from loopfiles
 static void (*do_lines_bridge)(char **pline, long len);
 static void loopfile_lines_bridge(int fd, char *name)
 {

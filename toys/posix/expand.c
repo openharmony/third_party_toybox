@@ -47,7 +47,7 @@ static void do_expand(int fd, char *name)
       char c;
 
       if (CFG_TOYBOX_I18N) {
-        wchar_t blah;
+        unsigned blah;
 
         width = utf8towc(&blah, toybuf+i, len-i);
         if (width > 1) {
