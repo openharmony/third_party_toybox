@@ -51,7 +51,7 @@ GLOBALS(
 int unicolumns(char *start, unsigned columns)
 {
   int i, j = 0;
-  wchar_t wc;
+  unsigned wc;
   char *s = start, *ss = start;
 
   // Skip start, rounding down if we hit a multicolumn char
@@ -109,7 +109,7 @@ static void cut_line(char **pline, long len)
       s += unicolumns(s, start);
       count = unicolumns(s, end-start);
     } else if (toys.optflags&FLAG_c) {
-      wchar_t wc;
+      unsigned wc;
       char *sss;
 
       // Find start
