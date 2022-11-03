@@ -58,8 +58,8 @@ void su_main()
 
   loggit(LOG_NOTICE, "%s->%s", getusername(getuid()), name);
 
-  if (!(shp = getspnam(name))) perror_exit("no '%s'", name);
-  if (getuid()) {
+  shp = getspnam(name);
+  if (getuid() && shp) {
     if (*shp->sp_pwdp != '$') goto deny;
     if (read_password(toybuf, sizeof(toybuf), "Password: ")) goto deny;
     passhash = crypt(toybuf, shp->sp_pwdp);
