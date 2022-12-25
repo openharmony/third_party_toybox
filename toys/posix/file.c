@@ -421,7 +421,7 @@ static void do_regular_file(int fd, char *name)
     // Distinguish ASCII text, UTF-8 text, or data
     } else for (i = 0; i<len; ++i) {
       if (!(isprint(toybuf[i]) || isspace(toybuf[i]))) {
-        wchar_t wc;
+        unsigned wc;
         if ((bytes = utf8towc(&wc, s+i, len-i))>0 && wcwidth(wc)>=0) {
           i += bytes-1;
           if (!what) what = "UTF-8 text";
