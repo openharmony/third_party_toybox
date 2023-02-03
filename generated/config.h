@@ -514,10 +514,10 @@
 #define USE_IFCONFIG(...) __VA_ARGS__
 #define CFG_MICROCOM 1
 #define USE_MICROCOM(...) __VA_ARGS__
-#define CFG_NETCAT 1
-#define USE_NETCAT(...) __VA_ARGS__
-#define CFG_NETCAT_LISTEN 1
-#define USE_NETCAT_LISTEN(...) __VA_ARGS__
+#define CFG_NETCAT 0
+#define USE_NETCAT(...)
+#define CFG_NETCAT_LISTEN 0
+#define USE_NETCAT_LISTEN(...)
 #define CFG_NETSTAT 1
 #define USE_NETSTAT(...) __VA_ARGS__
 #define CFG_PING 1
