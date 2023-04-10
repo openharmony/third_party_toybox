@@ -686,7 +686,6 @@ if (defined(ohos_lite)) {
       "-Wno-string-plus-int",
       "-Wno-tautological-constant-compare",
       "-Wno-string-conversion",
-      "-Wno-unused-but-set-variable",
     ]
 
     ldflags = [
