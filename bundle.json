@@ -14,14 +14,17 @@
         "en": ""
     },
     "component": {
-        "name": "thirdparty_toybox",
+        "name": "toybox",
         "subsystem": "",
         "syscap": [],
         "features": [],
-        "adapted_system_type": [],
-        "rom": "",
-        "ram": "",
-        "deps": {
+        "adapted_system_type": [
+            "standard",
+            "small"
+        ],
+        "rom": "73KB",
+        "ram": "146KB",
+        "external_deps": {
             "components": [],
             "third_party": []
         },
