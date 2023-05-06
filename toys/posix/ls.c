@@ -194,7 +194,7 @@ static int filter(struct dirtree *new)
         const char * const path = dirtree_path(new, 0);
 
         if (path) {
-            lsm_get_context(path, (char **)&new->extra);
+            (FLAG(L) ? lsm_get_context : lsm_lget_context)(path, (char **)&new->extra);
         }
 #else
       // (Wouldn't it be nice if the lsm functions worked like openat(),
