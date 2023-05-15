@@ -70,7 +70,9 @@
 
 #define HELP_sync "usage: sync\n\nWrite pending cached data to disk (synchronize), blocking until done."
 
+#ifdef OHOS_LITE
 #define HELP_su "usage: su [-lp] [-u UID] [-g GID,...] [-s SHELL] [-c CMD] [USER [COMMAND...]]\n\nSwitch user, prompting for password of new user when not run as root.\n\nWith one argument, switch to USER and run user's shell from /etc/passwd.\nWith no arguments, USER is root. If COMMAND line provided after USER,\nexec() it as new USER (bypasing shell). If -u or -g specified, first\nargument (if any) isn't USER (it's COMMAND).\n\nfirst argument is USER name to switch to (which must exist).\nNon-root users are prompted for new user's password.\n\n-s	Shell to use (default is user's shell from /etc/passwd)\n-c	Command line to pass to -s shell (ala sh -c \"CMD\")\n-l	Reset environment as if new login.\n-u	Switch to UID instead of USER\n-g	Switch to GID (only root allowed, can be comma separated list)\n-p	Preserve environment (except for $PATH and $IFS)"
+#endif
 
 #define HELP_seq "usage: seq [-w|-f fmt_str] [-s sep_str] [first] [increment] last\n\nCount from first to last, by increment. Omitted arguments default\nto 1. Two arguments are used as first and last. Arguments can be\nnegative or floating point.\n\n-f	Use fmt_str as a printf-style floating point format string\n-s	Use sep_str as separator, default is a newline character\n-w	Pad to equal width with leading zeroes"
 
