@@ -211,7 +211,10 @@ if (defined(ohos_lite)) {
 
     include_dirs = [ "./" ]
 
-    defines = [ "_DEFAULT_SOURCE" ]
+    defines = [
+      "_DEFAULT_SOURCE",
+      "OHOS_LITE",
+    ]
 
     configs -= [ "//build/lite/config:language_c" ]
     cflags_c = [
@@ -455,6 +458,49 @@ if (defined(ohos_lite)) {
   }
 } else {
   import("//build/ohos.gni")
+  ohos_executable("su") {
+    sources = [ "openharmony/su.c" ]
+
+    include_dirs = [ "./openharmony" ]
+
+    cflags_c = [
+      "-std=gnu11",
+      "-Wall",
+      "-Wundef",
+      "-Wno-char-subscripts",
+      "-Wno-implicit-function-declaration",
+      "-Wno-unused-variable",
+      "-Wno-unused-value",
+      "-Wno-incompatible-pointer-types",
+      "-Wno-int-conversion",
+      "-Wno-sign-compare",
+      "-Wno-format",
+      "-Wno-unused-result",
+      "-Os",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-fno-asynchronous-unwind-tables",
+      "-fPIE",
+      "-funsigned-char",
+      "-Wno-string-plus-int",
+      "-Wno-tautological-constant-compare",
+      "-Wno-string-conversion",
+      "-Wno-unused-but-set-variable",
+    ]
+
+    ldflags = [
+      "-pie",
+      "-Wl,-z,relro",
+      "-Wl,-z,now",
+      "-Wl,-z,noexecstack",
+      "-lm",
+      "-lcrypt",
+    ]
+
+    part_name = "init"
+    install_images = [ "eng_system" ]
+    install_enable = true
+  }
 
   ohos_executable("toybox") {
     sources = [
@@ -484,7 +530,6 @@ if (defined(ohos_lite)) {
       "toys/lsb/passwd.c",
       "toys/lsb/pidof.c",
       "toys/lsb/seq.c",
-      "toys/lsb/su.c",
       "toys/lsb/sync.c",
       "toys/lsb/umount.c",
       "toys/net/ftpget.c",
@@ -874,7 +919,6 @@ if (defined(ohos_lite)) {
       "split",
       "stat",
       "strings",
-      "su",
       "swapoff",
       "swapon",
       "switch_root",

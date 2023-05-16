@@ -128,11 +128,12 @@ struct seq_data {
 };
 
 // toys/lsb/su.c
-
+#ifdef OHOS_LITE
 struct su_data {
   char *s;
   char *c;
 };
+#endif
 
 // toys/lsb/umount.c
 
@@ -1439,7 +1440,9 @@ extern union global_union {
 	struct passwd_data passwd;
 	struct pidof_data pidof;
 	struct seq_data seq;
+#ifdef OHOS_LITE
 	struct su_data su;
+#endif
 	struct umount_data umount;
 	struct ftpget_data ftpget;
 	struct ifconfig_data ifconfig;
