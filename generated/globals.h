@@ -368,10 +368,23 @@ struct oneit_data {
   char *c;
 };
 
+// toys/other/pwgen.c
+
+struct pwgen_data {
+  char *r;
+};
+
 // toys/other/setfattr.c
 
 struct setfattr_data {
   char *x, *v, *n;
+};
+
+// toys/other/sha3sum.c
+
+struct sha3sum_data {
+  long a;
+  unsigned long long rc[24];
 };
 
 // toys/other/shred.c
@@ -454,7 +467,7 @@ struct arp_data {
     char *af_type_A;
     char *af_type_p;
     char *interface;
-    
+
     int sockfd;
     char *device;
 };
@@ -488,18 +501,23 @@ struct bc_data {
 // toys/pending/bootchartd.c
 
 struct bootchartd_data {
-  char buf[32];
-  long smpl_period_usec;
+  char timestamp[32];
+  long msec;
   int proc_accounting;
-  int is_login;
 
-  pid_t cur_pid;
+  pid_t pid;
 };
 
 // toys/pending/brctl.c
 
 struct brctl_data {
     int sockfd;
+};
+
+// toys/pending/chsh.c
+
+struct chsh_data {
+  char *s;
 };
 
 // toys/pending/crond.c
@@ -571,7 +589,7 @@ struct dhcp6_data {
 struct dhcpd_data {
     char *iface;
     long port;
-};;
+};
 
 // toys/pending/diff.c
 
@@ -636,26 +654,41 @@ struct getfattr_data {
   char *n;
 };
 
+// toys/pending/getopt.c
+
+struct getopt_data {
+  struct arg_list *l;
+  char *o, *n;
+};
+
 // toys/pending/getty.c
 
 struct getty_data {
-  char *issue_str;
-  char *login_str;
-  char *init_str;
-  char *host_str; 
-  long timeout;
-  
-  char *tty_name;  
-  int  speeds[20];
-  int  sc;              
+  char *f, *l, *I, *H;
+  long t;
+
+  char *tty_name, buff[128];
+  int speeds[20], sc;
   struct termios termios;
-  char buff[128];
 };
 
 // toys/pending/groupadd.c
 
 struct groupadd_data {
   long gid;
+};
+
+// toys/pending/hexdump.c
+
+struct hexdump_data {
+    long s, n;
+
+    long long len, pos, ppos;
+    const char *fmt;
+    unsigned int fn, bc;  // file number and byte count
+    char linebuf[16];  // line buffer - serves double duty for sqeezing repeat
+                       // lines and for accumulating full lines accross file
+                       // boundaries if necessesary.
 };
 
 // toys/pending/host.c
@@ -773,7 +806,7 @@ struct more_data {
 // toys/pending/openvt.c
 
 struct openvt_data {
-  unsigned long vt_num;
+  long c;
 };
 
 // toys/pending/route.c
@@ -811,6 +844,17 @@ struct sh_data {
     } *procs, *proc;
   } *jobs, *job;
   unsigned jobcnt;
+};
+
+// toys/pending/strace.c
+
+struct strace_data {
+  long s, p;
+
+  char ioctl[32], *fmt;
+  long regs[256/sizeof(long)], syscall;
+  pid_t pid;
+  int arg;
 };
 
 // toys/pending/stty.c
@@ -1474,7 +1518,9 @@ extern union global_union {
 	struct modinfo_data modinfo;
 	struct nsenter_data nsenter;
 	struct oneit_data oneit;
+	struct pwgen_data pwgen;
 	struct setfattr_data setfattr;
+	struct sha3sum_data sha3sum;
 	struct shred_data shred;
 	struct stat_data stat;
 	struct swapon_data swapon;
@@ -1489,6 +1535,7 @@ extern union global_union {
 	struct bc_data bc;
 	struct bootchartd_data bootchartd;
 	struct brctl_data brctl;
+	struct chsh_data chsh;
 	struct crond_data crond;
 	struct crontab_data crontab;
 	struct dd_data dd;
@@ -1502,8 +1549,10 @@ extern union global_union {
 	struct fold_data fold;
 	struct fsck_data fsck;
 	struct getfattr_data getfattr;
+	struct getopt_data getopt;
 	struct getty_data getty;
 	struct groupadd_data groupadd;
+	struct hexdump_data hexdump;
 	struct host_data host;
 	struct ip_data ip;
 	struct ipcrm_data ipcrm;
@@ -1518,6 +1567,7 @@ extern union global_union {
 	struct openvt_data openvt;
 	struct route_data route;
 	struct sh_data sh;
+	struct strace_data strace;
 	struct stty_data stty;
 	struct sulogin_data sulogin;
 	struct syslogd_data syslogd;
