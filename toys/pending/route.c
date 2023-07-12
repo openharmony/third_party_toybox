@@ -41,10 +41,9 @@ config ROUTE
 
     Available OPTIONS include:
     reject   - blocking route (force match failure)
-    dev NAME - force packets out this interface (ala "eth0")
+    dev NAME - force matching packets out this interface (ala "eth0")
     netmask  - old way of saying things like ADDR/24
     gw ADDR  - forward packets to gateway ADDR
-
 */
 
 #define FOR_route
@@ -61,7 +60,6 @@ GLOBALS(
 
 struct _arglist {
   char *arg;
-
   int action;
 };
 
