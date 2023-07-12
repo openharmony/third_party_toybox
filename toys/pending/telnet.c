@@ -14,7 +14,7 @@ config TELNET
   help
     usage: telnet HOST [PORT]
 
-    Connect to telnet server
+    Connect to telnet server.
 */
 
 #define FOR_telnet
