@@ -116,7 +116,7 @@ struct passwd_data {
 // toys/lsb/pidof.c
 
 struct pidof_data {
-  char *omit;
+  char *o;
 };
 
 // toys/lsb/seq.c
@@ -215,8 +215,9 @@ struct acpi_data {
 
 struct base64_data {
   long w;
-
   unsigned total;
+  unsigned n;  // number of bits used in encoding. 5 for base32, 6 for base64
+  unsigned align;  // number of bits to align to
 };
 
 // toys/other/blkid.c
@@ -246,8 +247,7 @@ struct dos2unix_data {
 // toys/other/fallocate.c
 
 struct fallocate_data {
-  long offset;
-  long size;
+  long o, l;
 };
 
 // toys/other/fmt.c
@@ -286,9 +286,7 @@ struct hwclock_data {
 // toys/other/ionice.c
 
 struct ionice_data {
-  long pid;
-  long level;
-  long class;
+  long p, n, c;
 };
 
 // toys/other/login.c
@@ -372,6 +370,12 @@ struct oneit_data {
 
 struct pwgen_data {
   char *r;
+};
+
+// toys/other/reboot.c
+
+struct reboot_data {
+  char *d;
 };
 
 // toys/other/setfattr.c
@@ -553,7 +557,7 @@ struct dd_data {
     unsigned long long offset;
   } in, out;
   unsigned conv, iflag, oflag;
-};;
+};
 
 // toys/pending/dhcp.c
 
@@ -1357,14 +1361,13 @@ struct sort_data {
 
   void *key_list;
   int linecount;
-  char **lines;
-  char *name;
+  char **lines, *name;
 };
 
 // toys/posix/split.c
 
 struct split_data {
-  long l, b, a;
+  long n, l, b, a;
 
   char *outfile;
 };
@@ -1423,6 +1426,7 @@ struct tar_data {
 
 struct tee_data {
   void *outputs;
+  int out;
 };
 
 // toys/posix/touch.c
@@ -1519,6 +1523,7 @@ extern union global_union {
 	struct nsenter_data nsenter;
 	struct oneit_data oneit;
 	struct pwgen_data pwgen;
+	struct reboot_data reboot;
 	struct setfattr_data setfattr;
 	struct sha3sum_data sha3sum;
 	struct shred_data shred;
