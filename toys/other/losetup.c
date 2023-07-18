@@ -52,7 +52,7 @@ GLOBALS(
 static int loopback_setup(char *device, char *file)
 {
   struct loop_info64 *loop = (void *)(toybuf+32);
-  int lfd = -1, ffd = ffd;
+  int lfd = -1, ffd = -1;
   int racy = !device;
 
   // Open file (ffd) and loop device (lfd)
@@ -103,19 +103,20 @@ static int loopback_setup(char *device, char *file)
     }
   // Associate file with this device?
   } else if (file) {
-    char *s = xabspath(file, 1);
+    char *f_path = xabspath(file, ABS_PATH);
 
-    if (!s) perror_exit("file"); // already opened, but if deleted since...
+    if (!f_path) perror_exit("%s", file); // already opened but if deleted since
     if (ioctl(lfd, LOOP_SET_FD, ffd)) {
+      free(f_path);
       if (racy && errno == EBUSY) return 1;
       perror_exit("%s=%s", device, file);
     }
+    xstrncpy((char *)loop->lo_file_name, f_path, LO_NAME_SIZE);
+    free(f_path);
     loop->lo_offset = TT.o;
     loop->lo_sizelimit = TT.S;
-    xstrncpy((char *)loop->lo_file_name, s, LO_NAME_SIZE);
     if (ioctl(lfd, LOOP_SET_STATUS64, loop)) perror_exit("%s=%s", device, file);
     if (FLAG(s)) puts(device);
-    free(s);
   }
   else {
     xprintf("%s: [%lld]:%llu (%s)", device, (long long)loop->lo_device,
@@ -128,8 +129,8 @@ static int loopback_setup(char *device, char *file)
   }
 
 done:
-  if (file) close(ffd);
-  if (lfd != -1) close(lfd);
+  xclose(ffd);
+  xclose(lfd);
   return 0;
 }
 
