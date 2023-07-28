@@ -497,7 +497,7 @@ if (defined(ohos_lite)) {
       "-lcrypt",
     ]
 
-    part_name = "init"
+    part_name = "toybox"
     install_images = [ "eng_system" ]
     install_enable = true
   }
@@ -968,7 +968,7 @@ if (defined(ohos_lite)) {
     if (build_selinux) {
       symlink_target_name -= [ "restorecon" ]
     }
-    part_name = "init"
+    part_name = "toybox"
     install_images = [
       "system",
       "ramdisk",
