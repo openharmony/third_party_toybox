@@ -76,7 +76,7 @@
 
 #define HELP_seq "usage: seq [-w|-f fmt_str] [-s sep_str] [first] [increment] last\n\nCount from first to last, by increment. Omitted arguments default\nto 1. Two arguments are used as first and last. Arguments can be\nnegative or floating point.\n\n-f	Use fmt_str as a printf-style floating point format string\n-s	Use sep_str as separator, default is a newline character\n-w	Pad to equal width with leading zeroes"
 
-#define HELP_pidof "usage: pidof [-s] [-o omitpid[,omitpid...]] [NAME]...\n\nPrint the PIDs of all processes with the given names.\n\n-s	Single shot, only return one pid\n-o	Omit PID(s)\n-x	Match shell scripts too"
+#define HELP_pidof "usage: pidof [-s] [-o omitpid[,omitpid...]] [NAME...]\n\nPrint the PIDs of all processes with the given names.\n\n-o	Omit PID(s)\n-s	Single shot, only return one pid\n-x	Match shell scripts too"
 
 #define HELP_passwd_sad "Password changes are checked to make sure they're at least 6 chars long,\ndon't include the entire username (but not a subset of it), or the entire\nprevious password (but changing password1, password2, password3 is fine).\nThis heuristic accepts \"aaaaaa\" and \"123456\"."
 
@@ -126,7 +126,7 @@
 
 #define HELP_netstat "usage: netstat [-pWrxwutneal]\n\nDisplay networking information. Default is netstat -tuwx\n\n-r	Routing table\n-a	All sockets (not just connected)\n-l	Listening server sockets\n-t	TCP sockets\n-u	UDP sockets\n-w	Raw sockets\n-x	Unix sockets\n-e	Extended info\n-n	Don't resolve names\n-W	Wide display\n-p	Show PID/program name of sockets"
 
-#define HELP_netcat "usage: netcat [-46Ut] [-lL COMMAND...] [-u] [-wpq #] [-s addr] {IPADDR PORTNUM|-f FILENAME}\n\nForward stdin/stdout to a file or network connection.\n\n-4	Force IPv4\n-6	Force IPv6\n-L	Listen for multiple incoming connections (server mode)\n-U	Use a UNIX domain socket\n-W	SECONDS timeout for more data on an idle connection\n-f	Use FILENAME (ala /dev/ttyS0) instead of network\n-l	Listen for one incoming connection\n-p	Local port number\n-q	Quit SECONDS after EOF on stdin, even if stdout hasn't closed yet\n-s	Local source address\n-t	Allocate tty (must come before -l or -L)\n-u	Use UDP\n-w	SECONDS timeout to establish connection\n\nUse \"stty 115200 -F /dev/ttyS0 && stty raw -echo -ctlecho\" with\nnetcat -f to connect to a serial port.\n\nThe command line after -l or -L is executed (as a child process) to handle\neach incoming connection. If blank -l waits for a connection and forwards\nit to stdin/stdout. If no -p specified, -l prints port it bound to and\nbackgrounds itself (returning immediately).\n\nFor a quick-and-dirty server, try something like:\nnetcat -s 127.0.0.1 -p 1234 -tL /bin/bash -l"
+#define HELP_netcat "usage: netcat [-46ELUlt] [-u] [-wpq #] [-s addr] {IPADDR PORTNUM|-f FILENAME|COMMAND...}\n\nForward stdin/stdout to a file or network connection.\n\n-4	Force IPv4\n-6	Force IPv6\n-E	Forward stderr\n-L	Listen and background each incoming connection (server mode)\n-U	Use a UNIX domain socket\n-W	SECONDS timeout for more data on an idle connection\n-f	Use FILENAME (ala /dev/ttyS0) instead of network\n-l	Listen for one incoming connection, then exit\n-p	Local port number\n-q	Quit SECONDS after EOF on stdin, even if stdout hasn't closed yet\n-s	Local source address\n-t	Allocate tty\n-u	Use UDP\n-w	SECONDS timeout to establish connection\n\nUse \"stty 115200 -F /dev/ttyS0 && stty raw -echo -ctlecho\" with\nnetcat -f to connect to a serial port.\n\nWhen listening the COMMAND line is executed as a child process to handle\nan incoming connection. With no COMMAND -l forwards the connection\nto stdin/stdout. If no -p specified, -l prints the port it bound to and\nbackgrounds itself (returning immediately).\n\nFor a quick-and-dirty server, try something like:\nnetcat -s 127.0.0.1 -p 1234 -tL sh -l"
 
 #define HELP_microcom "usage: microcom [-s SPEED] [-X] DEVICE\n\nSimple serial console.\n\n-s	Set baud rate to SPEED\n-X	Ignore ^@ (send break) and ^] (exit)"
 
@@ -178,6 +178,8 @@
 
 #define HELP_shred "usage: shred [-fuz] [-n COUNT] [-s SIZE] FILE...\n\nSecurely delete a file by overwriting its contents with random data.\n\n-f		Force (chmod if necessary)\n-n COUNT	Random overwrite iterations (default 1)\n-o OFFSET	Start at OFFSET\n-s SIZE		Use SIZE instead of detecting file size\n-u		Unlink (actually delete file when done)\n-x		Use exact size (default without -s rounds up to next 4k)\n-z		Zero at end\n\nNote: data journaling filesystems render this command useless, you must\noverwrite all free space (fill up disk) to erase old data on those."
 
+#define HELP_sha3sum "usage: sha3sum [-S] [-a BITS] [FILE...]\n\nHash function du jour.\n\n-a	Produce a hash BITS long (default 224)\n-b	Brief (hash only, no filename)\n-S	Use SHAKE termination byte instead of SHA3 (ask FIPS why)"
+
 #define HELP_setsid "usage: setsid [-t] command [args...]\n\nRun process in a new session.\n\n-t	Grab tty (become foreground process, receiving keyboard signals)"
 
 #define HELP_setfattr "usage: setfattr [-h] [-x|-n NAME] [-v VALUE] FILE...\n\nWrite POSIX extended attributes.\n\n-h	Do not dereference symlink\n-n	Set given attribute\n-x	Remove given attribute\n-v	Set value for attribute -n (default is empty)"
@@ -195,6 +197,8 @@
 #define HELP_readlink "usage: readlink FILE...\n\nWith no options, show what symlink points to, return error if not symlink.\n\nOptions for producing canonical paths (all symlinks/./.. resolved):\n\n-e	Canonical path to existing entry (fail if missing)\n-f	Full path (fail if directory missing)\n-m	Ignore missing entries, show where it would be\n-n	No trailing newline\n-q	Quiet (no output, just error code)"
 
 #define HELP_readahead "usage: readahead FILE...\n\nPreload files into disk cache."
+
+#define HELP_pwgen "usage: pwgen [-cAn0yrsBhC1v] [LENGTH] [COUNT]\n\nGenerate human-readable random passwords. When output is to tty produces\na screenfull to defeat shoulder surfing (pick one and clear the screen).\n\n-c  --capitalize                  Permit capital letters.\n-A  --no-capitalize               Don't include capital letters.\n-n  --numerals                    Permit numbers.\n-0  --no-numerals                 Don't include numbers.\n-y  --symbols                     Permit special characters ($#%...).\n-r <chars>  --remove=<chars>      Don't include the given characters.\n-s  --secure                      Generate more random passwords.\n-B  --ambiguous                   Avoid ambiguous characters (e.g. 0, O).\n-h  --help                        Print this help message.\n-C                                Print the output in columns.\n-1                                Print the output one line each.\n-v                                Don't include vowels."
 
 #define HELP_pwdx "usage: pwdx PID...\n\nPrint working directory of processes listed on command line."
 
@@ -310,6 +314,8 @@
 
 #define HELP_blkid "usage: blkid [-s TAG] [-UL] DEV...\n\nPrint type, label and UUID of filesystem on a block device or image.\n\n-U	Show UUID only (or device with that UUID)\n-L	Show LABEL only (or device with that LABEL)\n-s TAG	Only show matching tags (default all)"
 
+#define HELP_base32 "usage: base32 [-di] [-w COLUMNS] [FILE...]\n\nEncode or decode in base32.\n\n-d	Decode\n-i	Ignore non-alphabetic characters\n-w	Wrap output at COLUMNS (default 76 or 0 for no wrap)"
+
 #define HELP_base64 "usage: base64 [-di] [-w COLUMNS] [FILE...]\n\nEncode or decode in base64.\n\n-d	Decode\n-i	Ignore non-alphabetic characters\n-w	Wrap output at COLUMNS (default 76 or 0 for no wrap)"
 
 #define HELP_ascii "usage: ascii\n\nDisplay ascii character set."
@@ -336,7 +342,7 @@
 
 #define HELP_telnetd "Handle incoming telnet connections\n\n-l LOGIN  Exec LOGIN on connect\n-f ISSUE_FILE Display ISSUE_FILE instead of /etc/issue\n-K Close connection as soon as login exits\n-p PORT   Port to listen on\n-b ADDR[:PORT]  Address to bind to\n-F Run in foreground\n-i Inetd mode\n-w SEC    Inetd 'wait' mode, linger time SEC\n-S Log to syslog (implied by -i or without -F and -w)"
 
-#define HELP_telnet "usage: telnet HOST [PORT]\n\nConnect to telnet server"
+#define HELP_telnet "usage: telnet HOST [PORT]\n\nConnect to telnet server."
 
 #define HELP_tcpsvd "usage: tcpsvd [-hEv] [-c N] [-C N[:MSG]] [-b N] [-u User] [-l Name] IP Port Prog\nusage: udpsvd [-hEv] [-c N] [-u User] [-l Name] IP Port Prog\n\nCreate TCP/UDP socket, bind to IP:PORT and listen for incoming connection.\nRun PROG for each connection.\n\nIP            IP to listen on, 0 = all\nPORT          Port to listen on\nPROG ARGS     Program to run\n-l NAME       Local hostname (else looks up local hostname in DNS)\n-u USER[:GRP] Change to user/group after bind\n-c N          Handle up to N (> 0) connections simultaneously\n-b N          (TCP Only) Allow a backlog of approximately N TCP SYNs\n-C N[:MSG]    (TCP Only) Allow only up to N (> 0) connections from the same IP\n              New connections from this IP address are closed\n              immediately. MSG is written to the peer before close\n-h            Look up peer's hostname\n-E            Don't set up environment variables\n-v            Verbose"
 
@@ -345,6 +351,8 @@
 #define HELP_sulogin "usage: sulogin [-t time] [tty]\n\nSingle User Login.\n-t	Default Time for Single User Login"
 
 #define HELP_stty "usage: stty [-ag] [-F device] SETTING...\n\nGet/set terminal configuration.\n\n-F	Open device instead of stdin\n-a	Show all current settings (default differences from \"sane\")\n-g	Show all current settings usable as input to stty\n\nSpecial characters (syntax ^c or undef): intr quit erase kill eof eol eol2\nswtch start stop susp rprnt werase lnext discard\n\nControl/input/output/local settings as shown by -a, '-' prefix to disable\n\nCombo settings: cooked/raw, evenp/oddp/parity, nl, ek, sane\n\nN	set input and output speed (ispeed N or ospeed N for just one)\ncols N	set number of columns\nrows N	set number of rows\nline N	set line discipline\nmin N	set minimum chars per read\ntime N	set read timeout\nspeed	show speed only\nsize	show size only"
+
+#define HELP_strace "usage: strace [-fv] [-p PID] [-s NUM] COMMAND [ARGS...]\n\nTrace systems calls made by a process.\n\n-s	String length limit.\n-v	Dump all of large structs/arrays."
 
 #define HELP_exit "usage: exit [status]\n\nExit shell.  If no return value supplied on command line, use value\nof most recent command, or 0 if none."
 
@@ -394,11 +402,17 @@
 
 #define HELP_host "usage: host [-av] [-t TYPE] NAME [SERVER]\n\nPerform DNS lookup on NAME, which can be a domain name to lookup,\nor an IPv4 dotted or IPv6 colon-separated address to reverse lookup.\nSERVER (if present) is the DNS server to use.\n\n-a	-v -t ANY\n-t TYPE	query records of type TYPE\n-v	verbose"
 
+#define HELP_hd "usage: hd [FILE...]\n\nDisplay file(s) in cannonical hex+ASCII format."
+
+#define HELP_hexdump "usage: hexdump [-bcCdovx] [-n LEN] [-s SKIP] [FILE...]\n\nDump file(s) in hexadecimal format.\n\n-n LEN	Show LEN bytes of output\n-s SKIP	Skip bytes of input\n-v	Verbose (don't combine identical lines)\n\nDisplay type:\n-b One byte octal   -c One byte character -C Canonical (hex + ASCII)\n-d Two byte decimal -o Two byte octal     -x Two byte hexadecimal (default)"
+
 #define HELP_groupdel "usage: groupdel [USER] GROUP\n\nDelete a group or remove a user from a group"
 
 #define HELP_groupadd "usage: groupadd [-S] [-g GID] [USER] GROUP\n\nAdd a group or add a user to a group\n\n  -g GID Group id\n  -S     Create a system group"
 
 #define HELP_getty "usage: getty [OPTIONS] BAUD_RATE[,BAUD_RATE]... TTY [TERMTYPE]\n\n-h    Enable hardware RTS/CTS flow control\n-L    Set CLOCAL (ignore Carrier Detect state)\n-m    Get baud rate from modem's CONNECT status message\n-n    Don't prompt for login name\n-w    Wait for CR or LF before sending /etc/issue\n-i    Don't display /etc/issue\n-f ISSUE_FILE  Display ISSUE_FILE instead of /etc/issue\n-l LOGIN  Invoke LOGIN instead of /bin/login\n-t SEC    Terminate after SEC if no login name is read\n-I INITSTR  Send INITSTR before anything else\n-H HOST    Log HOST into the utmp file as the hostname"
+
+#define HELP_getopt "usage: getopt [OPTIONS] [--] ARG...\n\nParse command-line options for use in shell scripts.\n\n-a	Allow long options starting with a single -.\n-l OPTS	Specify long options.\n-n NAME	Command name for error messages.\n-o OPTS	Specify short options.\n-T	Test whether this is a modern getopt.\n-u	Output options unquoted."
 
 #define HELP_getfattr "usage: getfattr [-d] [-h] [-n NAME] FILE...\n\nRead POSIX extended attributes.\n\n-d	Show values as well as names\n-h	Do not dereference symbolic links\n-n	Show only attributes with the given name\n--only-values	Don't show names"
 
@@ -425,6 +439,8 @@
 #define HELP_crontab "usage: crontab [-u user] FILE\n               [-u user] [-e | -l | -r]\n               [-c dir]\n\nFiles used to schedule the execution of programs.\n\n-c crontab dir\n-e edit user's crontab\n-l list user's crontab\n-r delete user's crontab\n-u user\nFILE Replace crontab by FILE ('-': stdin)"
 
 #define HELP_crond "usage: crond [-fbS] [-l N] [-d N] [-L LOGFILE] [-c DIR]\n\nA daemon to execute scheduled commands.\n\n-b Background (default)\n-c crontab dir\n-d Set log level, log to stderr\n-f Foreground\n-l Set log level. 0 is the most verbose, default 8\n-S Log to syslog (default)\n-L Log to file"
+
+#define HELP_chsh "usage: chsh [-s SHELL] [USER]\n\nChange user's login shell.\n\n-s	Use SHELL instead of prompting\n\nNon-root users can only change their own shell to one listed in /etc/shells."
 
 #define HELP_brctl "usage: brctl COMMAND [BRIDGE [INTERFACE]]\n\nManage ethernet bridges\n\nCommands:\nshow                  Show a list of bridges\naddbr BRIDGE          Create BRIDGE\ndelbr BRIDGE          Delete BRIDGE\naddif BRIDGE IFACE    Add IFACE to BRIDGE\ndelif BRIDGE IFACE    Delete IFACE from BRIDGE\nsetageing BRIDGE TIME Set ageing time\nsetfd BRIDGE TIME     Set bridge forward delay\nsethello BRIDGE TIME  Set hello time\nsetmaxage BRIDGE TIME Set max message age\nsetpathcost BRIDGE PORT COST   Set path cost\nsetportprio BRIDGE PORT PRIO   Set port priority\nsetbridgeprio BRIDGE PRIO      Set bridge priority\nstp BRIDGE [1/yes/on|0/no/off] STP on/off"
 

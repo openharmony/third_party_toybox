@@ -74,11 +74,11 @@ void get_optflags(void);
 // Don't warn about failure to stat
 #define DIRTREE_SHUTUP      16
 // Breadth first traversal, conserves filehandles at the expense of memory
-#define DIRTREE_BREADTH     32
+#define DIRTREE_BREADTH     32 // TODO not implemented yet
 // skip non-numeric entries
 #define DIRTREE_PROC        64
 // Return files we can't stat
-#define DIRTREE_STATLESS    128
+#define DIRTREE_STATLESS   128
 // Don't look at any more files in this directory.
 #define DIRTREE_ABORT      256
 
@@ -90,8 +90,7 @@ struct dirtree {
   char *symlink;
   int dirfd;
   struct stat st;
-  char again;
-  char name[];
+  char again, name[];
 };
 
 int isdotdot(char *name);
@@ -112,7 +111,14 @@ void show_help(FILE *out);
 // Tell xopen and friends to print warnings but return -1 as necessary
 // The largest O_BLAH flag so far is arch/alpha's O_PATH at 0x800000 so
 // plenty of headroom.
-#define WARN_ONLY (1<<31)
+#define WARN_ONLY        (1<<31) // don't exit, just warn
+#define LOOPFILES_ANYWAY (1<<30) // call function with fd -1
+
+// xabspath flags
+#define ABS_PATH 1 // all but last path component must exist
+#define ABS_FILE 2 // last path component must exist
+#define ABS_KEEP 4 // don't resolve symlinks in path to last component
+#define ABS_LAST 8 // don't resolve symlink in last path component
 
 // xwrap.c
 void xstrncpy(char *dest, char *src, size_t size);
@@ -178,6 +184,7 @@ void xsetuser(struct passwd *pwd);
 char *xreadlink(char *name);
 double xstrtod(char *s);
 long xparsetime(char *arg, long units, long *fraction);
+void xparsetimespec(char *arg, struct timespec *ts);
 long long xparsemillitime(char *arg);
 void xpidfile(char *name);
 void xregcomp(regex_t *preg, char *rexec, int cflags);

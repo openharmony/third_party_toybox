@@ -251,6 +251,8 @@
 #define USE_FSCK(...)
 #define CFG_GETFATTR 0
 #define USE_GETFATTR(...)
+#define CFG_GETOPT 0
+#define USE_GETOPT(...)
 #ifdef WITH_SELINUX
 # define CFG_GETTY 0
 # define USE_GETTY(...)
@@ -262,6 +264,10 @@
 #define USE_GROUPADD(...)
 #define CFG_GROUPDEL 0
 #define USE_GROUPDEL(...)
+#define CFG_HEXDUMP 0
+#define USE_HEXDUMP(...)
+#define CFG_HD 0
+#define USE_HD(...)
 #define CFG_HOST 0
 #define USE_HOST(...)
 #define CFG_INIT 0
@@ -324,6 +330,8 @@
 #define USE_CD(...)
 #define CFG_EXIT 0
 #define USE_EXIT(...)
+#define CFG_STRACE 0
+#define USE_STRACE(...)
 #define CFG_STTY 0
 #define USE_STTY(...)
 #define CFG_SULOGIN 0
@@ -365,6 +373,8 @@
 #define USE_ASCII(...) __VA_ARGS__
 #define CFG_BASE64 1
 #define USE_BASE64(...) __VA_ARGS__
+#define CFG_BASE32 0
+#define USE_BASE32(...)
 #define CFG_BLKID 1
 #define USE_BLKID(...) __VA_ARGS__
 #define CFG_FSTYPE 1
@@ -488,6 +498,8 @@
 #define USE_PRINTENV(...) __VA_ARGS__
 #define CFG_PWDX 1
 #define USE_PWDX(...) __VA_ARGS__
+#define CFG_PWGEN 0
+#define USE_PWGEN(...)
 #define CFG_READAHEAD 1
 #define USE_READAHEAD(...) __VA_ARGS__
 #define CFG_READLINK 1
@@ -506,6 +518,8 @@
 #define USE_SETFATTR(...) __VA_ARGS__
 #define CFG_SETSID 1
 #define USE_SETSID(...) __VA_ARGS__
+#define CFG_SHA3SUM 0
+#define USE_SHA3SUM(...)
 #define CFG_SHRED 1
 #define USE_SHRED(...) __VA_ARGS__
 #define CFG_STAT 1
