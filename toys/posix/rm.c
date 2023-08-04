@@ -37,6 +37,10 @@ static int do_rm(struct dirtree *try)
   // This is either the posix section 2(b) prompt or the section 3 prompt.
   if (!FLAG(f)
     && (!S_ISLNK(try->st.st_mode) && faccessat(fd, try->name, W_OK, 0))) or++;
+
+  // Posix section 1(a), don't prompt for nonexistent.
+  if (or && errno == ENOENT) goto skip;
+
   if (!(dir && try->again) && ((or && isatty(0)) || FLAG(i))) {
     char *s = dirtree_path(try, 0);
 
@@ -95,15 +99,19 @@ void rm_main(void)
       error_msg("rm /. if you mean it");
       continue;
     }
+    // "rm dir/.*" can expand to include .. which generally isn't what you want
+    if (!strcmp("..", basename(*s))) {
+      error_msg("bad path %s", *s);
+      continue;
+    }
 
-    // Files that already don't exist aren't errors for -f, so try a quick
-    // unlink now to see if it succeeds or reports that it didn't exist.
-    if (FLAG(f) && (!unlink(*s) || errno == ENOENT)) continue;
+    // Files that already don't exist aren't errors for -f. Use lstat() instead
+    // of faccessat() because bionic doesn't support AT_SYMLINK_NOFOLLOW
+    if (FLAG(f) && lstat(*s, (void *)toybuf) && errno == ENOENT) continue;
 
     // There's a race here where a file removed between the above check and
     // dirtree's stat would report the nonexistence as an error, but that's
     // not a normal "it didn't exist" so I'm ok with it.
-
     dirtree_read(*s, do_rm);
   }
 }
