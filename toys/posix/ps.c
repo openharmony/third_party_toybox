@@ -1517,12 +1517,13 @@ static void top_common(
     mix.tb = xmalloc((old.count+new.count)*sizeof(struct procpid));
     mix.count = 0;
 
+    int merge_idx = (FLAG(H) || (TT.bits&(_PS_TID|_PS_TCNT))) ? SLOT_tid : SLOT_pid;
     while (old.count || new.count) {
       struct procpid *otb = old.count ? *old.tb : 0,
                      *ntb = new.count ? *new.tb : 0;
 
       // If we just have old for this process, it exited. Discard it.
-      if (old.count && (!new.count || *otb->slot < *ntb->slot)) {
+      if (old.count && (!new.count || otb->slot[merge_idx] < ntb->slot[merge_idx])) {
         old.tb++;
         old.count--;
 
@@ -1530,7 +1531,7 @@ static void top_common(
       }
 
       // If we just have new, use it verbatim
-      if (!old.count || *otb->slot > *ntb->slot) mix.tb[mix.count] = ntb;
+      if (!old.count || otb->slot[merge_idx] > ntb->slot[merge_idx]) mix.tb[mix.count] = ntb;
       else {
         // Keep or discard
         if (filter(otb->slot, ntb->slot, new.whence-old.whence)) {
