@@ -37,6 +37,8 @@ def main():
     target_link = args.long_path
     if os.path.exists(target_link):
         os.remove(target_link)
+    elif os.path.islink(target_link):
+        os.unlink(target_link)
 
     if target_link.find("usr") != -1:
         os.symlink("../../bin/toybox", target_link)
