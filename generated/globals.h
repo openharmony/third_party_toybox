@@ -668,12 +668,17 @@ struct getopt_data {
 // toys/pending/getty.c
 
 struct getty_data {
-  char *f, *l, *I, *H;
-  long t;
-
-  char *tty_name, buff[128];
-  int speeds[20], sc;
+  char *issue_str;
+  char *login_str;
+  char *init_str;
+  char *host_str; 
+  long timeout;
+  
+  char *tty_name;  
+  int  speeds[20];
+  int  sc;              
   struct termios termios;
+  char buff[128];
 };
 
 // toys/pending/groupadd.c

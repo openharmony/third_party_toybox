@@ -4350,17 +4350,17 @@
 #ifndef TT
 #define TT this.getty
 #endif
-#define FLAG_h (FORCED_FLAG<<0)
-#define FLAG_L (FORCED_FLAG<<1)
-#define FLAG_m (FORCED_FLAG<<2)
-#define FLAG_n (FORCED_FLAG<<3)
-#define FLAG_w (FORCED_FLAG<<4)
-#define FLAG_i (FORCED_FLAG<<5)
-#define FLAG_f (FORCED_FLAG<<6)
-#define FLAG_l (FORCED_FLAG<<7)
-#define FLAG_I (FORCED_FLAG<<8)
-#define FLAG_H (FORCED_FLAG<<9)
-#define FLAG_t (FORCED_FLAG<<10)
+#define FLAG_h (1<<0)
+#define FLAG_L (1<<1)
+#define FLAG_m (1<<2)
+#define FLAG_n (1<<3)
+#define FLAG_w (1<<4)
+#define FLAG_i (1<<5)
+#define FLAG_f (1<<6)
+#define FLAG_l (1<<7)
+#define FLAG_I (1<<8)
+#define FLAG_H (1<<9)
+#define FLAG_t (1<<10)
 #endif
 
 #ifdef FOR_grep
