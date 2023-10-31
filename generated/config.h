@@ -665,8 +665,8 @@
 #define USE_RESTORECON(...)
 #define CFG_RUNCON 0
 #define USE_RUNCON(...)
-#define CFG_SENDEVENT 0
-#define USE_SENDEVENT(...)
+#define CFG_SENDEVENT 1
+#define USE_SENDEVENT(...) __VA_ARGS__
 #define CFG_SETENFORCE 0
 #define USE_SETENFORCE(...)
 #define CFG_TOYBOX 1
