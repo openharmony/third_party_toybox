@@ -284,8 +284,8 @@
 #define USE_KLOGD_SOURCE_RING_BUFFER(...)
 #define CFG_LAST 0
 #define USE_LAST(...)
-#define CFG_LSOF 0
-#define USE_LSOF(...)
+#define CFG_LSOF 1
+#define USE_LSOF(...) __VA_ARGS__
 #define CFG_MAN 0
 #define USE_MAN(...)
 #ifdef WITH_SELINUX
