@@ -26,10 +26,6 @@
 #define USE_CAL(...) __VA_ARGS__
 #define CFG_CAT 1
 #define USE_CAT(...) __VA_ARGS__
-#define CFG_CAT_V 0
-#define USE_CAT_V(...)
-#define CFG_CATV 1
-#define USE_CATV(...) __VA_ARGS__
 #define CFG_CHGRP 1
 #define USE_CHGRP(...) __VA_ARGS__
 #define CFG_CHOWN 1
