@@ -195,9 +195,9 @@
 #undef FOR_cal
 #endif
 
-// cat u uvte
+// cat uvte uvte
 #undef OPTSTR_cat
-#define OPTSTR_cat "u"
+#define OPTSTR_cat "uvte"
 #ifdef CLEANUP_cat
 #undef CLEANUP_cat
 #undef FOR_cat
@@ -205,17 +205,6 @@
 #undef FLAG_t
 #undef FLAG_v
 #undef FLAG_u
-#endif
-
-// catv vte vte
-#undef OPTSTR_catv
-#define OPTSTR_catv "vte"
-#ifdef CLEANUP_catv
-#undef CLEANUP_catv
-#undef FOR_catv
-#undef FLAG_e
-#undef FLAG_t
-#undef FLAG_v
 #endif
 
 // cd    
