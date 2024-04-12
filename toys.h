@@ -56,14 +56,16 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-// Internationalization support (also in POSIX and LSB)
+// Internationalization support (also in POSIX)
 
+#include <langinfo.h>
 #include <locale.h>
 #include <wchar.h>
 #include <wctype.h>
 
-// LSB 4.1 headers
+// Non-posix headers
 #include <sys/ioctl.h>
+#include <sys/syscall.h>
 
 #include "lib/lib.h"
 #include "lib/lsm.h"
@@ -80,7 +82,15 @@
 
 // These live in main.c
 
+#define HELP_USAGE   1  // usage: line only
+#define HELP_HEADER  2  // Add Toybox header line to help output
+#define HELP_SEE     4  // "See COMMAND" instead of dereferencing alias
+#define HELP_HTML    8  // Output HTML
+
 struct toy_list *toy_find(char *name);
+void show_help(FILE *out, int full);
+void check_help(char **arg);
+void toy_singleinit(struct toy_list *which, char *argv[]);
 void toy_init(struct toy_list *which, char *argv[]);
 void toy_exec(char *argv[]);
 
@@ -101,27 +111,25 @@ extern struct toy_context {
   char **optargs;          // Arguments left over from get_optflags()
   unsigned long long optflags; // Command line option flags from get_optflags()
   int optc;                // Count of optargs
-  int envc;                // Count of original environ entries
-  int old_umask;           // Old umask preserved by TOYFLAG_UMASK
   short toycount;          // Total number of commands in this build
-  short signal;            // generic_signal() records what signal it saw here
-  int signalfd;            // and writes signal to this fd, if set
   char exitval;            // Value error_exit feeds to exit()
   char wasroot;            // dropped setuid
 
-  // This is at the end so toy_init() doesn't zero it.
+  // toy_init() should not zero past here.
   sigjmp_buf *rebound;     // siglongjmp here instead of exit when do_rebound
   struct arg_list *xexit;  // atexit() functions for xexit(), set by sigatexit()
   void *stacktop;          // nested toy_exec() call count, or 0 if vforked
+  int envc;                // Count of original environ entries
+  int old_umask;           // Old umask preserved by TOYFLAG_UMASK
+  short signal;            // generic_signal() records what signal it saw here
+  int signalfd;            // and writes signal to this fd, if set
 } toys;
 
 // Two big temporary buffers: one for use by commands, one for library functions
 
-extern char toybuf[4096], libbuf[4096];
+extern char **environ, *toybox_version, toybuf[4096], libbuf[4096];
 
-extern char **environ;
-
-#define FLAG(x) (toys.optflags&FLAG_##x)
+#define FLAG(x) (!!(toys.optflags&FLAG_##x))  // Return 1 if flag set, 0 if not
 
 #define GLOBALS(...)
 #define ARRAY_LEN(array) (sizeof(array)/sizeof(*array))
