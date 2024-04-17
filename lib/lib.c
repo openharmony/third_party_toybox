@@ -10,14 +10,17 @@ void verror_msg(char *msg, int err, va_list va)
 {
   char *s = ": %s";
 
-  fprintf(stderr, "%s: ", toys.which->name);
-  if (msg) vfprintf(stderr, msg, va);
-  else s+=2;
-  if (err>0) fprintf(stderr, s, strerror(err));
-  if (err<0 && CFG_TOYBOX_HELP)
-    fprintf(stderr, " (see \"%s --help\")", toys.which->name);
-  if (msg || err) putc('\n', stderr);
-  if (!toys.exitval) toys.exitval++;
+  // Exit silently in a pipeline
+  if (err != EPIPE) {
+    fprintf(stderr, "%s: ", toys.which->name);
+    if (msg) vfprintf(stderr, msg, va);
+    else s+=2;
+    if (err>0) fprintf(stderr, s, strerror(err));
+    if (err<0 && CFG_TOYBOX_HELP)
+      fprintf(stderr, " (see \"%s --help\")", toys.which->name);
+    if (msg || err) putc('\n', stderr);
+  }
+  if (!toys.exitval) toys.exitval = (toys.which->flags>>24) ? : 1;
 }
 
 // These functions don't collapse together because of the va_stuff.
@@ -55,14 +58,11 @@ void error_exit(char *msg, ...)
 // Die with an error message and strerror(errno)
 void perror_exit(char *msg, ...)
 {
-  // Die silently if our pipeline exited.
-  if (errno != EPIPE) {
-    va_list va;
+  va_list va;
 
-    va_start(va, msg);
-    verror_msg(msg, errno, va);
-    va_end(va);
-  }
+  va_start(va, msg);
+  verror_msg(msg, errno, va);
+  va_end(va);
 
   xexit();
 }
@@ -72,7 +72,7 @@ void help_exit(char *msg, ...)
 {
   va_list va;
 
-  if (!msg) show_help(stdout);
+  if (!msg) show_help(stdout, 1);
   else {
     va_start(va, msg);
     verror_msg(msg, -1, va);
@@ -162,9 +162,10 @@ off_t lskip(int fd, off_t offset)
   return offset;
 }
 
-// flags: 1=make last dir (with mode lastmode, otherwise skips last component)
-//        2=make path (already exists is ok)
-//        4=verbose
+// flags:
+// MKPATHAT_MKLAST  make last dir (with mode lastmode, else skips last part)
+// MKPATHAT_MAKE    make leading dirs (it's ok if they already exist)
+// MKPATHAT_VERBOSE Print what got created to stderr
 // returns 0 = path ok, 1 = error
 int mkpathat(int atfd, char *dir, mode_t lastmode, int flags)
 {
@@ -176,9 +177,12 @@ int mkpathat(int atfd, char *dir, mode_t lastmode, int flags)
   // not-a-directory along the way, but the last one we must explicitly
   // test for. Might as well do it up front.
 
-  if (!fstatat(atfd, dir, &buf, 0) && !S_ISDIR(buf.st_mode)) {
-    errno = EEXIST;
-    return 1;
+  if (!fstatat(atfd, dir, &buf, 0)) {
+    // Note that mkdir should return EEXIST for already existed directory/file.
+    if (!(flags&MKPATHAT_MAKE) || ((flags&MKPATHAT_MKLAST) && !S_ISDIR(buf.st_mode))) {
+      errno = EEXIST;
+      return 1;
+    } else return 0;
   }
 
   for (s = dir; ;s++) {
@@ -186,20 +190,20 @@ int mkpathat(int atfd, char *dir, mode_t lastmode, int flags)
     mode_t mode = (0777&~toys.old_umask)|0300;
 
     // find next '/', but don't try to mkdir "" at start of absolute path
-    if (*s == '/' && (flags&2) && s != dir) {
+    if (*s == '/' && (flags&MKPATHAT_MAKE) && s != dir) {
       save = *s;
       *s = 0;
     } else if (*s) continue;
 
     // Use the mode from the -m option only for the last directory.
     if (!save) {
-      if (flags&1) mode = lastmode;
+      if (flags&MKPATHAT_MKLAST) mode = lastmode;
       else break;
     }
 
     if (mkdirat(atfd, dir, mode)) {
-      if (!(flags&2) || errno != EEXIST) return 1;
-    } else if (flags&4)
+      if (!(flags&MKPATHAT_MAKE) || errno != EEXIST) return 1;
+    } else if (flags&MKPATHAT_VERBOSE)
       fprintf(stderr, "%s: created directory '%s'\n", toys.which->name, dir);
 
     if (!(*s = save)) break;
@@ -215,6 +219,7 @@ int mkpath(char *dir)
 }
 
 // Split a path into linked list of components, tracking head and tail of list.
+// Assigns head of list to *list, returns address of ->next entry to extend list
 // Filters out // entries with no contents.
 struct string_list **splitpath(char *path, struct string_list **list)
 {
@@ -344,7 +349,28 @@ int stridx(char *haystack, char needle)
   return off-haystack;
 }
 
+// Convert wc to utf8, returning bytes written. Does not null terminate.
+int wctoutf8(char *s, unsigned wc)
+{
+  int len = (wc>0x7ff)+(wc>0xffff), i;
+
+  if (wc<128) {
+    *s = wc;
+    return 1;
+  } else {
+    i = len;
+    do {
+      s[1+i] = 0x80+(wc&0x3f);
+      wc >>= 6;
+    } while (i--);
+    *s = (((signed char) 0x80) >> (len+1)) | wc;
+  }
+
+  return 2+len;
+}
+
 // Convert utf8 sequence to a unicode wide character
+// returns bytes consumed, or -1 if err, or -2 if need more data.
 int utf8towc(unsigned *wc, char *str, unsigned len)
 {
   unsigned result, mask, first;
@@ -373,37 +399,41 @@ int utf8towc(unsigned *wc, char *str, unsigned len)
   return str-s;
 }
 
+// Convert string to lower case, utf8 aware.
 char *strlower(char *s)
 {
   char *try, *new;
+  int len, mlen = (strlen(s)|7)+9;
+  unsigned c;
 
-  if (!CFG_TOYBOX_I18N) {
-    try = new = xstrdup(s);
-    for (; *s; s++) *(new++) = tolower(*s);
-  } else {
-    // I can't guarantee the string _won't_ expand during reencoding, so...?
-    try = new = xmalloc(strlen(s)*2+1);
+  try = new = xmalloc(mlen);
 
-    while (*s) {
-      unsigned c;
-      int len = utf8towc(&c, s, MB_CUR_MAX);
+  while (*s) {
 
-      if (len < 1) *(new++) = *(s++);
-      else {
-        s += len;
-        // squash title case too
-        c = towlower(c);
+    if (1>(len = utf8towc(&c, s, MB_CUR_MAX))) {
+      *(new++) = *(s++);
 
-        // if we had a valid utf8 sequence, convert it to lower case, and can't
-        // encode back to utf8, something is wrong with your libc. But just
-        // in case somebody finds an exploit...
-        len = wcrtomb(new, c, 0);
-        if (len < 1) error_exit("bad utf8 %x", (int)c);
-        new += len;
-      }
+      continue;
     }
-    *new = 0;
+
+    s += len;
+    // squash title case too
+    c = towlower(c);
+
+    // if we had a valid utf8 sequence, convert it to lower case, and can't
+    // encode back to utf8, something is wrong with your libc. But just
+    // in case somebody finds an exploit...
+    len = wcrtomb(new, c, 0);
+    if (len < 1) error_exit("bad utf8 %x", (int)c);
+    new += len;
+
+    // Case conversion can expand utf8 representation, but with extra mlen
+    // space above we should basically never need to realloc
+    if (mlen+4 > (len = new-try)) continue;
+    try = xrealloc(try, mlen = len+16);
+    new = try+len;
   }
+  *new = 0;
 
   return try;
 }
@@ -419,15 +449,16 @@ char *strafter(char *haystack, char *needle)
 // Remove trailing \n
 char *chomp(char *s)
 {
-  char *p = strrchr(s, '\n');
+  char *p;
 
-  if (p && !p[1]) *p = 0;
+  if (s) for (p = s+strlen(s); p>s && (p[-1]=='\r' || p[-1]=='\n'); *--p = 0);
+
   return s;
 }
 
 int unescape(char c)
 {
-  char *from = "\\abefnrtv", *to = "\\\a\b\033\f\n\r\t\v";
+  char *from = "\\abefnrtv", *to = "\\\a\b\e\f\n\r\t\v";
   int idx = stridx(from, c);
 
   return (idx == -1) ? 0 : to[idx];
@@ -453,7 +484,7 @@ int unescape2(char **c, int echo)
   if (-1 == (idx = stridx("\\abeEfnrtv'\"?0", **c))) return '\\';
   ++*c;
 
-  return "\\\a\b\033\033\f\n\r\t\v'\"?"[idx];
+  return "\\\a\b\e\e\f\n\r\t\v'\"?"[idx];
 }
 
 // If string ends with suffix return pointer to start of suffix in string,
@@ -488,25 +519,33 @@ int strcasestart(char **a, char *b)
   return i;
 }
 
+int same_file(struct stat *st1, struct stat *st2)
+{
+  return st1->st_ino==st2->st_ino && st1->st_dev==st2->st_dev;
+}
+
+int same_dev_ino(struct stat *st, struct dev_ino *di)
+{
+  return st->st_ino==di->ino && st->st_dev==di->dev;
+}
+
+
+
 // Return how long the file at fd is, if there's any way to determine it.
 off_t fdlength(int fd)
 {
   struct stat st;
   off_t base = 0, range = 1, expand = 1, old;
+  unsigned long long size;
 
   if (!fstat(fd, &st) && S_ISREG(st.st_mode)) return st.st_size;
 
   // If the ioctl works for this, return it.
-  // TODO: is blocksize still always 512, or do we stat for it?
-  // unsigned int size;
-  // if (ioctl(fd, BLKGETSIZE, &size) >= 0) return size*512L;
+  if (get_block_device_size(fd, &size)) return size;
 
   // If not, do a binary search for the last location we can read.  (Some
   // block devices don't do BLKGETSIZE right.)  This should probably have
   // a CONFIG option...
-
-  // If not, do a binary search for the last location we can read.
-
   old = lseek(fd, 0, SEEK_CUR);
   do {
     char temp;
@@ -529,20 +568,13 @@ off_t fdlength(int fd)
   return base;
 }
 
-// Read contents of file as a single nul-terminated string.
-// measure file size if !len, allocate buffer if !buf
-// Existing buffers need len in *plen
-// Returns amount of data read in *plen
-char *readfileat(int dirfd, char *name, char *ibuf, off_t *plen)
+char *readfd(int fd, char *ibuf, off_t *plen)
 {
   off_t len, rlen;
-  int fd;
   char *buf, *rbuf;
 
   // Unsafe to probe for size with a supplied buffer, don't ever do that.
   if (CFG_TOYBOX_DEBUG && (ibuf ? !*plen : *plen)) error_exit("bad readfileat");
-
-  if (-1 == (fd = openat(dirfd, name, O_RDONLY))) return 0;
 
   // If we dunno the length, probe it. If we can't probe, start with 1 page.
   if (!*plen) {
@@ -564,7 +596,6 @@ char *readfileat(int dirfd, char *name, char *ibuf, off_t *plen)
     len -= rlen;
   }
   *plen = len = rlen+(rbuf-buf);
-  close(fd);
 
   if (rlen<0) {
     if (ibuf != buf) free(buf);
@@ -572,6 +603,20 @@ char *readfileat(int dirfd, char *name, char *ibuf, off_t *plen)
   } else buf[len] = 0;
 
   return buf;
+}
+
+// Read contents of file as a single nul-terminated string.
+// measure file size if !len, allocate buffer if !buf
+// Existing buffers need len in *plen
+// Returns amount of data read in *plen
+char *readfileat(int dirfd, char *name, char *ibuf, off_t *plen)
+{
+  if (-1 == (dirfd = openat(dirfd, name, O_RDONLY))) return 0;
+
+  ibuf = readfd(dirfd, ibuf, plen);
+  close(dirfd);
+
+  return ibuf;
 }
 
 char *readfile(char *name, char *ibuf, off_t len)
@@ -682,9 +727,9 @@ void poke(void *ptr, long long val, unsigned size)
 void loopfiles_rw(char **argv, int flags, int permissions,
   void (*function)(int fd, char *name))
 {
-  int fd, failok = !(flags&WARN_ONLY);
+  int fd, failok = !(flags&WARN_ONLY), anyway = flags & LOOPFILES_ANYWAY;
 
-  flags &= ~WARN_ONLY;
+  flags &= ~(WARN_ONLY|LOOPFILES_ANYWAY);
 
   // If no arguments, read from stdin.
   if (!*argv) function((flags & O_ACCMODE) != O_RDONLY ? 1 : 0, "-");
@@ -693,12 +738,12 @@ void loopfiles_rw(char **argv, int flags, int permissions,
     // Inability to open a file prints a warning, but doesn't exit.
 
     if (!strcmp(*argv, "-")) fd = 0;
-    else if (0>(fd = notstdio(open(*argv, flags, permissions))) && !failok) {
+    else if (0>(fd = xnotstdio(open(*argv, flags, permissions))) && !failok) {
       perror_msg_raw(*argv);
-      continue;
+      if (!anyway) continue;
     }
     function(fd, *argv);
-    if ((flags & O_CLOEXEC) && fd) close(fd);
+    if ((flags & O_CLOEXEC) && fd>0) close(fd);
   } while (*++argv);
 }
 
@@ -812,7 +857,7 @@ void replace_tempfile(int fdin, int fdout, char **tempname)
 
 // Create a 256 entry CRC32 lookup table.
 
-void crc_init(unsigned int *crc_table, int little_endian)
+void crc_init(unsigned *crc_table, int little_endian)
 {
   unsigned int i;
 
@@ -874,41 +919,47 @@ void generic_signal(int sig)
   toys.signal = sig;
 }
 
+// More or less SIG_DFL that runs our atexit list and can siglongjmp.
 void exit_signal(int sig)
 {
+  sigset_t sigset;
+
   if (sig) toys.exitval = sig|128;
+  sigfillset(&sigset);
+  sigprocmask(SIG_BLOCK, &sigset, 0);
   xexit();
 }
 
-// Install the same handler on every signal that defaults to killing the
-// process, calling the handler on the way out. Calling multiple times
-// adds the handlers to a list, to be called in order.
+// Install an atexit handler. Also install the same handler on every signal
+// that defaults to killing the process, calling the handler on the way out.
+// Calling multiple times adds the handlers to a list, to be called in LIFO
+// order.
 void sigatexit(void *handler)
 {
+  struct arg_list *al = 0;
+
   xsignal_all_killers(handler ? exit_signal : SIG_DFL);
-
   if (handler) {
-    struct arg_list *al = xmalloc(sizeof(struct arg_list));
-
+    al = xmalloc(sizeof(struct arg_list));
     al->next = toys.xexit;
     al->arg = handler;
-    toys.xexit = al;
-  } else {
-    llist_traverse(toys.xexit, free);
-    toys.xexit = 0;
-  }
+  } else llist_traverse(toys.xexit, free);
+  toys.xexit = al;
 }
 
-// Output a nicely formatted 80-column table of all the signals.
-void list_signals()
+// Output a nicely formatted table of all the signals.
+void list_signals(void)
 {
-  int i = 0, count = 0;
+  int i = 1, count = 0;
+  unsigned cols = 80;
   char *name;
 
+  terminal_size(&cols, 0);
+  cols /= 16;
   for (; i<=NSIG; i++) {
     if ((name = num_to_sig(i))) {
       printf("%2d) SIG%-9s", i, name);
-      if (++count % 5 == 0) putchar('\n');
+      if (++count % cols == 0) putchar('\n');
     }
   }
   putchar('\n');
@@ -943,59 +994,54 @@ mode_t string_to_mode(char *modestr, mode_t mode)
     // If who isn't specified, like "a" but honoring umask.
     if (!dowho) {
       dowho = 8;
-      umask(amask=umask(0));
-    }
-    if (!*str || !(s = strchr(hows, *str))) goto barf;
-    dohow = *(str++);
-
-    if (!dohow) goto barf;
-    while (*str && (s = strchr(whats, *str))) {
-      dowhat |= 1<<(s-whats);
-      str++;
+      umask(amask = umask(0));
     }
 
-    // Convert X to x for directory or if already executable somewhere
-    if ((dowhat&32) &&  (S_ISDIR(mode) || (mode&0111))) dowhat |= 1;
+    // Repeated "hows" are allowed; something like "a=r+w+s" is valid.
+    for (;;) {
+      if (-1 == stridx(hows, dohow = *str)) goto barf;
+      while (*++str && (s = strchr(whats, *str))) dowhat |= 1<<(s-whats);
 
-    // Copy mode from another category?
-    if (!dowhat && *str && (s = strchr(whys, *str))) {
-      dowhat = (mode>>(3*(s-whys)))&7;
-      str++;
-    }
+      // Convert X to x for directory or if already executable somewhere
+      if ((dowhat&32) && (S_ISDIR(mode) || (mode&0111))) dowhat |= 1;
 
-    // Are we ready to do a thing yet?
-    if (*str && *(str++) != ',') goto barf;
+      // Copy mode from another category?
+      if (!dowhat && -1 != (i = stridx(whys, *str))) {
+        dowhat = (mode>>(3*i))&7;
+        str++;
+      }
 
-    // Ok, apply the bits to the mode.
-    for (i=0; i<4; i++) {
-      for (j=0; j<3; j++) {
-        mode_t bit = 0;
-        int where = 1<<((3*i)+j);
+      // Loop through what=xwrs and who=ogu to apply bits to the mode.
+      for (i=0; i<4; i++) {
+        for (j=0; j<3; j++) {
+          mode_t bit = 0;
+          int where = 1<<((3*i)+j);
 
-        if (amask & where) continue;
+          if (amask & where) continue;
 
-        // Figure out new value at this location
-        if (i == 3) {
-          // suid/sticky bit.
-          if (j) {
-            if ((dowhat & 8) && (dowho&(8|(1<<i)))) bit++;
-          } else if (dowhat & 16) bit++;
-        } else {
-          if (!(dowho&(8|(1<<i)))) continue;
-          if (dowhat&(1<<j)) bit++;
+          // Figure out new value at this location
+          if (i == 3) {
+            // suid and sticky
+            if (!j) bit = dowhat&16; // o+s = t but a+s doesn't set t, hence t
+            else if ((dowhat&8) && (dowho&(8|(1<<j)))) bit++;
+          } else {
+            if (!(dowho&(8|(1<<i)))) continue;
+            else if (dowhat&(1<<j)) bit++;
+          }
+
+          // When selection active, modify bit
+          if (dohow == '=' || (bit && dohow == '-')) mode &= ~where;
+          if (bit && dohow != '-') mode |= where;
         }
-
-        // When selection active, modify bit
-
-        if (dohow == '=' || (bit && dohow == '-')) mode &= ~where;
-        if (bit && dohow != '-') mode |= where;
+      }
+      if (!*str) return mode|extrabits;
+      if (*str == ',') {
+        str++;
+        break;
       }
     }
-
-    if (!*str) break;
   }
 
-  return mode|extrabits;
 barf:
   error_exit("bad mode '%s'", modestr);
 }
@@ -1052,13 +1098,60 @@ char *getbasename(char *name)
 // Return pointer to xabspath(file) if file is under dir, else 0
 char *fileunderdir(char *file, char *dir)
 {
-  char *s1 = xabspath(dir, 1), *s2 = xabspath(file, -1), *ss = s2;
+  char *s1 = xabspath(dir, ABS_FILE), *s2 = xabspath(file, 0), *ss = s2;
   int rc = s1 && s2 && strstart(&ss, s1) && (!s1[1] || s2[strlen(s1)] == '/');
 
   free(s1);
   if (!rc) free(s2);
 
   return rc ? s2 : 0;
+}
+
+void *mepcpy(void *to, void *from, unsigned long len)
+{
+  memcpy(to, from, len);
+
+  return ((char *)to)+len;
+}
+
+// return (malloced) relative path to get between two normalized absolute paths
+// normalized: no duplicate / or trailing / or .. or . (symlinks optional)
+char *relative_path(char *from, char *to, int abs)
+{
+  char *s, *ret = 0;
+  int i, j, k;
+
+  if (abs) {
+    if (!(from = xabspath(from, 0))) return 0;
+    if (!(to = xabspath(to, 0))) goto error;
+  }
+
+  for (i = j = 0;; i++) {
+    if (!from[i] || !to[i]) {
+      if (from[i]=='/' || to[i]=='/' || from[i]==to[i]) j = i;
+      break;
+    }
+    if (from[i] != to[i]) break;
+    if (from[i] == '/') j = i;
+  }
+
+  // count remaining destination directories
+  for (i = j, k = 0; from[i]; i++) if (from[i] == '/') k++;
+  if (!k) {
+    if (to[j]=='/') j++;
+    ret = xstrdup(to[j] ? to+j : ".");
+  } else {
+    s = ret = xmprintf("%*c%s", 3*k-!!k, ' ', to+j);
+    for (i = 0; i<k; i++) s = mepcpy(s, "/.."+!i, 3-!i);
+  }
+
+error:
+  if (abs) {
+    free(from);
+    free(to);
+  }
+
+  return ret;
 }
 
 // Execute a callback for each PID that matches a process name from a list.
@@ -1102,8 +1195,7 @@ void names_to_pid(char **names, int (*callback)(pid_t pid, char *name),
         char buf[32];
 
         sprintf(buf, "/proc/%u/exe", u);
-        if (stat(buf, &st2)) continue;
-        if (st1.st_dev != st2.st_dev || st1.st_ino != st2.st_ino) continue;
+        if (stat(buf, &st2) || !same_file(&st1, &st2)) continue;
         goto match;
       }
 
@@ -1120,9 +1212,10 @@ void names_to_pid(char **names, int (*callback)(pid_t pid, char *name),
       if (scripts && !strcmp(bb, getbasename(cmd+strlen(cmd)+1))) goto match;
       continue;
 match:
-      if (callback(u, *cur)) break;
+      if (callback(u, *cur)) goto done;
     }
   }
+done:
   closedir(dp);
 }
 
@@ -1178,7 +1271,7 @@ int qstrcmp(const void *a, const void *b)
 void create_uuid(char *uuid)
 {
   // "Set all the ... bits to randomly (or pseudo-randomly) chosen values".
-  xgetrandom(uuid, 16, 0);
+  xgetrandom(uuid, 16);
 
   // "Set the four most significant bits ... of the time_hi_and_version
   // field to the 4-bit version number [4]".
@@ -1217,23 +1310,8 @@ char *next_printf(char *s, char **start)
   return 0;
 }
 
-int dev_minor(int dev)
-{
-  return ((dev&0xfff00000)>>12)|(dev&0xff);
-}
-
-int dev_major(int dev)
-{
-  return (dev&0xfff00)>>8;
-}
-
-int dev_makedev(int major, int minor)
-{
-  return (minor&0xff)|((major&0xfff)<<8)|((minor&0xfff00)<<12);
-}
-
 // Return cached passwd entries.
-struct passwd *bufgetpwuid(uid_t uid)
+struct passwd *bufgetpwnamuid(char *name, uid_t uid)
 {
   struct pwuidbuf_list {
     struct pwuidbuf_list *next;
@@ -1245,11 +1323,14 @@ struct passwd *bufgetpwuid(uid_t uid)
 
   // If we already have this one, return it.
   for (list = pwuidbuf; list; list = list->next)
-    if (list->pw.pw_uid == uid) return &(list->pw);
+    if (name ? !strcmp(name, list->pw.pw_name) : list->pw.pw_uid==uid)
+      return &(list->pw);
 
   for (;;) {
     list = xrealloc(list, size *= 2);
-    errno = getpwuid_r(uid, &list->pw, sizeof(*list)+(char *)list,
+    if (name) errno = getpwnam_r(name, &list->pw, sizeof(*list)+(char *)list,
+      size-sizeof(*list), &temp);
+    else errno = getpwuid_r(uid, &list->pw, sizeof(*list)+(char *)list,
       size-sizeof(*list), &temp);
     if (errno != ERANGE) break;
   }
@@ -1265,8 +1346,13 @@ struct passwd *bufgetpwuid(uid_t uid)
   return &list->pw;
 }
 
+struct passwd *bufgetpwuid(uid_t uid)
+{
+  return bufgetpwnamuid(0, uid);
+}
+
 // Return cached group entries.
-struct group *bufgetgrgid(gid_t gid)
+struct group *bufgetgrnamgid(char *name, gid_t gid)
 {
   struct grgidbuf_list {
     struct grgidbuf_list *next;
@@ -1277,11 +1363,14 @@ struct group *bufgetgrgid(gid_t gid)
   unsigned size = 256;
 
   for (list = grgidbuf; list; list = list->next)
-    if (list->gr.gr_gid == gid) return &(list->gr);
+    if (name ? !strcmp(name, list->gr.gr_name) : list->gr.gr_gid==gid)
+      return &(list->gr);
 
   for (;;) {
     list = xrealloc(list, size *= 2);
-    errno = getgrgid_r(gid, &list->gr, sizeof(*list)+(char *)list,
+    if (name) errno = getgrnam_r(name, &list->gr, sizeof(*list)+(char *)list,
+      size-sizeof(*list), &temp);
+    else errno = getgrgid_r(gid, &list->gr, sizeof(*list)+(char *)list,
       size-sizeof(*list), &temp);
     if (errno != ERANGE) break;
   }
@@ -1295,6 +1384,12 @@ struct group *bufgetgrgid(gid_t gid)
 
   return &list->gr;
 }
+
+struct group *bufgetgrgid(gid_t gid)
+{
+  return bufgetgrnamgid(0, gid);
+}
+
 
 // Always null terminates, returns 0 for failure, len for success
 int readlinkat0(int dirfd, char *path, char *buf, int len)
@@ -1423,9 +1518,78 @@ int is_tar_header(void *pkt)
   char *p = pkt;
   int i = 0;
 
-  if (p[257] && memcmp("ustar", p+257, 5)) return 0;
+  if (p[257] && smemcmp("ustar", p+257, 5)) return 0;
   if (p[148] != '0' && p[148] != ' ') return 0;
   sscanf(p+148, "%8o", &i);
 
   return i && tar_cksum(pkt) == i;
 }
+
+char *elf_arch_name(int type)
+{
+  int i;
+  // Values from include/linux/elf-em.h (plus arch/*/include/asm/elf.h)
+  // Names are linux/arch/ directory (sometimes before 32/64 bit merges)
+  struct {int val; char *name;} types[] = {{0x9026, "alpha"}, {93, "arc"},
+    {195, "arcv2"}, {40, "arm"}, {183, "arm64"}, {0x18ad, "avr32"},
+    {247, "bpf"}, {106, "blackfin"}, {140, "c6x"}, {23, "cell"}, {76, "cris"},
+    {252, "csky"}, {0x5441, "frv"}, {46, "h8300"}, {164, "hexagon"},
+    {50, "ia64"}, {258, "loongarch"}, {88, "m32r"}, {0x9041, "m32r"},
+    {4, "m68k"}, {174, "metag"}, {189, "microblaze"},
+    {0xbaab, "microblaze-old"}, {8, "mips"}, {10, "mips-old"}, {89, "mn10300"},
+    {0xbeef, "mn10300-old"}, {113, "nios2"}, {92, "openrisc"},
+    {0x8472, "openrisc-old"}, {15, "parisc"}, {20, "ppc"}, {21, "ppc64"},
+    {243, "riscv"}, {22, "s390"}, {0xa390, "s390-old"}, {135, "score"},
+    {42, "sh"}, {2, "sparc"}, {18, "sparc8+"}, {43, "sparc9"}, {188, "tile"},
+    {191, "tilegx"}, {3, "386"}, {6, "486"}, {62, "x86-64"}, {94, "xtensa"},
+    {0xabc7, "xtensa-old"}
+  };
+
+  for (i = 0; i<ARRAY_LEN(types); i++) {
+    if (type==types[i].val) return types[i].name;
+  }
+  sprintf(libbuf, "unknown arch %d", type);
+  return libbuf;
+}
+
+// Remove octal escapes from string (common in kernel exports)
+void octal_deslash(char *s)
+{
+  char *o = s;
+
+  while (*s) {
+    if (*s == '\\') {
+      int i, oct = 0;
+
+      for (i = 1; i < 4; i++) {
+        if (!isdigit(s[i])) break;
+        oct = (oct<<3)+s[i]-'0';
+      }
+      if (i == 4) {
+        *o++ = oct;
+        s += i;
+        continue;
+      }
+    }
+    *o++ = *s++;
+  }
+
+  *o = 0;
+}
+
+// ASAN flips out about memcmp("a", "abc", 4) but the result is well-defined.
+// This one's guaranteed to stop at len _or_ the first difference.
+int smemcmp(char *one, char *two, unsigned long len)
+{
+  int ii = 0;
+
+  // NULL sorts after anything else
+  if (one == two) return 0;
+  if (!one) return 1;
+  if (!two) return -1;
+
+  while (len--) if ((ii = *one++ - *two++)) break;
+
+  return ii;
+}
+
