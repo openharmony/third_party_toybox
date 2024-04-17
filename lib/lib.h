@@ -8,11 +8,6 @@ struct ptr_len {
   long len;
 };
 
-struct str_len {
-  char *str;
-  long len;
-};
-
 // llist.c
 
 // All these list types can be handled by the same code because first element
@@ -21,7 +16,7 @@ struct str_len {
 
 struct string_list {
   struct string_list *next;
-  char str[0];
+  char str[];
 };
 
 struct arg_list {
@@ -40,6 +35,11 @@ struct num_cache {
   char data[];
 };
 
+struct dev_ino {
+  dev_t dev;
+  ino_t ino;
+};
+
 void llist_free_arg(void *node);
 void llist_free_double(void *node);
 void llist_traverse(void *list, void (*using)(void *node));
@@ -49,9 +49,6 @@ void *dlist_lpop(void *list); // also struct double_list **list
 void dlist_add_nomalloc(struct double_list **list, struct double_list *new);
 struct double_list *dlist_add(struct double_list **list, char *data);
 void *dlist_terminate(void *list);
-struct num_cache *get_num_cache(struct num_cache *cache, long long num);
-struct num_cache *add_num_cache(struct num_cache **cache, long long num,
-  void *data, int len);
 
 // args.c
 #define FLAGS_NODASH (1LL<<63)
@@ -104,10 +101,6 @@ struct dirtree *dirtree_flagread(char *path, int flags,
   int (*callback)(struct dirtree *node));
 struct dirtree *dirtree_read(char *path, int (*callback)(struct dirtree *node));
 
-// help.c
-
-void show_help(FILE *out);
-
 // Tell xopen and friends to print warnings but return -1 as necessary
 // The largest O_BLAH flag so far is arch/alpha's O_PATH at 0x800000 so
 // plenty of headroom.
@@ -123,8 +116,8 @@ void show_help(FILE *out);
 // xwrap.c
 void xstrncpy(char *dest, char *src, size_t size);
 void xstrncat(char *dest, char *src, size_t size);
-void _xexit(void) __attribute__((__noreturn__));
-void xexit(void) __attribute__((__noreturn__));
+_Noreturn void _xexit(void);
+_Noreturn void xexit(void);
 void *xmmap(void *addr, size_t length, int prot, int flags, int fd, off_t off);
 void *xmalloc(size_t size);
 void *xzalloc(size_t size);
@@ -133,19 +126,22 @@ char *xstrndup(char *s, size_t n);
 char *xstrdup(char *s);
 void *xmemdup(void *s, long len);
 char *xmprintf(char *format, ...) printf_format;
+void xflush(int flush);
 void xprintf(char *format, ...) printf_format;
 void xputsl(char *s, int len);
 void xputsn(char *s);
 void xputs(char *s);
 void xputc(char c);
-void xflush(int flush);
+void xvdaemon(void);
 void xexec(char **argv);
+pid_t xpopen_setup(char **argv, int *pipes, void (*callback)(char **argv));
 pid_t xpopen_both(char **argv, int *pipes);
 int xwaitpid(pid_t pid);
 int xpclose_both(pid_t pid, int *pipes);
 pid_t xpopen(char **argv, int *pipe, int isstdout);
 pid_t xpclose(pid_t pid, int pipe);
 int xrun(char **argv);
+char *xrunread(char *argv[], char *to_stdin);
 int xpspawn(char **argv, int*pipes);
 void xaccess(char *path, int flags);
 void xunlink(char *path);
@@ -160,7 +156,7 @@ int xopenro(char *path);
 void xpipe(int *pp);
 void xclose(int fd);
 int xdup(int fd);
-int notstdio(int fd);
+int xnotstdio(int fd);
 FILE *xfdopen(int fd, char *mode);
 FILE *xfopen(char *path, char *mode);
 size_t xread(int fd, void *buf, size_t len);
@@ -194,19 +190,20 @@ void xsignal_flags(int signal, void *handler, int flags);
 void xsignal(int signal, void *handler);
 time_t xvali_date(struct tm *tm, char *str);
 void xparsedate(char *str, time_t *t, unsigned *nano, int endian);
-char *xgetline(FILE *fp, int *len);
+char *xgetline(FILE *fp);
+time_t xmktime(struct tm *tm, int utc);
 
 // lib.c
 void verror_msg(char *msg, int err, va_list va);
 void error_msg(char *msg, ...) printf_format;
 void perror_msg(char *msg, ...) printf_format;
-void error_exit(char *msg, ...) printf_format __attribute__((__noreturn__));
-void perror_exit(char *msg, ...) printf_format __attribute__((__noreturn__));
-void help_exit(char *msg, ...) printf_format __attribute__((__noreturn__));
+_Noreturn void error_exit(char *msg, ...) printf_format;
+_Noreturn void perror_exit(char *msg, ...) printf_format;
+_Noreturn void help_exit(char *msg, ...) printf_format;
 void error_msg_raw(char *msg);
 void perror_msg_raw(char *msg);
-void error_exit_raw(char *msg);
-void perror_exit_raw(char *msg);
+_Noreturn void error_exit_raw(char *msg);
+_Noreturn void perror_exit_raw(char *msg);
 ssize_t readall(int fd, void *buf, size_t len);
 ssize_t writeall(int fd, void *buf, size_t len);
 off_t lskip(int fd, off_t offset);
@@ -216,6 +213,7 @@ off_t lskip(int fd, off_t offset);
 int mkpathat(int atfd, char *dir, mode_t lastmode, int flags);
 int mkpath(char *dir);
 struct string_list **splitpath(char *path, struct string_list **list);
+char *readfd(int fd, char *ibuf, off_t *plen);
 char *readfileat(int dirfd, char *name, char *buf, off_t *len);
 char *readfile(char *name, char *buf, off_t len);
 void msleep(long milliseconds);
@@ -234,6 +232,7 @@ long long xstrtol(char *str, char **end, int base);
 long long atolx(char *c);
 long long atolx_range(char *numstr, long long low, long long high);
 int stridx(char *haystack, char needle);
+int wctoutf8(char *s, unsigned wc);
 int utf8towc(unsigned *wc, char *str, unsigned len);
 char *strlower(char *s);
 char *strafter(char *haystack, char *needle);
@@ -243,6 +242,8 @@ int unescape2(char **c, int echo);
 char *strend(char *str, char *suffix);
 int strstart(char **a, char *b);
 int strcasestart(char **a, char *b);
+int same_file(struct stat *st1, struct stat *st2);
+int same_dev_ino(struct stat *st, struct dev_ino *di);
 off_t fdlength(int fd);
 void loopfiles_rw(char **argv, int flags, int permissions,
   void (*function)(int fd, char *name));
@@ -256,7 +257,7 @@ int wfchmodat(int rc, char *name, mode_t mode);
 int copy_tempfile(int fdin, char *name, char **tempname);
 void delete_tempfile(int fdin, int fdout, char **tempname);
 void replace_tempfile(int fdin, int fdout, char **tempname);
-void crc_init(unsigned int *crc_table, int little_endian);
+void crc_init(unsigned *crc_table, int little_endian);
 void base64_init(char *p);
 int yesno(int def);
 int fyesno(FILE *fp, int def);
@@ -264,10 +265,9 @@ int qstrcmp(const void *a, const void *b);
 void create_uuid(char *uuid);
 char *show_uuid(char *uuid);
 char *next_printf(char *s, char **start);
-int dev_minor(int dev);
-int dev_major(int dev);
-int dev_makedev(int major, int minor);
+struct passwd *bufgetpwnamuid(char *name, uid_t uid);
 struct passwd *bufgetpwuid(uid_t uid);
+struct group *bufgetgrnamgid(char *name, gid_t gid);
 struct group *bufgetgrgid(gid_t gid);
 int readlinkat0(int dirfd, char *path, char *buf, int len);
 int readlink0(char *path, char *buf, int len);
@@ -278,10 +278,12 @@ char *getgroupname(gid_t gid);
 void do_lines(int fd, char delim, void (*call)(char **pline, long len));
 long long millitime(void);
 char *format_iso_time(char *buf, size_t len, struct timespec *ts);
-void reset_env(struct passwd *p, int clear);
 void loggit(int priority, char *format, ...);
 unsigned tar_cksum(void *data);
 int is_tar_header(void *pkt);
+char *elf_arch_name(int type);
+void octal_deslash(char *s);
+int smemcmp(char *one, char *two, unsigned long len);
 
 #define HR_SPACE 1 // Space between number and units
 #define HR_B     2 // Use "B" for single byte units
@@ -291,10 +293,12 @@ int human_readable(char *buf, unsigned long long num, int style);
 
 // env.c
 
-long environ_bytes();
-void xsetenv(char *name, char *val);
+long environ_bytes(void);
+char *xsetenv(char *name, char *val);
 void xunsetenv(char *name);
+char *xpop_env(char *name); // because xpopenv() looks like xpopen_v()
 void xclearenv(void);
+void reset_env(struct passwd *p, int clear);
 
 // linestack.c
 
@@ -303,11 +307,8 @@ struct linestack {
   struct ptr_len idx[];
 };
 
-void linestack_addstack(struct linestack **lls, struct linestack *throw,
-  long pos);
-void linestack_insert(struct linestack **lls, long pos, char *line, long len);
-void linestack_append(struct linestack **lls, char *line);
-struct linestack *linestack_load(char *name);
+// utf8.c
+
 int crunch_escape(FILE *out, int cols, int wc);
 int crunch_rev_escape(FILE *out, int cols, int wc);
 int crunch_str(char **str, int width, FILE *out, char *escmore,
@@ -342,8 +343,6 @@ int scan_key_getsize(char *scratch, int timeout_ms, unsigned *xx, unsigned *yy);
 void xsetspeed(struct termios *tio, int speed);
 int set_terminal(int fd, int raw, int speed, struct termios *old);
 void xset_terminal(int fd, int raw, int speed, struct termios *old);
-void tty_esc(char *s);
-void tty_jump(int x, int y);
 void tty_reset(void);
 void tty_sigreset(int i);
 void start_redraw(unsigned *width, unsigned *height);
@@ -369,6 +368,8 @@ int pollinate(int in1, int in2, int out1, int out2, int timeout, int shutdown_ti
 char *ntop(struct sockaddr *sa);
 void xsendto(int sockfd, void *buf, size_t len, struct sockaddr *dest);
 int xrecvwait(int fd, char *buf, int len, union socksaddr *sa, int timeout);
+char *escape_url(char *str, char *and);
+char *unescape_url(char *str, int do_cut);
 
 // password.c
 int get_salt(char *salt, char * algo);
@@ -386,6 +387,8 @@ int comma_remove(char *optlist, char *opt);
 
 long long gzip_fd(int infd, int outfd);
 long long gunzip_fd(int infd, int outfd);
+long long gunzip_fd_preload(int infd, int outfd, char *buf, unsigned len);
+
 
 // getmountlist.c
 struct mtab_list {
@@ -406,13 +409,15 @@ struct mtab_list *xgetmountlist(char *path);
 void generic_signal(int signal);
 void exit_signal(int signal);
 void sigatexit(void *handler);
-void list_signals();
+void list_signals(void);
 
 mode_t string_to_mode(char *mode_str, mode_t base);
 void mode_to_string(mode_t mode, char *buf);
 char *getdirname(char *name);
 char *getbasename(char *name);
 char *fileunderdir(char *file, char *dir);
+void *mepcpy(void *from, void *to, unsigned long len);
+char *relative_path(char *from, char *to, int abs);
 void names_to_pid(char **names, int (*callback)(pid_t pid, char *name),
     int scripts);
 
