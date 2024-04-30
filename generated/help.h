@@ -134,7 +134,7 @@
 
 #define HELP_ftpput "An ftpget that defaults to -s instead of -g"
 
-#define HELP_ftpget "usage: ftpget [-cvgslLmMdD] [-P PORT] [-p PASSWORD] [-u USER] HOST [LOCAL] REMOTE\n\nTalk to ftp server. By default get REMOTE file via passive anonymous\ntransfer, optionally saving under a LOCAL name. Can also send, list, etc.\n\n-c	Continue partial transfer\n-p	Use PORT instead of \"21\"\n-P	Use PASSWORD instead of \"ftpget@\"\n-u	Use USER instead of \"anonymous\"\n-v	Verbose\n\nWays to interact with FTP server:\n-d	Delete file\n-D	Remove directory\n-g	Get file (default)\n-l	List directory\n-L	List (filenames only)\n-m	Move file on server from LOCAL to REMOTE\n-M	mkdir\n-s	Send file"
+#define HELP_ftpget "usage: ftpget [-cvgslLmMdD] [-p PORT] [-P PASSWORD] [-u USER] HOST [LOCAL] REMOTE\n\nTalk to ftp server. By default get REMOTE file via passive anonymous\ntransfer, optionally saving under a LOCAL name. Can also send, list, etc.\n\n-c	Continue partial transfer\n-p	Use PORT instead of \"21\"\n-P	Use PASSWORD instead of \"ftpget@\"\n-u	Use USER instead of \"anonymous\"\n-v	Verbose\n\nWays to interact with FTP server:\n-d	Delete file\n-D	Remove directory\n-g	Get file (default)\n-l	List directory\n-L	List (filenames only)\n-m	Move file on server from LOCAL to REMOTE\n-M	mkdir\n-s	Send file"
 
 #define HELP_yes "usage: yes [args...]\n\nRepeatedly output line until killed. If no args, output 'y'."
 
