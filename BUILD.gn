@@ -708,8 +708,7 @@ if (defined(ohos_lite)) {
 
     if (build_selinux) {
       sources += [ "toys/other/chcon.c" ]
-      include_dirs += [ "//third_party/selinux/libselinux/include" ]
-      deps += [ "//third_party/selinux:libselinux" ]
+      external_deps = [ "selinux:libselinux" ]
     }
 
     defines = [ "_DEFAULT_SOURCE" ]
