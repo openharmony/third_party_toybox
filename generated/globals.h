@@ -149,6 +149,8 @@ struct ftpget_data {
   char *u, *p, *P;
 
   int fd;
+  int datafd;
+  int filefd;
 };
 
 // toys/net/ifconfig.c
