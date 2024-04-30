@@ -14,7 +14,7 @@ config FTPGET
   bool "ftpget"
   default y
   help
-    usage: ftpget [-cvgslLmMdD] [-P PORT] [-p PASSWORD] [-u USER] HOST [LOCAL] REMOTE
+    usage: ftpget [-cvgslLmMdD] [-p PORT] [-P PASSWORD] [-u USER] HOST [LOCAL] REMOTE
 
     Talk to ftp server. By default get REMOTE file via passive anonymous
     transfer, optionally saving under a LOCAL name. Can also send, list, etc.
@@ -49,6 +49,8 @@ GLOBALS(
   char *u, *p, *P;
 
   int fd;
+  int datafd;
+  int filefd;
 )
 
 // we should get one line of data, but it may be in multiple chunks
@@ -58,10 +60,28 @@ static int xread2line(int fd, char *buf, int len)
 
   len--;
   while (total<len && (i = xread(fd, buf, len-total))) {
+    if (i <= 0) {
+      error_msg("xread2line line %d, len %d total %d i %d toybox buf %s\r\n",
+        __LINE__, len, total, i, toybuf);
+        break;
+    }
     total += i;
     if (buf[total-1] == '\n') break;
   }
-  if (total>=len) error_exit("overflow");
+  if (total>=len) {
+    error_msg("xread2line line %d, len %d total %d toybox buf %s\r\n",
+      __LINE__, len, total, toybuf);
+    if (TT.fd >= 0) {
+      xclose(TT.fd);
+    }
+    if (TT.datafd >= 0) {
+      xclose(TT.datafd);
+    }
+    if (TT.filefd >= 0) {
+      xclose(TT.filefd);
+    }
+    error_exit("overflow");
+  }
   while (total--)
     if (buf[total]=='\r' || buf[total]=='\n') buf[total] = 0;
     else break;
@@ -81,8 +101,20 @@ static int ftp_line(char *cmd, char *arg, int must)
   }
   if (must>=0) {
     xread2line(TT.fd, toybuf, sizeof(toybuf));
-    if (!sscanf(toybuf, "%d", &rc) || (must && rc != must))
+    if (!sscanf(toybuf, "%d", &rc) || (must && rc != must)) {
+      error_msg("ftp_line line %d, must %d rc %d toybox buf %s\r\n",
+        __LINE__, must, rc, toybuf);
+      if (TT.fd >= 0) {
+        xclose(TT.fd);
+      }
+      if (TT.datafd >= 0) {
+        xclose(TT.datafd);
+      }
+      if (TT.filefd >= 0) {
+        xclose(TT.filefd);
+      }
       error_exit_raw(toybuf);
+    }
   }
 
   return rc;
@@ -95,7 +127,9 @@ void ftpget_main(void)
   socklen_t sl = sizeof(si6);
   char *s, *remote = toys.optargs[2];
   unsigned long long lenl = 0, lenr;
-
+  TT.fd = -1;
+  TT.datafd = -1;
+  TT.filefd = -1;
   if (!(toys.optflags&(FLAG_v-1)))
     toys.optflags |= (toys.which->name[3]=='g') ? FLAG_g : FLAG_s;
 
@@ -113,10 +147,24 @@ void ftpget_main(void)
   ftp_line(0, 0, 220);
   rc = ftp_line("USER", TT.u, 0);
   if (rc == 331) rc = ftp_line("PASS", TT.P, 0);
-  if (rc != 230) error_exit_raw(toybuf);
+  if (rc != 230) {
+    error_msg("ftpget_main line %d, PASS ret %d toybox buf %s\r\n",
+      __LINE__, rc, toybuf);
+    if (TT.fd >= 0) {
+      xclose(TT.fd);
+    }
+    error_exit_raw(toybuf);
+  }
 
   if (toys.optflags & FLAG_m) {
-    if (toys.optc != 3) error_exit("-m FROM TO");
+    if (toys.optc != 3) {
+      error_msg("ftpget_main line %d, toys.optflags 0x%x toys.optc %d toybox buf %s\r\n",
+        __LINE__, toys.optflags, toys.optc, toybuf);
+      if (TT.fd >= 0) {
+        xclose(TT.fd);
+      }
+      error_exit("-m FROM TO");
+    }
     ftp_line("RNFR", toys.optargs[1], 350);
     ftp_line("RNTO", toys.optargs[2], 250);
   } else if (toys.optflags & FLAG_M) ftp_line("MKD", toys.optargs[1], 257);
@@ -144,9 +192,17 @@ void ftpget_main(void)
       port += 256*p1;
       break;
     }
-    if (!s || port<1 || port>65535) error_exit_raw(toybuf);
+    if (!s || port<1 || port>65535) {
+      error_msg("ftpget_main line %d, port %d toybox buf %s\r\n", __LINE__, port, toybuf);
+      ftp_line("QUIT", 0, 0);
+      if (TT.fd >= 0) {
+        xclose(TT.fd);
+      }
+      error_exit_raw(toybuf);
+    }
     si6.sin6_port = SWAP_BE16(port); // same field size/offset for v4 and v6
     port = xsocket(si6.sin6_family, SOCK_STREAM, 0);
+    TT.datafd = port;
     xconnect(port, (void *)&si6, sizeof(si6));
 
     // RETR blocks until file data read from data port, so use SIZE to check
@@ -155,14 +211,26 @@ void ftpget_main(void)
     if (toys.optflags&(FLAG_s|FLAG_g)) {
       if (ftp_line("SIZE", remote, 0) == 213)
         sscanf(toybuf, "%*u %llu", &lenr);
-      else if (get) error_exit("no %s", remote);
+      else if (get) {
+        error_msg("ftpget_main line %d, port %d get %d toybox buf %s\r\n", __LINE__, port, get, toybuf);
+        ftp_line("QUIT", 0, 0);
+        if (TT.fd >= 0) {
+          xclose(TT.fd);
+        }
+        if (TT.datafd >= 0) {
+          xclose(TT.datafd);
+        }
+        error_exit("no %s", remote);
+      }
     }
 
     // Open file for reading or writing
     if (toys.optflags & (FLAG_g|FLAG_s)) {
-      if (strcmp(toys.optargs[1], "-"))
+      if (strcmp(toys.optargs[1], "-")) {
         ii = xcreate(toys.optargs[1],
           get ? (cnt ? O_APPEND : O_TRUNC)|O_CREAT|O_WRONLY : O_RDONLY, 0666);
+        TT.filefd = ii;
+      }
       lenl = fdlength(ii);
     }
     if (get) {
@@ -189,16 +257,30 @@ void ftpget_main(void)
       ftp_line(cmd, remote, 150);
       lenr += xsendfile(ii, port);
       close(port);
+      port = -1;
+      TT.datafd = -1;
     }
-    if (toys.optflags&(FLAG_g|FLAG_s))
-      if (lenl != lenr) error_exit("short %lld/%lld", lenl, lenr);
+    if (toys.optflags&(FLAG_g|FLAG_s)) {
+      if (lenl != lenr) {
+        error_msg("ftpget_main line %d, len local %d len remote %d toybox buf %s\r\n", __LINE__, lenl, lenr, toybuf);
+        ftp_line("QUIT", ((port == -1) ? -1 : 0), 0);
+        if (TT.fd >= 0) {
+          xclose(TT.fd);
+        }
+        if (TT.datafd >= 0) {
+          xclose(TT.datafd);
+        }
+        if (TT.filefd >= 0) {
+          xclose(TT.filefd);
+        }
+        error_exit("short %lld/%lld", lenl, lenr);
+      }
+    }
   }
-  ftp_line("QUIT", 0, 0);
 
 done:
-  if (CFG_TOYBOX_FREE) {
-    if (ii!=1) xclose(ii);
-    xclose(port);
-    xclose(TT.fd);
-  }
+  ftp_line("QUIT", ((port == -1) ? -1 : 0), 0);
+  if (ii!=1) xclose(ii);
+  if (port>=0) xclose(port);
+  if (TT.fd>=0) xclose(TT.fd);
 }
