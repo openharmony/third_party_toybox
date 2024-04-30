@@ -202,7 +202,7 @@ void ftpget_main(void)
     }
     si6.sin6_port = SWAP_BE16(port); // same field size/offset for v4 and v6
     port = xsocket(si6.sin6_family, SOCK_STREAM, 0);
-    TT.datefd = port;
+    TT.datafd = port;
     xconnect(port, (void *)&si6, sizeof(si6));
 
     // RETR blocks until file data read from data port, so use SIZE to check
