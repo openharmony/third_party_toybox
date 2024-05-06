@@ -25,7 +25,9 @@
         "rom": "73KB",
         "ram": "146KB",
         "deps": {
-            "components": [],
+            "components": [
+                "selinux"
+            ],
             "third_party": [
                 "selinux"
             ]
