@@ -1,8 +1,8 @@
-/* xwrap.c - library function wrappers that exit instead of returning error
+/* xwrap.c - wrappers around existing library functions.
  *
- * Functions with the x prefix either succeed or kill the program with an
- * error message, so the caller doesn't have to check for failure. They
- * usually have the same arguments and return value as the function they wrap.
+ * Functions with the x prefix are wrappers that either succeed or kill the
+ * program with an error message, but never return failure. They usually have
+ * the same arguments and return value as the function they wrap.
  *
  * Copyright 2006 Rob Landley <rob@landley.net>
  */
@@ -96,6 +96,7 @@ void *xrealloc(void *ptr, size_t size)
 char *xstrndup(char *s, size_t n)
 {
   char *ret = strndup(s, n);
+
   if (!ret) error_exit("xstrndup");
 
   return ret;
@@ -104,12 +105,7 @@ char *xstrndup(char *s, size_t n)
 // Die unless we can allocate a copy of this string.
 char *xstrdup(char *s)
 {
-  long len = strlen(s);
-  char *c = xmalloc(++len);
-
-  memcpy(c, s, len);
-
-  return c;
+  return xstrndup(s, strlen(s));
 }
 
 void *xmemdup(void *s, long len)
@@ -131,7 +127,8 @@ char *xmprintf(char *format, ...)
   va_copy(va2, va);
 
   // How long is it?
-  len = vsnprintf(0, 0, format, va)+1;
+  len = vsnprintf(0, 0, format, va);
+  len++;
   va_end(va);
 
   // Allocate and do the sprintf()
@@ -162,8 +159,14 @@ void xprintf(char *format, ...)
 // Put string with length (does not append newline)
 void xputsl(char *s, int len)
 {
-  xflush(1);
-  xwrite(1, s, len);
+  int out;
+
+  while (len != (out = fwrite(s, 1, len, stdout))) {
+    if (out<1) perror_exit("write");
+    len -= out;
+    s += out;
+  }
+  xflush(0);
 }
 
 // xputs with no newline
@@ -185,30 +188,6 @@ void xputc(char c)
   xflush(0);
 }
 
-// daemonize via vfork(). Does not chdir("/"), caller should do that first
-// note: restarts process from command_main()
-void xvdaemon(void)
-{
-  int fd;
-
-  // vfork and exec /proc/self/exe
-  if (toys.stacktop) {
-    xpopen_both(0, 0);
-    _exit(0);
-  }
-
-  // new session id, point fd 0-2 at /dev/null, detach from tty
-  setsid();
-  close(0);
-  xopen_stdio("/dev/null", O_RDWR);
-  dup2(0, 1);
-  if (-1 != (fd = open("/dev/tty", O_RDONLY))) {
-    ioctl(fd, TIOCNOTTY);
-    close(fd);
-  }
-  dup2(0, 2);
-}
-
 // This is called through the XVFORK macro because parent/child of vfork
 // share a stack, so child returning from a function would stomp the return
 // address parent would need. Solution: make vfork() an argument so processes
@@ -228,8 +207,8 @@ pid_t __attribute__((returns_twice)) xvforkwrap(pid_t pid)
 void xexec(char **argv)
 {
   // Only recurse to builtin when we have multiplexer and !vfork context.
-  if (CFG_TOYBOX && !CFG_TOYBOX_NORECURSE)
-    if (toys.stacktop && !strchr(*argv, '/')) toy_exec(argv);
+  if (CFG_TOYBOX && !CFG_TOYBOX_NORECURSE && toys.stacktop && **argv != '/')
+    toy_exec(argv);
   execvp(argv[0], argv);
 
   toys.exitval = 126+(errno == ENOENT);
@@ -245,14 +224,16 @@ void xexec(char **argv)
 //           If -1, replace with pipe handle connected to stdin/stdout.
 //           NULL treated as {0, 1}, I.E. leave stdin/stdout as is
 // return: pid of child process
-pid_t xpopen_setup(char **argv, int *pipes, void (*callback)(char **argv))
+pid_t xpopen_both(char **argv, int *pipes)
 {
   int cestnepasun[4], pid;
 
   // Make the pipes?
   memset(cestnepasun, 0, sizeof(cestnepasun));
-  if (pipes) for (pid = 0; pid < 2; pid++)
-    if (pipes[pid]==-1 && pipe(cestnepasun+(2*pid))) perror_exit("pipe");
+  if (pipes) for (pid = 0; pid < 2; pid++) {
+    if (pipes[pid] != -1) continue;
+    if (pipe(cestnepasun+(2*pid))) perror_exit("pipe");
+  }
 
   if (!(pid = CFG_TOYBOX_FORK ? xfork() : XVFORK())) {
     // Child process: Dance of the stdin/stdout redirection.
@@ -288,7 +269,6 @@ pid_t xpopen_setup(char **argv, int *pipes, void (*callback)(char **argv))
         close(pipes[1]);
       }
     }
-    if (callback) callback(argv);
     if (argv) xexec(argv);
 
     // In fork() case, force recursion because we know it's us.
@@ -306,7 +286,6 @@ pid_t xpopen_setup(char **argv, int *pipes, void (*callback)(char **argv))
       // setting high bit of argv[0][0] to let new process know
       **toys.argv |= 0x80;
       execv(s, toys.argv);
-      if ((s = getenv("_"))) execv(s, toys.argv);
       perror_msg_raw(s);
 
       _exit(127);
@@ -330,18 +309,12 @@ pid_t xpopen_setup(char **argv, int *pipes, void (*callback)(char **argv))
   return pid;
 }
 
-pid_t xpopen_both(char **argv, int *pipes)
-{
-  return xpopen_setup(argv, pipes, 0);
-}
-
-
 // Wait for child process to exit, then return adjusted exit code.
 int xwaitpid(pid_t pid)
 {
-  int status = 127<<8;
+  int status;
 
-  while (-1 == waitpid(pid, &status, 0) && errno == EINTR) errno = 0;
+  while (-1 == waitpid(pid, &status, 0) && errno == EINTR);
 
   return WIFEXITED(status) ? WEXITSTATUS(status) : WTERMSIG(status)+128;
 }
@@ -349,8 +322,8 @@ int xwaitpid(pid_t pid)
 int xpclose_both(pid_t pid, int *pipes)
 {
   if (pipes) {
-    if (pipes[0]) close(pipes[0]);
-    if (pipes[1]>1) close(pipes[1]);
+    close(pipes[0]);
+    close(pipes[1]);
   }
 
   return xwaitpid(pid);
@@ -382,34 +355,6 @@ int xrun(char **argv)
   return xpclose_both(xpopen_both(argv, 0), 0);
 }
 
-// Run child, writing to_stdin, returning stdout or NULL, pass through stderr
-char *xrunread(char *argv[], char *to_stdin)
-{
-  char *result = 0;
-  int pipe[] = {-1, -1}, total = 0, len;
-  pid_t pid;
-
-  pid = xpopen_both(argv, pipe);
-  if (to_stdin && *to_stdin) writeall(*pipe, to_stdin, strlen(to_stdin));
-  close(*pipe);
-  for (;;) {
-    if (0>=(len = readall(pipe[1], libbuf, sizeof(libbuf)))) break;
-    memcpy((result = xrealloc(result, 1+total+len))+total, libbuf, len);
-    total += len;
-    if (len != sizeof(libbuf)) break;
-  }
-  if (result) result[total] = 0;
-  close(pipe[1]);
-
-  if (xwaitpid(pid)) {
-    free(result);
-
-    return 0;
-  }
-
-  return result;
-}
-
 void xaccess(char *path, int flags)
 {
   if (access(path, flags)) perror_exit("Can't access '%s'", path);
@@ -428,7 +373,7 @@ int xcreate_stdio(char *path, int flags, int mode)
 {
   int fd = open(path, (flags^O_CLOEXEC)&~WARN_ONLY, mode);
 
-  if (fd == -1) ((flags&WARN_ONLY) ? perror_msg_raw : perror_exit_raw)(path);
+  if (fd == -1) ((mode&WARN_ONLY) ? perror_msg_raw : perror_exit_raw)(path);
   return fd;
 }
 
@@ -457,7 +402,9 @@ int xdup(int fd)
   return fd;
 }
 
-int xnotstdio(int fd)
+// Move file descriptor above stdin/stdout/stderr, using /dev/null to consume
+// old one. (We should never be called with stdin/stdout/stderr closed, but...)
+int notstdio(int fd)
 {
   if (fd<0) return fd;
 
@@ -490,13 +437,13 @@ int xtempfile(char *name, char **tempname)
 // Create a file but don't return stdin/stdout/stderr
 int xcreate(char *path, int flags, int mode)
 {
-  return xnotstdio(xcreate_stdio(path, flags, mode));
+  return notstdio(xcreate_stdio(path, flags, mode));
 }
 
 // Open a file descriptor NOT in stdin/stdout/stderr
 int xopen(char *path, int flags)
 {
-  return xnotstdio(xopen_stdio(path, flags));
+  return notstdio(xopen_stdio(path, flags));
 }
 
 // Open read only, treating "-" as a synonym for stdin, defaulting to warn only
@@ -577,73 +524,72 @@ void xstat(char *path, struct stat *st)
 }
 
 // Canonicalize path, even to file with one or more missing components at end.
-// Returns allocated string for pathname or NULL if doesn't exist. Flags are:
-// ABS_PATH:path to last component must exist ABS_FILE: whole path must exist
-// ABS_KEEP:keep symlinks in path ABS_LAST: keep symlink at end of path
-char *xabspath(char *path, int flags)
+// Returns allocated string for pathname or NULL if doesn't exist
+// exact = 1 file must exist, 0 dir must exist, -1 show theoretical location
+char *xabspath(char *path, int exact)
 {
-  struct string_list *todo, *done = 0, *new, **tail;
-  int fd, track, len, try = 9999, dirfd = -1, missing = 0;
-  char *str;
+  struct string_list *todo, *done = 0;
+  int try = 9999, dirfd = open("/", O_PATH), missing = 0;
+  char *ret;
 
-  // If the last file must exist, path to it must exist.
-  if (flags&ABS_FILE) flags |= ABS_PATH;
-  // If we don't resolve path's symlinks, don't resolve last symlink.
-  if (flags&ABS_KEEP) flags |= ABS_LAST;
-
-  // If this isn't an absolute path, start with cwd or $PWD.
+  // If this isn't an absolute path, start with cwd.
   if (*path != '/') {
-    if ((flags & ABS_KEEP) && (str = getenv("PWD")))
-      splitpath(path, splitpath(str, &todo));
-    else {
-      splitpath(path, splitpath(str = xgetcwd(), &todo));
-      free(str);
-    }
+    char *temp = xgetcwd();
+
+    splitpath(path, splitpath(temp, &todo));
+    free(temp);
   } else splitpath(path, &todo);
 
   // Iterate through path components in todo, prepend processed ones to done.
   while (todo) {
-    // break out of endless symlink loops
+    struct string_list *new = llist_pop(&todo), **tail;
+    ssize_t len;
+
+    // Eventually break out of endless loops
     if (!try--) {
       errno = ELOOP;
       goto error;
     }
 
-    // Remove . or .. component, tracking dirfd back up tree as necessary
-    str = (new = llist_pop(&todo))->str;
-    // track dirfd if this component must exist or we're resolving symlinks
-    track = ((flags>>!todo) & (ABS_PATH|ABS_KEEP)) ^ ABS_KEEP;
-    if (!done && track) dirfd = open("/", O_PATH);
-    if (*str=='.' && !str[1+((fd = str[1])=='.')]) {
+    // Removable path componenents.
+    if (!strcmp(new->str, ".") || !strcmp(new->str, "..")) {
+      int x = new->str[1];
+
       free(new);
-      if (fd) {
-        if (done) free(llist_pop(&done));
-        if (missing) missing--;
-        else if (track) {
-          if (-1 == (fd = openat(dirfd, "..", O_PATH))) goto error;
-          close(dirfd);
-          dirfd = fd;
-        }
+      if (!x) continue;
+      if (done) free(llist_pop(&done));
+      len = 0;
+
+      if (missing) missing--;
+      else {
+        if (-1 == (x = openat(dirfd, "..", O_PATH))) goto error;
+        close(dirfd);
+        dirfd = x;
       }
       continue;
     }
 
     // Is this a symlink?
-    if (flags & (ABS_KEEP<<!todo)) len = 0, errno = EINVAL;
-    else len = readlinkat(dirfd, str, libbuf, sizeof(libbuf));
+    len = readlinkat(dirfd, new->str, libbuf, sizeof(libbuf));
     if (len>4095) goto error;
 
     // Not a symlink: add to linked list, move dirfd, fail if error
     if (len<1) {
+      int fd;
+
       new->next = done;
       done = new;
-      if (errno == ENOENT && !(flags & (ABS_PATH<<!todo))) missing++;
-      else if (errno != EINVAL && (flags & (ABS_PATH<<!todo))) goto error;
-      else if (track) {
-        if (-1 == (fd = openat(dirfd, new->str, O_PATH))) goto error;
-        close(dirfd);
-        dirfd = fd;
+      if (errno == EINVAL && !todo) break;
+      if (errno == ENOENT && exact<0) {
+        missing++;
+        continue;
       }
+      if (errno != EINVAL && (exact || todo)) goto error;
+
+      fd = openat(dirfd, new->str, O_PATH);
+      if (fd == -1 && (exact || todo || errno != ENOENT)) goto error;
+      close(dirfd);
+      dirfd = fd;
       continue;
     }
 
@@ -651,13 +597,13 @@ char *xabspath(char *path, int flags)
     libbuf[len] = 0;
     if (*libbuf == '/') {
       llist_traverse(done, free);
-      done = 0;
+      done=0;
       close(dirfd);
-      dirfd = -1;
+      dirfd = open("/", O_PATH);
     }
     free(new);
 
-    // prepend components of new path. Note symlink to "/" will leave new = NULL
+    // prepend components of new path. Note symlink to "/" will leave new NULL
     tail = splitpath(libbuf, &new);
 
     // symlink to "/" will return null and leave tail alone
@@ -666,10 +612,11 @@ char *xabspath(char *path, int flags)
       todo = new;
     }
   }
-  xclose(dirfd);
+  close(dirfd);
 
-  // At this point done has the path, in reverse order. Reverse list
-  // (into todo) while calculating buffer length.
+  // At this point done has the path, in reverse order. Reverse list while
+  // calculating buffer length.
+
   try = 2;
   while (done) {
     struct string_list *temp = llist_pop(&done);
@@ -681,18 +628,20 @@ char *xabspath(char *path, int flags)
   }
 
   // Assemble return buffer
-  *(str = xmalloc(try)) = '/';
-  str[try = 1] = 0;
+
+  ret = xmalloc(try);
+  *ret = '/';
+  ret [try = 1] = 0;
   while (todo) {
-    if (try>1) str[try++] = '/';
-    try = stpcpy(str+try, todo->str) - str;
+    if (try>1) ret[try++] = '/';
+    try = stpcpy(ret+try, todo->str) - ret;
     free(llist_pop(&todo));
   }
 
-  return str;
+  return ret;
 
 error:
-  xclose(dirfd);
+  close(dirfd);
   llist_traverse(todo, free);
   llist_traverse(done, free);
 
@@ -971,7 +920,7 @@ void xregcomp(regex_t *preg, char *regex, int cflags)
 
   if ((rc = regcomp(preg, regex, cflags))) {
     regerror(rc, preg, libbuf, sizeof(libbuf));
-    error_exit("bad regex '%s': %s", regex, libbuf);
+    error_exit("bad regex: %s", libbuf);
   }
 }
 
@@ -1021,11 +970,9 @@ void xparsedate(char *str, time_t *t, unsigned *nano, int endian)
   struct tm tm;
   time_t now = *t;
   int len = 0, i = 0;
-  long long ll;
   // Formats with seconds come first. Posix can't agree on whether 12 digits
   // has year before (touch -t) or year after (date), so support both.
   char *s = str, *p, *oldtz = 0, *formats[] = {"%Y-%m-%d %T", "%Y-%m-%dT%T",
-    "%a %b %e %H:%M:%S %Z %Y", // date(1) output format in POSIX/C locale.
     "%H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d", "%H:%M", "%m%d%H%M",
     endian ? "%m%d%H%M%y" : "%y%m%d%H%M",
     endian ? "%m%d%H%M%C%y" : "%C%y%m%d%H%M"};
@@ -1033,15 +980,31 @@ void xparsedate(char *str, time_t *t, unsigned *nano, int endian)
   *nano = 0;
 
   // Parse @UNIXTIME[.FRACTION]
-  if (1 == sscanf(s, "@%lld%n", &ll, &len)) {
-    if (*(s+=len)=='.') for (len = 0, s++; len<9; len++) {
-      *nano *= 10;
-      if (isdigit(*s)) *nano += *s++-'0';
+  if (*str == '@') {
+    long long ll;
+
+    // Collect seconds and nanoseconds.
+    // &ll is not just t because we can't guarantee time_t is 64 bit (yet).
+    sscanf(s, "@%lld%n", &ll, &len);
+    if (s[len]=='.') {
+      s += len+1;
+      for (len = 0; len<9; len++) {
+        *nano *= 10;
+        if (isdigit(*s)) *nano += *s++-'0';
+      }
     }
-    // Can't be sure t is 64 bit (yet) for %lld above
     *t = ll;
-    if (!*s) return;
+    if (!s[len]) return;
     xvali_date(0, str);
+  }
+
+  // Trailing Z means UTC timezone, don't expect libc to know this.
+  // (Trimming it off here means it won't show up in error messages.)
+  if ((i = strlen(str)) && toupper(str[i-1])=='Z') {
+    str[--i] = 0;
+    oldtz = getenv("TZ");
+    if (oldtz) oldtz = xstrdup(oldtz);
+    setenv("TZ", "UTC0", 1);
   }
 
   // Try each format
@@ -1051,7 +1014,6 @@ void xparsedate(char *str, time_t *t, unsigned *nano, int endian)
     tm.tm_isdst = -endian;
 
     if ((p = strptime(s, formats[i], &tm))) {
-      // Handle optional fractional seconds.
       if (*p == '.') {
         p++;
         // If format didn't already specify seconds, grab seconds
@@ -1067,35 +1029,6 @@ void xparsedate(char *str, time_t *t, unsigned *nano, int endian)
         }
       }
 
-      // Handle optional Z or +HH[[:]MM] timezone
-      while (isspace(*p)) p++;
-      if (*p && strchr("Z+-", *p)) {
-        unsigned uu[3] = {0}, n = 0, nn = 0;
-        char *tz = 0, sign = *p++;
-
-        if (sign == 'Z') tz = "UTC0";
-        else if (0<sscanf(p, " %u%n : %u%n : %u%n", uu,&n,uu+1,&nn,uu+2,&nn)) {
-          if (n>2) {
-            uu[1] += uu[0]%100;
-            uu[0] /= 100;
-          }
-          if (n>nn) nn = n;
-          if (!nn) continue;
-
-          // flip sign because POSIX UTC offsets are backwards
-          sprintf(tz = libbuf, "UTC%c%02u:%02u:%02u", "+-"[sign=='+'],
-            uu[0], uu[1], uu[2]);
-          p += nn;
-        }
-
-        if (!oldtz) {
-          oldtz = getenv("TZ");
-          if (oldtz) oldtz = xstrdup(oldtz);
-        }
-        if (tz) setenv("TZ", tz, 1);
-      }
-      while (isspace(*p)) p++;
-
       if (!*p) break;
     }
   }
@@ -1107,31 +1040,17 @@ void xparsedate(char *str, time_t *t, unsigned *nano, int endian)
   free(oldtz);
 }
 
-// Return line of text from file. Strips trailing newline (if any).
-char *xgetline(FILE *fp)
+char *xgetline(FILE *fp, int *len)
 {
   char *new = 0;
-  size_t len = 0;
-  long ll;
+  size_t linelen = 0;
 
   errno = 0;
-  if (1>(ll = getline(&new, &len, fp))) {
-    if (errno && errno != EINTR) perror_msg("getline");
+  if (1>(linelen = getline(&new, &linelen, fp))) {
+    if (errno) perror_msg("getline");
     new = 0;
-  } else if (new[ll-1] == '\n') new[--ll] = 0;
+  } else if (new[linelen-1] == '\n') new[--linelen] = 0;
+  if (len) *len = linelen;
 
   return new;
-}
-
-time_t xmktime(struct tm *tm, int utc)
-{
-  char *old_tz = utc ? xtzset("UTC0") : 0;
-  time_t result;
-
-  if ((result = mktime(tm)) < 0) error_exit("mktime");
-  if (utc) {
-    free(xtzset(old_tz));
-    free(old_tz);
-  }
-  return result;
 }

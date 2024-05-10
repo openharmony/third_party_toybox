@@ -37,7 +37,7 @@ struct bitbuf {
 };
 
 // malloc a struct bitbuf
-static struct bitbuf *bitbuf_init(int fd, int size)
+struct bitbuf *bitbuf_init(int fd, int size)
 {
   struct bitbuf *bb = xzalloc(sizeof(struct bitbuf)+size);
 
@@ -50,7 +50,7 @@ static struct bitbuf *bitbuf_init(int fd, int size)
 // Advance bitpos without the overhead of recording bits
 // Loads more data when input buffer empty
 // call with 0 to just load data, returns 0 at EOF
-static int bitbuf_skip(struct bitbuf *bb, int bits)
+int bitbuf_skip(struct bitbuf *bb, int bits)
 {
   int pos = bb->bitpos + bits + (bits<0), len;
 
@@ -80,7 +80,7 @@ static inline int bitbuf_bit(struct bitbuf *bb)
 }
 
 // Fetch the next X bits from the bitbuf, little endian
-static unsigned bitbuf_get(struct bitbuf *bb, int bits)
+unsigned bitbuf_get(struct bitbuf *bb, int bits)
 {
   int result = 0, offset = 0;
 
@@ -106,7 +106,7 @@ static unsigned bitbuf_get(struct bitbuf *bb, int bits)
   return result;
 }
 
-static void bitbuf_flush(struct bitbuf *bb)
+void bitbuf_flush(struct bitbuf *bb)
 {
   if (!bb->bitpos) return;
 
@@ -115,7 +115,7 @@ static void bitbuf_flush(struct bitbuf *bb)
   bb->bitpos = 0;
 }
 
-static void bitbuf_put(struct bitbuf *bb, int data, int len)
+void bitbuf_put(struct bitbuf *bb, int data, int len)
 {
   while (len) {
     int click = bb->bitpos >> 3, blow, blen;
@@ -331,7 +331,7 @@ static void deflate(struct deflate *dd, struct bitbuf *bb)
   while (!final) {
     // Read next half-window of data if we haven't hit EOF yet.
     len = readall(dd->infd, data+(dd->len&32768), 32768);
-    if (len < 0) perror_exit("read"); // TODO: add filename
+    if (len < 0) perror_exit("read"); // todo: add filename
     if (len != 32768) final++;
     if (dd->crcfunc) dd->crcfunc(dd, data+(dd->len&32768), len);
     // dd->len += len;  crcfunc advances len TODO
@@ -412,7 +412,7 @@ static int is_gzip(struct bitbuf *bb)
   bitbuf_skip(bb, 6*8);
 
   // Skip extra, name, comment, header CRC fields
-  if (flags & 4) bitbuf_skip(bb, bitbuf_get(bb, 16) * 8);
+  if (flags & 4) bitbuf_skip(bb, 16);
   if (flags & 8) while (bitbuf_get(bb, 8));
   if (flags & 16) while (bitbuf_get(bb, 8));
   if (flags & 2) bitbuf_skip(bb, 16);
@@ -420,7 +420,7 @@ static int is_gzip(struct bitbuf *bb)
   return 1;
 }
 
-static void gzip_crc(struct deflate *dd, char *data, unsigned len)
+void gzip_crc(struct deflate *dd, char *data, unsigned len)
 {
   int i;
   unsigned crc, *crc_table = dd->crctable;
@@ -433,17 +433,14 @@ static void gzip_crc(struct deflate *dd, char *data, unsigned len)
 
 /*
 // Start with crc = 1, or pass in last crc to append more data
-// Deferred modulus good for paged size inputs (can't overflow for ~5500 bytes)
 unsigned adler32(char *buf, unsigned len, unsigned crc)
 {
   unsigned aa = crc&((1<<16)-1), bb = crc>>16;
-
   while (len--) {
-    aa += *buf++;
-    bb += aa;
+    aa = (aa+*buf)%65521;
+    bb = (bb+aa)%65521;
   }
-
-  return ((bb%65521)<<16)+aa%65521;
+  return (bb<16)+aa;
 }
 */
 

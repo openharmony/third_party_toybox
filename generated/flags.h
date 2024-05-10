@@ -1188,13 +1188,12 @@
 #undef FOR_hello
 #endif
 
-// help ahu ahu
+// help ah ah
 #undef OPTSTR_help
-#define OPTSTR_help "ahu"
+#define OPTSTR_help "ah"
 #ifdef CLEANUP_help
 #undef CLEANUP_help
 #undef FOR_help
-#undef FLAG_u
 #undef FLAG_h
 #undef FLAG_a
 #endif
@@ -4467,13 +4466,11 @@
 #endif
 
 #ifdef FOR_help
-#define CLEANUP_help
 #ifndef TT
 #define TT this.help
 #endif
-#define FLAG_u (1LL<<0)
-#define FLAG_h (1LL<<1)
-#define FLAG_a (1LL<<2)
+#define FLAG_h (1<<0)
+#define FLAG_a (1<<1)
 #endif
 
 #ifdef FOR_hexdump
