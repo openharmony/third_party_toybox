@@ -2,13 +2,13 @@
 
 #include "toys.h"
 
-// In libc, populated by start code, used by getenv() and exec() and friends.
+// In libc, populated by start code,used by getenv() and exec() and friends.
 extern char **environ;
 
 // Returns the number of bytes taken by the environment variables. For use
 // when calculating the maximum bytes of environment+argument data that can
 // be passed to exec for find(1) and xargs(1).
-long environ_bytes(void)
+long environ_bytes()
 {
   long bytes = sizeof(char *);
   char **ev;
@@ -22,92 +22,67 @@ long environ_bytes(void)
 // Use this instead of envc so we keep track of what needs to be freed.
 void xclearenv(void)
 {
-  if (toys.envc) {
-    int i;
-
-    for (i = 0; environ[i]; i++) if (i>=toys.envc) free(environ[i]);
-  } else environ = xmalloc(256*sizeof(char *));
-  toys.envc = 1;
+  toys.envc = 0;
   *environ = 0;
 }
 
 // Frees entries we set earlier. Use with libc getenv but not setenv/putenv.
 // if name has an equals and !val, act like putenv (name=val must be malloced!)
 // if !val unset name. (Name with = and val is an error)
-// returns pointer to new name=value environment string, NULL if none
-char *xsetenv(char *name, char *val)
+void xsetenv(char *name, char *val)
 {
-  unsigned i, j = 0, len;
+  unsigned i, len, envc;
   char *new;
 
   // If we haven't snapshot initial environment state yet, do so now.
   if (!toys.envc) {
-
     // envc is size +1 so even if env empty it's nonzero after initialization
     while (environ[toys.envc++]);
-    memcpy(new = xmalloc(((toys.envc|31)+1)*sizeof(char *)), environ,
-      toys.envc*sizeof(char *));
+    memcpy(new = xmalloc(((toys.envc|0xff)+1)*sizeof(char *)),
+      environ, toys.envc*sizeof(char *));
     environ = (void *)new;
   }
 
-  if (!(new = strchr(name, '='))) {
-    len = strlen(name);
-    if (val) new = xmprintf("%s=%s", name, val);
-  } else {
+  new = strchr(name, '=');
+  if (new) {
     len = new-name;
     if (val) error_exit("xsetenv %s to %s", name, val);
     new = name;
+  } else {
+    len = strlen(name);
+    if (val) new = xmprintf("%s=%s", name, val);
   }
 
+  envc = toys.envc-1;  // compensate for size +1 above
   for (i = 0; environ[i]; i++) {
     // Drop old entry, freeing as appropriate. Assumes no duplicates.
-    if (!smemcmp(name, environ[i], len) && environ[i][len]=='=') {
-      if (i<toys.envc-1) toys.envc--;
-      else free(environ[i]);
-      j++;
+    if (!memcmp(name, environ[i], len) && environ[i][len]=='=') {
+      if (i>=envc) free(environ[i]);
+      else {
+        // move old entries down, add at end of old data
+        toys.envc = envc--;
+        for (; new ? i<envc : !!environ[i]; i++) environ[i] = environ[i+1];
+        i = envc;
+      }
+      break;
     }
-
-    // move data down to fill hole, including null terminator
-    if (j && !(environ[i] = environ[i+1])) break;
   }
 
-  if (!new) return 0;
+  if (!new) return;
 
   // resize and null terminate if expanding
-  if (!j && !environ[i]) {
+  if (!environ[i]) {
     len = i+1;
-    if (!(len&31)) environ = xrealloc(environ, (len+32)*sizeof(char *));
+    if (!(len&255)) environ = xrealloc(environ, len*sizeof(char *));
     environ[len] = 0;
   }
-
-  return environ[i] = new;
+  environ[i] = new;
 }
 
 void xunsetenv(char *name)
 {
   if (strchr(name, '=')) error_exit("xunsetenv %s name has =", name);
   xsetenv(name, 0);
-}
-
-// remove entry and return pointer instead of freeing
-char *xpop_env(char *name)
-{
-  int len, i;
-  char *s = 0;
-
-  for (len = 0; name[len] && name[len]!='='; len++);
-  for (i = 0; environ[i]; i++) {
-    if (!s && !strncmp(name, environ[i], len) && environ[i][len] == '=') {
-      s = environ[i];
-      if (toys.envc-1>i) {
-        s = xstrdup(s);
-        toys.envc--;
-      }
-    }
-    if (s) environ[i] = environ[i+1];
-  }
-
-  return s;
 }
 
 // reset environment for a user, optionally clearing most of it

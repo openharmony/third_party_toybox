@@ -184,14 +184,16 @@ void ftpget_main(void)
     // PASV output is "227 PASV ok (x,x,x,x,p1,p2)" where x,x,x,x is the IP addr
     // (must match the server you're talking to???) and port is (256*p1)+p2
     s = 0;
-    if (rc==227) for (s = toybuf; (s = strchr(s, ',')); s++) {
-      int p1, got = 0;
+    if (rc==227) {
+      for (s = toybuf; (s = strchr(s, ',')); s++) {
+        int p1, got = 0;
 
-      sscanf(s, ",%u,%u)%n", &p1, &port, &got);
-      if (!got) continue;
-      port += 256*p1;
-      break;
-    }
+        sscanf(s, ",%u,%u)%n", &p1, &port, &got);
+        if (!got) continue;
+        port += 256*p1;
+        break;
+      }
+	}
     if (!s || port<1 || port>65535) {
       error_msg("ftpget_main line %d, port %d toybox buf %s\r\n", __LINE__, port, toybuf);
       ftp_line("QUIT", 0, 0);
@@ -209,9 +211,9 @@ void ftpget_main(void)
     // if file exists before creating local copy
     lenr = 0;
     if (toys.optflags&(FLAG_s|FLAG_g)) {
-      if (ftp_line("SIZE", remote, 0) == 213)
+      if (ftp_line("SIZE", remote, 0) == 213) {
         sscanf(toybuf, "%*u %llu", &lenr);
-      else if (get) {
+      } else if (get) {
         error_msg("ftpget_main line %d, port %d get %d toybox buf %s\r\n", __LINE__, port, get, toybuf);
         ftp_line("QUIT", 0, 0);
         if (TT.fd >= 0) {
@@ -248,6 +250,9 @@ void ftpget_main(void)
       ftp_line(cmd, remote, -1);
       lenl += xsendfile(port, ii);
       ftp_line(0, 0, (toys.optflags&FLAG_g) ? 226 : 150);
+      close(port);
+      port = -1;
+      TT.datafd = -1;
     } else if (toys.optflags & FLAG_s) {
       cmd = "STOR";
       if (cnt && lenr) {
@@ -256,6 +261,7 @@ void ftpget_main(void)
       } else lenr = 0;
       ftp_line(cmd, remote, 150);
       lenr += xsendfile(ii, port);
+      ftp_line(0, 0, 426);
       close(port);
       port = -1;
       TT.datafd = -1;
@@ -263,7 +269,7 @@ void ftpget_main(void)
     if (toys.optflags&(FLAG_g|FLAG_s)) {
       if (lenl != lenr) {
         error_msg("ftpget_main line %d, len local %d len remote %d toybox buf %s\r\n", __LINE__, lenl, lenr, toybuf);
-        ftp_line("QUIT", ((port == -1) ? -1 : 0), 0);
+        ftp_line("QUIT", 0, ((port == -1) ? -1 : 0));
         if (TT.fd >= 0) {
           xclose(TT.fd);
         }
@@ -279,7 +285,7 @@ void ftpget_main(void)
   }
 
 done:
-  ftp_line("QUIT", ((port == -1) ? -1 : 0), 0);
+  ftp_line("QUIT", 0, ((port == -1) ? -1 : 0));
   if (ii!=1) xclose(ii);
   if (port>=0) xclose(port);
   if (TT.fd>=0) xclose(TT.fd);
