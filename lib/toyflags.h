@@ -32,8 +32,11 @@
 // Suppress default --help processing
 #define TOYFLAG_NOHELP   (1<<10)
 
-// Line buffered stdout
-#define TOYFLAG_LINEBUF  (1<<11)
-
 // Error code to return if argument parsing fails (default 1)
 #define TOYFLAG_ARGFAIL(x) (x<<24)
+
+#if CFG_TOYBOX_PEDANTIC_ARGS
+#define NO_ARGS ">0"
+#else
+#define NO_ARGS 0
+#endif

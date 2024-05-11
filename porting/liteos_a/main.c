@@ -5,6 +5,7 @@
 
 #include "toys.h"
 
+
 // Populate toy_list[].
 
 #undef NEWTOY
@@ -21,7 +22,7 @@ struct toy_list toy_list[] = {
 
 struct toy_context toys;
 union global_union this;
-char *toybox_version = TOYBOX_VERSION, toybuf[4096], libbuf[4096];
+char toybuf[4096], libbuf[4096];
 
 struct toy_list *toy_find(char *name)
 {
@@ -29,11 +30,14 @@ struct toy_list *toy_find(char *name)
 
   if (!CFG_TOYBOX || strchr(name, '/')) return 0;
 
-  // Multiplexer name works as prefix, else skip first entry (it's out of order)
-  if (!toys.which && strstart(&name, toy_list->name)) return toy_list;
+  // If the name starts with "toybox" accept that as a match.  Otherwise
+  // skip the first entry, which is out of order.
+
+  if (!strncmp(name, "toybox", 6)) return toy_list;
   bottom = 1;
 
   // Binary search to find this command.
+
   top = ARRAY_LEN(toy_list)-1;
   for (;;) {
     int result;
@@ -60,112 +64,46 @@ static const int NEED_OPTIONS =
 #include "generated/newtoys.h"
 0;  // Ends the opts || opts || opts...
 
-// Populate help text array
-
-#undef NEWTOY
-#undef OLDTOY
-#define NEWTOY(name,opt,flags) HELP_##name "\0"
-#if CFG_TOYBOX
-#define OLDTOY(name,oldname,flags) "\xff" #oldname "\0"
-#else
-#define OLDTOY(name, oldname, flags) HELP_##oldname "\0"
-#endif
-
-#include "generated/help.h"
-static char *help_data =
-#include "generated/newtoys.h"
-;
-
-void show_help(FILE *out, int flags)
-{
-  int i = toys.which-toy_list;
-  char *s, *ss;
-
-  if (CFG_TOYBOX_HELP) {
-    if (flags & HELP_HEADER)
-      fprintf(out, "Toybox %s"USE_TOYBOX(" multicall binary")"%s\n\n",
-        toybox_version, (CFG_TOYBOX && i) ? " (see toybox --help)"
-        : " (see https://landley.net/toybox)");
-
-    for (;;) {
-      s = help_data;
-      while (i--) s += strlen(s) + 1;
-      // If it's an alias, restart search for real name
-      if (*s != 255) break;
-      i = toy_find(++s)-toy_list;
-      if ((flags & HELP_SEE) && toy_list[i].flags) {
-        if (flags & HELP_HTML) fprintf(out, "See <a href=#%s>%s</a>\n", s, s);
-        else fprintf(out, "%s see %s\n", toys.which->name, s);
-
-        return;
-      }
-    }
-
-    if (!(flags & HELP_USAGE)) fprintf(out, "%s\n", s);
-    else {
-      strstart(&s, "usage: ");
-      for (ss = s; *ss && *ss!='\n'; ss++);
-      fprintf(out, "%.*s\n", (int)(ss-s), s);
-    }
-  }
-}
-
 static void unknown(char *name)
 {
   toys.exitval = 127;
   toys.which = toy_list;
-  help_exit("Unknown command %s", name);
-}
-
-// Parse --help and --version for (almost) all commands
-void check_help(char **arg)
-{
-  if (!CFG_TOYBOX_HELP_DASHDASH || !*arg) return;
-  if (!CFG_TOYBOX || toys.which != toy_list)
-    if (toys.which->flags&TOYFLAG_NOHELP) return;
-
-  if (!strcmp(*arg, "--help")) {
-    if (CFG_TOYBOX && toys.which == toy_list && arg[1]) {
-      toys.which = 0;
-      if (!(toys.which = toy_find(arg[1]))) unknown(arg[1]);
-    }
-    show_help(stdout, HELP_HEADER);
-    xexit();
-  }
-
-  if (!strcmp(*arg, "--version")) {
-    xprintf("toybox %s\n", toybox_version);
-    xexit();
-  }
+  error_exit("Unknown command %s", name);
 }
 
 // Setup toybox global state for this command.
-void toy_singleinit(struct toy_list *which, char *argv[])
+static void toy_singleinit(struct toy_list *which, char *argv[])
 {
   toys.which = which;
   toys.argv = argv;
-  toys.toycount = ARRAY_LEN(toy_list);
+
+  if (CFG_TOYBOX_I18N) setlocale(LC_CTYPE, "C.UTF-8");
+  setlinebuf(stdout);
+
+  // Parse --help and --version for (almost) all commands
+  if (CFG_TOYBOX_HELP_DASHDASH && !(which->flags & TOYFLAG_NOHELP) && argv[1]) {
+    if (!strcmp(argv[1], "--help")) {
+      if (CFG_TOYBOX && toys.which == toy_list && toys.argv[2])
+        if (!(toys.which = toy_find(toys.argv[2]))) unknown(toys.argv[2]);
+      show_help(stdout);
+      xexit();
+    }
+
+    if (!strcmp(argv[1], "--version")) {
+      xputs("toybox "TOYBOX_VERSION);
+      xexit();
+    }
+  }
 
   if (NEED_OPTIONS && which->options) get_optflags();
   else {
-    check_help(toys.optargs = argv+1);
+    toys.optargs = argv+1;
     for (toys.optc = 0; toys.optargs[toys.optc]; toys.optc++);
   }
-
-  // Setup we only want to do once: skip for multiplexer or NOFORK reentry
-  if (!(CFG_TOYBOX && which == toy_list) && !(which->flags & TOYFLAG_NOFORK)) {
-    toys.old_umask = umask(0);
-    if (!(which->flags & TOYFLAG_UMASK)) umask(toys.old_umask);
-
-    // Try user's locale, but if that isn't UTF-8 merge in a UTF-8 locale's
-    // character type data. (Fall back to en_US for MacOS.)
-    setlocale(LC_CTYPE, "");
-    if (strcmp("UTF-8", nl_langinfo(CODESET)))
-      uselocale(newlocale(LC_CTYPE_MASK, "C.UTF-8", 0) ? :
-        newlocale(LC_CTYPE_MASK, "en_US.UTF-8", 0));
-
-    setvbuf(stdout, 0, (which->flags & TOYFLAG_LINEBUF) ? _IOLBF : _IONBF, 0);
-  }
+  toys.old_umask = umask(0);
+  if (!(which->flags & TOYFLAG_UMASK)) umask(toys.old_umask);
+  toys.signalfd--;
+  toys.toycount = ARRAY_LEN(toy_list);
 }
 
 // Full init needed by multiplexer or reentrant calls, calls singleinit at end
@@ -174,6 +112,7 @@ void toy_init(struct toy_list *which, char *argv[])
   void *oldwhich = toys.which;
 
   // Drop permissions for non-suid commands.
+
   if (CFG_TOYBOX_SUID) {
     if (!toys.which) toys.which = toy_list;
 
@@ -188,11 +127,7 @@ void toy_init(struct toy_list *which, char *argv[])
     } else if (CFG_TOYBOX_DEBUG && uid && which != toy_list)
       error_msg("Not installed suid root");
 
-    if ((which->flags & TOYFLAG_NEEDROOT) && euid != KERNEL_PROCESS_GROUP) {
-      toys.which = which;
-      check_help(argv+1);
-      help_exit("Not root");
-    }
+    if ((which->flags & TOYFLAG_NEEDROOT) && euid != KERNEL_PROCESS_GROUP) help_exit("Not root");
   }
 
   // Free old toys contents (to be reentrant), but leave rebound if any
@@ -207,10 +142,10 @@ void toy_init(struct toy_list *which, char *argv[])
 
 // Run an internal toybox command.
 // Only returns if it can't run command internally, otherwise xexit() when done.
-static void toy_exec_which(struct toy_list *which, char *argv[])
+void toy_exec_which(struct toy_list *which, char *argv[])
 {
   // Return if we can't find it (which includes no multiplexer case),
-  if (!which || (which->flags&TOYFLAG_NOFORK)) return;
+  if (!which) return;
 
   // Return if stack depth getting noticeable (proxy for leaked heap, etc).
 
@@ -233,46 +168,45 @@ static void toy_exec_which(struct toy_list *which, char *argv[])
 // Lookup internal toybox command to run via argv[0]
 void toy_exec(char *argv[])
 {
-  toy_exec_which(toy_find(*argv), argv);
+  toy_exec_which(toy_find(basename(*argv)), argv);
 }
 
 // Multiplexer command, first argument is command to run, rest are args to that.
 // If first argument starts with - output list of command install paths.
 void toybox_main(void)
 {
-  char *toy_paths[] = {"usr/", "bin/", "sbin/", 0}, *s = toys.argv[1];
+  static char *toy_paths[]={"usr/","bin/","sbin/",0};
   int i, len = 0;
-  unsigned width = 80;
 
   // fast path: try to exec immediately.
   // (Leave toys.which null to disable suid return logic.)
-  // Try dereferencing symlinks until we hit a recognized name
-  while (s) {
-    char *ss = basename(s);
-    struct toy_list *tl = toy_find(ss);
+  // Try dereferencing one layer of symlink
+  if (toys.argv[1]) {
+    toy_exec(toys.argv+1);
+    if (0<readlink(toys.argv[1], libbuf, sizeof(libbuf))) {
+      struct toy_list *tl= toy_find(basename(libbuf));
 
-    if (tl==toy_list && s!=toys.argv[1]) unknown(ss);
-    toy_exec_which(tl, toys.argv+1);
-    s = (0<readlink(s, libbuf, sizeof(libbuf))) ? libbuf : 0;
+      if (tl == toy_list) unknown(basename(toys.argv[1]));
+      else toy_exec_which(tl, toys.argv+1);
+    }
   }
 
   // For early error reporting
   toys.which = toy_list;
 
-  if (toys.argv[1] && strcmp(toys.argv[1], "--long")) unknown(toys.argv[1]);
+  if (toys.argv[1] && toys.argv[1][0] != '-') unknown(toys.argv[1]);
 
-  // Output list of commands.
-  terminal_size(&width, 0);
-  for (i = 1; i<ARRAY_LEN(toy_list); i++) {
+  // Output list of command.
+  for (i=1; i<ARRAY_LEN(toy_list); i++) {
     int fl = toy_list[i].flags;
     if (fl & TOYMASK_LOCATION) {
       if (toys.argv[1]) {
         int j;
-        for (j = 0; toy_paths[j]; j++)
+        for (j=0; toy_paths[j]; j++)
           if (fl & (1<<j)) len += printf("%s", toy_paths[j]);
       }
       len += printf("%s",toy_list[i].name);
-      if (++len > width-15) len = 0;
+      if (++len > 65) len = 0;
       xputc(len ? ' ' : '\n');
     }
   }
@@ -281,27 +215,40 @@ void toybox_main(void)
 
 int main(int argc, char *argv[])
 {
-  // don't segfault if our environment is crazy
   if (!*argv) return 127;
 
   // Snapshot stack location so we can detect recursion depth later.
-  // Nommu has special reentry path, !stacktop = "vfork/exec self happened"
-  if (!CFG_TOYBOX_FORK && (0x80 & **argv)) **argv &= 0x7f;
+  // This is its own block so probe doesn't permanently consume stack.
   else {
-    int stack_start;  // here so probe var won't permanently eat stack
+    int stack;
 
-    toys.stacktop = &stack_start;
+    toys.stacktop = &stack;
   }
 
-  // Android before O had non-default SIGPIPE, 7 years = remove in Sep 2024.
+  // Up to and including Android M, bionic's dynamic linker added a handler to
+  // cause a crash dump on SIGPIPE. That was removed in Android N, but adbd
+  // was still setting the SIGPIPE disposition to SIG_IGN, and its children
+  // were inheriting that. In Android O, adbd is fixed, but manually asking
+  // for the default disposition is harmless, and it'll be a long time before
+  // no one's using anything older than O!
   if (CFG_TOYBOX_ON_ANDROID) signal(SIGPIPE, SIG_DFL);
 
+  // If nommu can't fork, special reentry path.
+  // Use !stacktop to signal "vfork happened", both before and after xexec()
+  if (!CFG_TOYBOX_FORK) {
+    if (0x80 & **argv) {
+      **argv &= 0x7f;
+      toys.stacktop = 0;
+    }
+  }
+
   if (CFG_TOYBOX) {
-    // Call the multiplexer with argv[] as its arguments so it can toy_find()
+    // Call the multiplexer, adjusting this argv[] to be its' argv[1].
+    // (It will adjust it back before calling toy_exec().)
     toys.argv = argv-1;
     toybox_main();
   } else {
-    // single command built standalone with no multiplexer is first list entry
+    // a single toybox command built standalone with no multiplexer
     toy_singleinit(toy_list, argv);
     toy_list->toy_main();
   }
