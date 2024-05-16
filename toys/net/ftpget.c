@@ -261,10 +261,10 @@ void ftpget_main(void)
       } else lenr = 0;
       ftp_line(cmd, remote, 150);
       lenr += xsendfile(ii, port);
-      ftp_line(0, 0, 426);
       close(port);
       port = -1;
       TT.datafd = -1;
+      ftp_line(0, 0, 226);
     }
     if (toys.optflags&(FLAG_g|FLAG_s)) {
       if (lenl != lenr) {
