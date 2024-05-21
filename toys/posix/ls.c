@@ -63,6 +63,19 @@ GLOBALS(
   char *escmore;
 )
 
+static unsigned long g_block_size = 4096;
+
+void get_block_size(struct dirtree *indir)
+{
+  if (indir == NULL) return;
+  const char *path = dirtree_path(indir, 0);
+  if (path == NULL) return;
+  struct statvfs buf;
+  if (statvfs(path, &buf) == 0) {
+    g_block_size = buf.f_bsize;
+  }
+}
+
 // Callback from crunch_str to represent unprintable chars
 static int crunch_qb(FILE *out, int cols, int wc)
 {
@@ -152,7 +165,7 @@ static void entrylen(struct dirtree *dt, unsigned *len)
     } else len[5] = print_with_h(tmp, st->st_size, 1);
   }
 
-  len[6] = (flags & FLAG_s) ? print_with_h(tmp, st->st_blocks, 512) : 0;
+  len[6] = (flags & FLAG_s) ? print_with_h(tmp, st->st_blocks, g_block_size) : 0;
   len[7] = (flags & FLAG_Z) ? strwidth((char *)dt->extra) : 0;
 }
 
@@ -371,7 +384,7 @@ static void listfiles(int dirfd, struct dirtree *indir)
     }
     totpad = totals[1]+!!totals[1]+totals[6]+!!totals[6]+totals[7]+!!totals[7];
     if ((flags&(FLAG_h|FLAG_l|FLAG_o|FLAG_n|FLAG_g|FLAG_s)) && indir->parent) {
-      print_with_h(tmp, blocks, 512);
+      print_with_h(tmp, blocks, g_block_size);
       xprintf("total %s\n", tmp);
     }
   }
@@ -444,7 +457,7 @@ static void listfiles(int dirfd, struct dirtree *indir)
     if (flags & FLAG_i) zprint(zap, "lu ", totals[1], st->st_ino);
 
     if (flags & FLAG_s) {
-      print_with_h(tmp, st->st_blocks, 512);
+      print_with_h(tmp, st->st_blocks, g_block_size);
       zprint(zap, "s ", totals[6], (unsigned long)tmp);
     }
 
@@ -605,6 +618,7 @@ void ls_main(void)
   for (dt = TT.files->child; dt; dt = dt->next) dt->parent = TT.files;
 
   // Display the files we collected
+  get_block_size(TT.files->child);
   listfiles(AT_FDCWD, TT.files);
 
   if (CFG_TOYBOX_FREE) free(TT.files);
