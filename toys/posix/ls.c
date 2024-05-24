@@ -226,7 +226,9 @@ static int filter(struct dirtree *new)
 
   if (flags & FLAG_u) new->st.st_mtime = new->st.st_atime;
   if (flags & FLAG_c) new->st.st_mtime = new->st.st_ctime;
-  new->st.st_blocks >>= 1;
+  // In Linux, the st_block unit of the stat structure is 512B, so we use 512B
+  // rather than 1KiB as blocks unit, which is different from the implementation
+  // logic of the Toybox community.
 
   if (flags & (FLAG_a|FLAG_f)) return DIRTREE_SAVE;
   if (!(flags & FLAG_A) && new->name[0]=='.') return 0;
