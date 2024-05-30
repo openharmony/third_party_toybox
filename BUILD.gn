@@ -461,6 +461,7 @@ if (defined(ohos_lite)) {
   }
 } else {
   import("//build/ohos.gni")
+
   ohos_executable("su") {
     sources = [ "openharmony/su.c" ]
 
@@ -500,7 +501,8 @@ if (defined(ohos_lite)) {
       "-lcrypt",
     ]
 
-    part_name = "toybox"
+    part_name = "su"
+    subsystem_name = "thirdparty"
     install_images = [ "eng_system" ]
     install_enable = true
   }
@@ -974,6 +976,7 @@ if (defined(ohos_lite)) {
       symlink_target_name -= [ "restorecon" ]
     }
     part_name = "toybox"
+    subsystem_name = "thirdparty"
     install_images = [
       "system",
       "ramdisk",
