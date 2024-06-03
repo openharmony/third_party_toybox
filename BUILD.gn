@@ -501,7 +501,7 @@ if (defined(ohos_lite)) {
       "-lcrypt",
     ]
 
-    part_name = "su"
+    part_name = "toybox"
     subsystem_name = "thirdparty"
     install_images = [ "eng_system" ]
     install_enable = true
