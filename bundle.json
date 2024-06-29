@@ -26,7 +26,8 @@
         "ram": "146KB",
         "deps": {
             "components": [
-                "selinux"
+                "selinux",
+                "openssl"
             ],
             "third_party": [
                 "selinux",
