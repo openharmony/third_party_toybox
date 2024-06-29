@@ -635,7 +635,6 @@ if (defined(ohos_lite)) {
       "toys/pending/more.c",
       "toys/pending/route.c",
       "toys/pending/telnetd.c",
-      "toys/pending/traceroute.c",
       "toys/posix/basename.c",
       "toys/posix/cal.c",
       "toys/posix/cat.c",
@@ -708,13 +707,17 @@ if (defined(ohos_lite)) {
     include_dirs = [ "./" ]
 
     deps = []
+    defines = [ "_DEFAULT_SOURCE" ]
 
     if (build_selinux) {
-      sources += [ "toys/other/chcon.c" ]
+      sources += [
+        "toys/other/chcon.c",
+        "toys/pending/traceroute.c",
+      ]
       external_deps = [ "selinux:libselinux" ]
+      defines += [ "TOYBOX_EXTRA_CMD" ]
     }
 
-    defines = [ "_DEFAULT_SOURCE" ]
 
     cflags_c = [
       "-std=gnu11",
