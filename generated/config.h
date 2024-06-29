@@ -600,8 +600,8 @@
 #define USE_SHA1SUM(...) __VA_ARGS__
 #define CFG_SHA224SUM 0
 #define USE_SHA224SUM(...)
-#define CFG_SHA256SUM 1
-#define USE_SHA256SUM(...) __VA_ARGS__
+#define CFG_SHA256SUM 0
+#define USE_SHA256SUM(...)
 #define CFG_SHA384SUM 0
 #define USE_SHA384SUM(...)
 #define CFG_SHA512SUM 0
@@ -682,8 +682,8 @@
 #endif // WITH_SELINUX
 #define CFG_TOYBOX_SMACK 0
 #define USE_TOYBOX_SMACK(...)
-#define CFG_TOYBOX_LIBCRYPTO 1
-#define USE_TOYBOX_LIBCRYPTO(...) __VA_ARGS__
+#define CFG_TOYBOX_LIBCRYPTO 0
+#define USE_TOYBOX_LIBCRYPTO(...)
 #define CFG_TOYBOX_LIBZ 0
 #define USE_TOYBOX_LIBZ(...)
 #define CFG_TOYBOX_FLOAT 1
