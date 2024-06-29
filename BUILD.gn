@@ -635,6 +635,7 @@ if (defined(ohos_lite)) {
       "toys/pending/more.c",
       "toys/pending/route.c",
       "toys/pending/telnetd.c",
+      "toys/pending/traceroute.c",
       "toys/posix/basename.c",
       "toys/posix/cal.c",
       "toys/posix/cat.c",
@@ -706,7 +707,7 @@ if (defined(ohos_lite)) {
 
     include_dirs = [ "./" ]
 
-    deps = []
+    deps = [ "//third_party/openssl:libcrypto_shared" ]
 
     if (build_selinux) {
       sources += [ "toys/other/chcon.c" ]
@@ -906,7 +907,6 @@ if (defined(ohos_lite)) {
       "rm",
       "rmdir",
       "rmmod",
-      "route",
       "runcon",
       "sed",
       "sendevent",
@@ -943,6 +943,7 @@ if (defined(ohos_lite)) {
       "top",
       "touch",
       "tr",
+      "traceroute",
       "true",
       "truncate",
       "tty",

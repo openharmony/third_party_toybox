@@ -29,7 +29,8 @@
                 "selinux"
             ],
             "third_party": [
-                "selinux"
+                "selinux",
+                "openssl"
             ]
         },
         "build": {
