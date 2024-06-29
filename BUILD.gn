@@ -718,7 +718,6 @@ if (defined(ohos_lite)) {
       defines += [ "TOYBOX_EXTRA_CMD" ]
     }
 
-
     cflags_c = [
       "-std=gnu11",
       "-Wall",
