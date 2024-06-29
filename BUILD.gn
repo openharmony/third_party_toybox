@@ -707,11 +707,12 @@ if (defined(ohos_lite)) {
 
     include_dirs = [ "./" ]
 
-    deps = [ "//third_party/openssl:libcrypto_shared" ]
+    deps = []
+    external_deps = [ "openssl:libcrypto_shared" ]
 
     if (build_selinux) {
       sources += [ "toys/other/chcon.c" ]
-      external_deps = [ "selinux:libselinux" ]
+      external_deps += [ "selinux:libselinux" ]
     }
 
     defines = [ "_DEFAULT_SOURCE" ]
