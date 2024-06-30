@@ -307,8 +307,8 @@
 #define USE_MKE2FS_EXTENDED(...)
 #define CFG_MODPROBE 0
 #define USE_MODPROBE(...)
-#define CFG_MORE 0
-#define USE_MORE(...)
+#define CFG_MORE 1
+#define USE_MORE(...) __VA_ARGS__
 #define CFG_OPENVT 0
 #define USE_OPENVT(...)
 #define CFG_DEALLOCVT 0
@@ -349,8 +349,13 @@
 #define USE_TFTP(...)
 #define CFG_TFTPD 0
 #define USE_TFTPD(...)
+#ifdef TOYBOX_EXTRA_CMD
+#define CFG_TRACEROUTE 1
+#define USE_TRACEROUTE(...) __VA_ARGS__
+#else
 #define CFG_TRACEROUTE 0
 #define USE_TRACEROUTE(...)
+#endif
 #define CFG_TR 0
 #define USE_TR(...)
 #define CFG_USERADD 0

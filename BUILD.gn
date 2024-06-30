@@ -707,13 +707,16 @@ if (defined(ohos_lite)) {
     include_dirs = [ "./" ]
 
     deps = []
+    defines = [ "_DEFAULT_SOURCE" ]
 
     if (build_selinux) {
-      sources += [ "toys/other/chcon.c" ]
+      sources += [
+        "toys/other/chcon.c",
+        "toys/pending/traceroute.c",
+      ]
       external_deps = [ "selinux:libselinux" ]
+      defines += [ "TOYBOX_EXTRA_CMD" ]
     }
-
-    defines = [ "_DEFAULT_SOURCE" ]
 
     cflags_c = [
       "-std=gnu11",
@@ -906,7 +909,6 @@ if (defined(ohos_lite)) {
       "rm",
       "rmdir",
       "rmmod",
-      "route",
       "runcon",
       "sed",
       "sendevent",
@@ -943,6 +945,7 @@ if (defined(ohos_lite)) {
       "top",
       "touch",
       "tr",
+      "traceroute",
       "true",
       "truncate",
       "tty",
