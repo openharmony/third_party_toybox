@@ -714,7 +714,10 @@ if (defined(ohos_lite)) {
         "toys/other/chcon.c",
         "toys/pending/traceroute.c",
       ]
-      external_deps = [ "selinux:libselinux" ]
+      external_deps = [
+        "openssl:libcrypto_shared",
+        "selinux:libselinux",
+      ]
       defines += [ "TOYBOX_EXTRA_CMD" ]
     }
 
