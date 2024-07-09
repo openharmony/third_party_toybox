@@ -29,7 +29,7 @@ config PING
     -4,		Force IPv4
     -c CNT		Send CNT many packets (default 3, 0 = infinite)
     -f		Flood (print . and \b to show drops, default -c 15 -i 0.2)
-    -i TIME		Interval between packets (default 1, need root for < .2)
+    -i TIME		Interval between packets (default 1, need root for < 0.2)
     -q		Quiet (stops after one returns true if host is alive)
     -s SIZE		Data SIZE in bytes (default 56)
 */
