@@ -46,6 +46,7 @@ config DD
 
 #define FOR_dd
 #include "toys.h"
+#define BS_MAX_SIZE 1073741824
 
 GLOBALS(
   int show_xfer, show_records;
@@ -148,9 +149,10 @@ void dd_main()
   for (args = toys.optargs; *args; args++) {
     char *arg = *args;
 
-    if (strstart(&arg, "bs=")) bs = atolx_range(arg, 1, LONG_MAX);
-    else if (strstart(&arg, "ibs=")) TT.in.sz = atolx_range(arg, 1, LONG_MAX);
-    else if (strstart(&arg, "obs=")) TT.out.sz = atolx_range(arg, 1, LONG_MAX);
+    // set BS_MAX_SIZE to 1073741824(1G) to avoid malloc too much space later.
+    if (strstart(&arg, "bs=")) bs = atolx_range(arg, 1, BS_MAX_SIZE);
+    else if (strstart(&arg, "ibs=")) TT.in.sz = atolx_range(arg, 1, BS_MAX_SIZE);
+    else if (strstart(&arg, "obs=")) TT.out.sz = atolx_range(arg, 1, BS_MAX_SIZE);
     else if (strstart(&arg, "count="))
       TT.c_count = atolx_range(arg, 0, LLONG_MAX);
     else if (strstart(&arg, "if=")) TT.in.name = arg;
