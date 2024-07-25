@@ -3360,13 +3360,15 @@
 #undef FLAG_m
 #endif
 
-// wget   (no-check-certificate)O:
+// wget   <1>1(max-redirect)#<0=20d(debug)O(output-document):
 #undef OPTSTR_wget
-#define OPTSTR_wget "(no-check-certificate)O:"
+#define OPTSTR_wget "<1>1(max-redirect)#<0=20d(debug)O(output-document):"
 #ifdef CLEANUP_wget
 #undef CLEANUP_wget
 #undef FOR_wget
+#undef FLAG_p
 #undef FLAG_O
+#undef FLAG_d
 #undef FLAG_no_check_certificate
 #endif
 
@@ -4022,24 +4024,24 @@
 #ifndef TT
 #define TT this.diff
 #endif
-#define FLAG_U (FORCED_FLAG<<0)
-#define FLAG_r (FORCED_FLAG<<1)
-#define FLAG_N (FORCED_FLAG<<2)
-#define FLAG_S (FORCED_FLAG<<3)
-#define FLAG_L (FORCED_FLAG<<4)
-#define FLAG_a (FORCED_FLAG<<5)
-#define FLAG_q (FORCED_FLAG<<6)
-#define FLAG_s (FORCED_FLAG<<7)
-#define FLAG_T (FORCED_FLAG<<8)
-#define FLAG_i (FORCED_FLAG<<9)
-#define FLAG_w (FORCED_FLAG<<10)
-#define FLAG_t (FORCED_FLAG<<11)
-#define FLAG_u (FORCED_FLAG<<12)
-#define FLAG_b (FORCED_FLAG<<13)
-#define FLAG_d (FORCED_FLAG<<14)
-#define FLAG_B (FORCED_FLAG<<15)
-#define FLAG_strip_trailing_cr (FORCED_FLAG<<16)
-#define FLAG_color (FORCED_FLAG<<17)
+#define FLAG_U (1<<0)
+#define FLAG_r (1<<1)
+#define FLAG_N (1<<2)
+#define FLAG_S (1<<3)
+#define FLAG_L (1<<4)
+#define FLAG_a (1<<5)
+#define FLAG_q (1<<6)
+#define FLAG_s (1<<7)
+#define FLAG_T (1<<8)
+#define FLAG_i (1<<9)
+#define FLAG_w (1<<10)
+#define FLAG_t (1<<11)
+#define FLAG_u (1<<12)
+#define FLAG_b (1<<13)
+#define FLAG_d (1<<14)
+#define FLAG_B (1<<15)
+#define FLAG_strip_trailing_cr (1<<16)
+#define FLAG_color (1<<17)
 #endif
 
 #ifdef FOR_dirname
@@ -6037,26 +6039,26 @@
 #ifndef TT
 #define TT this.traceroute
 #endif
-#define FLAG_4 (FORCED_FLAG<<0)
-#define FLAG_6 (FORCED_FLAG<<1)
-#define FLAG_F (FORCED_FLAG<<2)
-#define FLAG_U (FORCED_FLAG<<3)
-#define FLAG_I (FORCED_FLAG<<4)
-#define FLAG_l (FORCED_FLAG<<5)
-#define FLAG_d (FORCED_FLAG<<6)
-#define FLAG_n (FORCED_FLAG<<7)
-#define FLAG_v (FORCED_FLAG<<8)
-#define FLAG_r (FORCED_FLAG<<9)
-#define FLAG_m (FORCED_FLAG<<10)
-#define FLAG_p (FORCED_FLAG<<11)
-#define FLAG_q (FORCED_FLAG<<12)
-#define FLAG_s (FORCED_FLAG<<13)
-#define FLAG_t (FORCED_FLAG<<14)
-#define FLAG_w (FORCED_FLAG<<15)
-#define FLAG_g (FORCED_FLAG<<16)
-#define FLAG_z (FORCED_FLAG<<17)
-#define FLAG_f (FORCED_FLAG<<18)
-#define FLAG_i (FORCED_FLAG<<19)
+#define FLAG_4 (1<<0)
+#define FLAG_6 (1<<1)
+#define FLAG_F (1<<2)
+#define FLAG_U (1<<3)
+#define FLAG_I (1<<4)
+#define FLAG_l (1<<5)
+#define FLAG_d (1<<6)
+#define FLAG_n (1<<7)
+#define FLAG_v (1<<8)
+#define FLAG_r (1<<9)
+#define FLAG_m (1<<10)
+#define FLAG_p (1<<11)
+#define FLAG_q (1<<12)
+#define FLAG_s (1<<13)
+#define FLAG_t (1<<14)
+#define FLAG_w (1<<15)
+#define FLAG_g (1<<16)
+#define FLAG_z (1<<17)
+#define FLAG_f (1<<18)
+#define FLAG_i (1<<19)
 #endif
 
 #ifdef FOR_true
@@ -6291,8 +6293,10 @@
 #ifndef TT
 #define TT this.wget
 #endif
-#define FLAG_O (FORCED_FLAG<<0)
-#define FLAG_no_check_certificate (FORCED_FLAG<<1)
+#define FLAG_p (1<<0)
+#define FLAG_O (1<<1)
+#define FLAG_d (1<<2)
+#define FLAG_no_check_certificate (1<<3)
 #endif
 
 #ifdef FOR_which
