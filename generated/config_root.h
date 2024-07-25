@@ -7,6 +7,8 @@
 #define USE_TRACEROUTE(...) __VA_ARGS__
 #define CFG_WGET 1
 #define USE_WGET(...) __VA_ARGS__
+#define CFG_WGET_LIBTLS 0
+#define USE_WGET_LIBTLS(...)
 #else
 #define CFG_DIFF 0
 #define USE_DIFF(...)

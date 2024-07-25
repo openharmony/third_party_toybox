@@ -62,7 +62,7 @@ config WGET_OPENSSL
 #if CFG_WGET_LIBTLS
 #define WGET_SSL 1
 #include <tls.h>
-#elif CFG_WGET_OPENSSL
+#elif CFG_TOYBOX_LIBCRYPTO
 #define WGET_SSL 1
 #include <openssl/crypto.h>
 #include <openssl/ssl.h>
@@ -87,7 +87,7 @@ GLOBALS(
   char *url;
 #if CFG_WGET_LIBTLS
   struct tls *tls;
-#elif CFG_WGET_OPENSSL
+#elif CFG_TOYBOX_LIBCRYPTO
   struct ssl_ctx_st *ctx;
   struct ssl_st *ssl;
 #endif
@@ -153,7 +153,7 @@ static void wget_connect(char *host, char *port)
 
     if (tls_connect(TT.tls, host, port) != 0)
       error_exit("tls_connect: %s", tls_error(TT.tls));
-#elif CFG_WGET_OPENSSL
+#elif CFG_TOYBOX_LIBCRYPTO
     SSL_library_init();
     OpenSSL_add_all_algorithms();
     SSL_load_error_strings();
@@ -191,7 +191,7 @@ static size_t wget_read(void *buf, size_t len)
    ssize_t ret = tls_read(TT.tls, buf, len);
    if (ret < 0) error_exit("tls_read: %s", tls_error(TT.tls));
    return ret;
-#elif CFG_WGET_OPENSSL
+#elif CFG_TOYBOX_LIBCRYPTO
    int ret = SSL_read(TT.ssl, buf, (int) len);
    if (ret < 0)
      error_exit("SSL_read: %s", ERR_error_string(ERR_get_error(), NULL));
@@ -208,7 +208,7 @@ static void wget_write(void *buf, size_t len)
 #if CFG_WGET_LIBTLS
     if (len != tls_write(TT.tls, buf, len))
       error_exit("tls_write: %s", tls_error(TT.tls));
-#elif CFG_WGET_OPENSSL
+#elif CFG_TOYBOX_LIBCRYPTO
     if (len != SSL_write(TT.ssl, buf, (int) len))
       error_exit("SSL_write: %s", ERR_error_string(ERR_get_error(), NULL));
 #endif
@@ -228,7 +228,7 @@ static void wget_close()
     tls_free(TT.tls);
     TT.tls = NULL;
   }
-#elif CFG_WGET_OPENSSL
+#elif CFG_TOYBOX_LIBCRYPTO
   if (TT.ssl) {
     SSL_shutdown(TT.ssl);
     SSL_free(TT.ssl);
