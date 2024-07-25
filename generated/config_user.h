@@ -393,6 +393,8 @@
 #define USE_ASCII(...)
 #define CFG_BASE64 1
 #define USE_BASE64(...) __VA_ARGS__
+#define CFG_BASE32 0
+#define USE_BASE32(...)
 #define CFG_BLKID 0
 #define USE_BLKID(...)
 #define CFG_FSTYPE 0
