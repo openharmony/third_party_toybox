@@ -17,7 +17,7 @@
         "name": "toybox",
         "subsystem": "thirdparty",
         "syscap": [],
-        "features": [],
+        "features": [ "toybox_extended_cmd" ],
         "adapted_system_type": [
             "standard",
             "small"
@@ -29,10 +29,7 @@
                 "selinux",
                 "openssl"
             ],
-            "third_party": [
-                "selinux",
-                "openssl"
-            ]
+            "third_party": []
         },
         "build": {
             "sub_component": [
