@@ -1041,7 +1041,7 @@ struct wget_data {
   char *url;
 #if CFG_WGET_LIBTLS
   struct tls *tls;
-#elif CFG_TOYBOX_LIBCRYPTO
+#elif CFG_WGET_OPENSSL
   struct ssl_ctx_st *ctx;
   struct ssl_st *ssl;
 #endif
