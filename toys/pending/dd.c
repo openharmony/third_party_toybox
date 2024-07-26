@@ -46,7 +46,7 @@ config DD
 
 #define FOR_dd
 #include "toys.h"
-#define BS_MAX_SIZE 1073741824
+#define BS_MAX_SIZE INT32_MAX
 
 GLOBALS(
   int show_xfer, show_records;
