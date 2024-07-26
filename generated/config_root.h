@@ -18,6 +18,8 @@
 #define USE_TRACEROUTE(...)
 #define CFG_WGET 0
 #define USE_WGET(...)
+#define CFG_WGET_LIBTLS 0
+#define USE_WGET_LIBTLS(...)
 #endif
 #ifdef WITH_SELINUX
 #define CFG_SHA256SUM 1
