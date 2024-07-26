@@ -9,6 +9,8 @@
 #define USE_WGET(...) __VA_ARGS__
 #define CFG_WGET_LIBTLS 0
 #define USE_WGET_LIBTLS(...)
+#define CFG_WGET_OPENSSL 0
+#define USE_WGET_OPENSSL(...)
 #else
 #define CFG_DIFF 0
 #define USE_DIFF(...)
@@ -20,6 +22,8 @@
 #define USE_WGET(...)
 #define CFG_WGET_LIBTLS 0
 #define USE_WGET_LIBTLS(...)
+#define CFG_WGET_OPENSSL 0
+#define USE_WGET_OPENSSL(...)
 #endif
 #ifdef WITH_SELINUX
 #define CFG_SHA256SUM 1

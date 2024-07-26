@@ -9,6 +9,8 @@
 #define USE_WGET(...) __VA_ARGS__
 #define CFG_WGET_LIBTLS 0
 #define USE_WGET_LIBTLS(...)
+#define CFG_WGET_OPENSSL 0
+#define USE_WGET_OPENSSL(...)
 #define CFG_ULIMIT 1
 #define USE_ULIMIT(...) __VA_ARGS__
 #else
@@ -22,6 +24,8 @@
 #define USE_WGET(...)
 #define CFG_WGET_LIBTLS 0
 #define USE_WGET_LIBTLS(...)
+#define CFG_WGET_OPENSSL 0
+#define USE_WGET_OPENSSL(...)
 #define CFG_ULIMIT 0
 #define USE_ULIMIT(...)
 #endif
