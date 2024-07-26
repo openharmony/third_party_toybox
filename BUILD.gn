@@ -461,6 +461,7 @@ if (defined(ohos_lite)) {
   }
 } else {
   import("//build/ohos.gni")
+  import("toybox.gni")
 
   ohos_executable("su") {
     sources = [ "openharmony/su.c" ]
@@ -628,7 +629,6 @@ if (defined(ohos_lite)) {
       "toys/other/yes.c",
       "toys/pending/bootchartd.c",
       "toys/pending/dd.c",
-      "toys/pending/diff.c",
       "toys/pending/getty.c",
       "toys/pending/lsof.c",
       "toys/pending/mdev.c",
@@ -706,21 +706,6 @@ if (defined(ohos_lite)) {
 
     include_dirs = [ "./" ]
 
-    deps = []
-    defines = [ "_DEFAULT_SOURCE" ]
-
-    if (build_selinux) {
-      sources += [
-        "toys/other/chcon.c",
-        "toys/pending/traceroute.c",
-      ]
-      external_deps = [
-        "openssl:libcrypto_shared",
-        "selinux:libselinux",
-      ]
-      defines += [ "TOYBOX_EXTRA_CMD" ]
-    }
-
     cflags_c = [
       "-std=gnu11",
       "-Wall",
@@ -766,11 +751,18 @@ if (defined(ohos_lite)) {
     }
 
     symlink_target_name = [
+      "acpi",
+      "arch",
+      "ascii",
       "base64",
       "basename",
       "blockdev",
+      "bunzip2",
+      "bzcat",
       "cal",
       "cat",
+      "chattr",
+      "chcon",
       "chgrp",
       "chmod",
       "chown",
@@ -790,7 +782,6 @@ if (defined(ohos_lite)) {
       "dd",
       "devmem",
       "df",
-      "diff",
       "dirname",
       "dmesg",
       "dnsdomainname",
@@ -801,7 +792,6 @@ if (defined(ohos_lite)) {
       "eject",
       "env",
       "expand",
-      "expr",
       "factor",
       "fallocate",
       "false",
@@ -859,7 +849,6 @@ if (defined(ohos_lite)) {
       "makedevs",
       "mcookie",
       "md5sum",
-      "mdev",
       "microcom",
       "mix",
       "mkdir",
@@ -874,7 +863,6 @@ if (defined(ohos_lite)) {
       "mountpoint",
       "mv",
       "nbd-client",
-      "netcat",
       "netstat",
       "nice",
       "nl",
@@ -912,18 +900,13 @@ if (defined(ohos_lite)) {
       "rm",
       "rmdir",
       "rmmod",
-      "runcon",
       "sed",
       "sendevent",
       "seq",
       "setfattr",
       "setsid",
       "sha1sum",
-      "sha224sum",
       "sha256sum",
-      "sha384sum",
-      "sha512sum",
-      "shalsum",
       "shred",
       "sleep",
       "sntp",
@@ -947,8 +930,6 @@ if (defined(ohos_lite)) {
       "timeout",
       "top",
       "touch",
-      "tr",
-      "traceroute",
       "true",
       "truncate",
       "tty",
@@ -978,9 +959,128 @@ if (defined(ohos_lite)) {
       "yes",
       "zcat",
     ]
+
+    deps = []
+    defines = [ "_DEFAULT_SOURCE" ]
+
     if (build_selinux) {
+      sources += [ "toys/other/chcon.c" ]
+      external_deps = [
+        "openssl:libcrypto_shared",
+        "selinux:libselinux",
+      ]
+      symlink_target_name += [ "chcon" ]
       symlink_target_name -= [ "restorecon" ]
+
+      if (toybox_extended_cmd) {
+        defines += [ "TOYBOX_EXTENDED_CMD" ]
+        sources += [
+          "toys/pending/diff.c",
+          "toys/pending/telnet.c",
+          "toys/pending/traceroute.c",
+          "toys/pending/wget.c",
+        ]
+        symlink_target_name += [
+          "traceroute",
+          "traceroute6",
+          "telnet",
+          "wget",
+          "diff",
+        ]
+      } else {
+        if (build_variant == "user") {
+          symlink_target_name -= [ "ulimit" ]
+        }
+      }
+
+      if (build_variant == "root") {
+        defines += [ "TOYBOX_BUILD_ROOT" ]
+      } else {
+        symlink_target_name -= [
+          "hwclock",
+          "usleep",
+          "killall5",
+          "pmap",
+          "mountpoint",
+          "chgrp",
+          "chown",
+          "acpi",
+          "arch",
+          "ascii",
+          "blockdev",
+          "bunzip2",
+          "bzcat",
+          "chattr",
+          "chcon",
+          "chroot",
+          "chrt",
+          "chvt",
+          "devmem",
+          "dmesg",
+          "dnsdomainname",
+          "eject",
+          "fallocate",
+          "flock",
+          "freeramdisk",
+          "fsfreeze",
+          "fstype",
+          "fsync",
+          "getconf",
+          "halt",
+          "i2cdetect",
+          "i2cdump",
+          "i2cget",
+          "i2cset",
+          "inotifyd",
+          "insmod",
+          "install",
+          "ionice",
+          "iorenice",
+          "link",
+          "ln",
+          "logger",
+          "login",
+          "losetup",
+          "lsmod",
+          "lspci",
+          "lsusb",
+          "makedevs",
+          "microcom",
+          "mix",
+          "mknod",
+          "mkswap",
+          "modinfo",
+          "nbd-client",
+          "nice",
+          "nsenter",
+          "oneit",
+          "partprobe",
+          "passwd",
+          "pivot_root",
+          "poweroff",
+          "renice",
+          "rfkill",
+          "rmmod",
+          "sendevent",
+          "setfattr",
+          "setsid",
+          "shred",
+          "sntp",
+          "swapoff",
+          "swapon",
+          "switch_root",
+          "sysctl",
+          "taskset",
+          "tunctl",
+          "umount",
+          "unshare",
+          "vconfig",
+          "vmstat",
+          "w",
+        ]
+      }
     }
+
     part_name = "toybox"
     subsystem_name = "thirdparty"
     install_images = [
