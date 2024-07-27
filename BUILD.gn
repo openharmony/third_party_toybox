@@ -919,7 +919,6 @@ if (defined(ohos_lite)) {
       "switch_root",
       "sync",
       "sysctl",
-      "sysctrl",
       "tac",
       "tail",
       "tar",
@@ -989,7 +988,11 @@ if (defined(ohos_lite)) {
         ]
       } else {
         if (build_variant == "user") {
-          symlink_target_name -= [ "ulimit" ]
+          symlink_target_name -= [
+            "mkpasswd",
+            "prlimit",
+            "ulimit",
+          ]
         }
       }
 
