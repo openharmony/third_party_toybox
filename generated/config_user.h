@@ -13,6 +13,8 @@
 #define USE_WGET_OPENSSL(...)
 #define CFG_ULIMIT 1
 #define USE_ULIMIT(...) __VA_ARGS__
+#define CFG_MKPASSWD 1
+#define USE_MKPASSWD(...) __VA_ARGS__
 #else
 #define CFG_DIFF 0
 #define USE_DIFF(...)
@@ -28,6 +30,8 @@
 #define USE_WGET_OPENSSL(...)
 #define CFG_ULIMIT 0
 #define USE_ULIMIT(...)
+#define CFG_MKPASSWD 0
+#define USE_MKPASSWD(...)
 #endif
 #ifdef WITH_SELINUX
 #define CFG_SHA256SUM 1
@@ -495,8 +499,6 @@
 #define USE_MCOOKIE(...) __VA_ARGS__
 #define CFG_MIX 0
 #define USE_MIX(...)
-#define CFG_MKPASSWD 0
-#define USE_MKPASSWD(...)
 #define CFG_MKSWAP 0
 #define USE_MKSWAP(...)
 #define CFG_MODINFO 0
@@ -529,8 +531,8 @@
 #define USE_READLINK(...) __VA_ARGS__
 #define CFG_REALPATH 1
 #define USE_REALPATH(...) __VA_ARGS__
-#define CFG_REBOOT 1
-#define USE_REBOOT(...) __VA_ARGS__
+#define CFG_REBOOT 0
+#define USE_REBOOT(...)
 #define CFG_RESET 1
 #define USE_RESET(...) __VA_ARGS__
 #define CFG_REV 1
@@ -639,8 +641,8 @@
 #define USE_MKTEMP(...) __VA_ARGS__
 #define CFG_MOUNT 1
 #define USE_MOUNT(...) __VA_ARGS__
-#define CFG_PASSWD 1
-#define USE_PASSWD(...) __VA_ARGS__
+#define CFG_PASSWD 0
+#define USE_PASSWD(...)
 #define CFG_PASSWD_SAD 0
 #define USE_PASSWD_SAD(...)
 #define CFG_PIDOF 1
