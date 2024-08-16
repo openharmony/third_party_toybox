@@ -620,3 +620,4 @@
 
 #define HELP_basename "usage: basename [-a] [-s SUFFIX] NAME... | NAME [SUFFIX]\n\nReturn non-directory portion of a pathname removing suffix.\n\n-a		All arguments are names\n-s SUFFIX	Remove suffix (implies -a)"
 
+#define HELP_awk "usage:  awk [-F sepstring] [-v assignment]... program [argument...]\n  or:\n        awk [-F sepstring] -f progfile [-f progfile]... [-v assignment]...\n              [argument...]\n  also:\n  -b : use bytes, not characters\n  -c : compile only, do not run"

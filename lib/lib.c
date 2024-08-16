@@ -344,6 +344,26 @@ int stridx(char *haystack, char needle)
   return off-haystack;
 }
 
+// Convert wc to utf8, returning bytes written. Does not null terminate.
+int wctoutf8(char *s, unsigned wc)
+{
+  int len = (wc>0x7ff)+(wc>0xffff), i;
+
+  if (wc<128) {
+    *s = wc;
+    return 1;
+  } else {
+    i = len;
+    do {
+      s[1+i] = 0x80+(wc&0x3f);
+      wc >>= 6;
+    } while (i--);
+    *s = (((signed char) 0x80) >> (len+1)) | wc;
+  }
+
+  return 2+len;
+}
+
 // Convert utf8 sequence to a unicode wide character
 int utf8towc(unsigned *wc, char *str, unsigned len)
 {

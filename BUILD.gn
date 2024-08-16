@@ -966,6 +966,7 @@ if (defined(ohos_lite)) {
       sources += [ "toys/other/chcon.c" ]
       external_deps = [
         "openssl:libcrypto_shared",
+        "openssl:libssl_shared",
         "selinux:libselinux",
       ]
       symlink_target_name += [ "chcon" ]
@@ -974,6 +975,7 @@ if (defined(ohos_lite)) {
       if (toybox_extended_cmd) {
         defines += [ "TOYBOX_EXTENDED_CMD" ]
         sources += [
+          "toys/pending/awk.c",
           "toys/pending/diff.c",
           "toys/pending/telnet.c",
           "toys/pending/traceroute.c",
@@ -984,6 +986,7 @@ if (defined(ohos_lite)) {
           "traceroute6",
           "telnet",
           "wget",
+          "awk",
           "diff",
         ]
       } else {
