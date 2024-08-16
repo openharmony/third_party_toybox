@@ -105,6 +105,19 @@
 #undef FLAG_a
 #endif
 
+// awk F:v*f*bc F:v*f*bc
+#undef OPTSTR_awk
+#define OPTSTR_awk "F:v*f*bc"
+#ifdef CLEANUP_awk
+#undef CLEANUP_awk
+#undef FOR_awk
+#undef FALG_c
+#undef FALG_b
+#undef FALG_f
+#undef FALG_v
+#undef FALG_F
+#endif
+
 // bc   i(interactive)l(mathlib)q(quiet)s(standard)w(warn)
 #undef OPTSTR_bc
 #define OPTSTR_bc "i(interactive)l(mathlib)q(quiet)s(standard)w(warn)"
@@ -3458,6 +3471,18 @@
 #undef FLAG_f
 #undef FLAG_d
 #undef FLAG_c
+#endif
+
+#ifdef FOR_awk
+#define CLEANUP_awk
+#ifndef TT
+#define TT this.awk
+#endif
+#define FLAG_c (1LL<<0)
+#define FLAG_b (1LL<<1)
+#define FLAG_f (1LL<<2)
+#define FLAG_v (1LL<<3)
+#define FLAG_F (1LL<<4)
 #endif
 
 #ifdef FOR_acpi
