@@ -351,6 +351,8 @@
 #define USE_TFTPD(...)
 #define CFG_TRACEROUTE 0
 #define USE_TRACEROUTE(...)
+#define CFG_AWK 0
+#define USE_AWK(...)
 #define CFG_TR 0
 #define USE_TR(...)
 #define CFG_USERADD 0

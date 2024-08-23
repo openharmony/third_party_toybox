@@ -5,11 +5,13 @@
 #define USE_TELNET(...) __VA_ARGS__
 #define CFG_TRACEROUTE 1
 #define USE_TRACEROUTE(...) __VA_ARGS__
+#define CFG_AWK 1
+#define USE_AWK(...) __VA_ARGS__
 #define CFG_WGET 1
 #define USE_WGET(...) __VA_ARGS__
 #define CFG_WGET_LIBTLS 0
 #define USE_WGET_LIBTLS(...)
-#define CFG_WGET_OPENSSL 0
+#define CFG_WGET_OPENSSL 1
 #define USE_WGET_OPENSSL(...)
 #define CFG_ULIMIT 1
 #define USE_ULIMIT(...) __VA_ARGS__
@@ -22,6 +24,8 @@
 #define USE_TELNET(...)
 #define CFG_TRACEROUTE 0
 #define USE_TRACEROUTE(...)
+#define CFG_AWK 0
+#define USE_AWK(...)
 #define CFG_WGET 0
 #define USE_WGET(...)
 #define CFG_WGET_LIBTLS 0
