@@ -234,6 +234,7 @@ long long xstrtol(char *str, char **end, int base);
 long long atolx(char *c);
 long long atolx_range(char *numstr, long long low, long long high);
 int stridx(char *haystack, char needle);
+int wctoutf8(char *s, unsigned wc);
 int utf8towc(unsigned *wc, char *str, unsigned len);
 char *strlower(char *s);
 char *strafter(char *haystack, char *needle);
