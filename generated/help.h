@@ -470,7 +470,7 @@
 
 #define HELP_arch "usage: arch\n\nPrint machine (hardware) name, same as uname -m."
 
-#define HELP_ulimit "usage: ulimit [-P PID] [-SHRacdefilmnpqrstuv] [LIMIT]\n\nPrint or set resource limits for process number PID. If no LIMIT specified\n(or read-only -ap selected) display current value (sizes in bytes).\nDefault is ulimit -P $PPID -Sf\" (show soft filesize of your shell).\n\n-S  Set/show soft limit          -H  Set/show hard (maximum) limit\n-a  Show all limits              -c  Core file size\n-d  Process data segment         -e  Max scheduling priority\n-f  Output file size             -i  Pending signal count\n-l  Locked memory                -m  Resident Set Size\n-n  Number of open files         -p  Pipe buffer\n-q  Posix message queue          -r  Max Real-time priority\n-R  Realtime latency (usec)      -s  Stack size\n-t  Total CPU time (in seconds)  -u  Maximum processes (under this UID)\n-v  Virtual memory size          -P  PID to affect (default $PPID)"
+#define HELP_ulimit "usage: ulimit/prlimit [-P PID] [-SHRacdefilmnpqrstuv] [LIMIT]\n\nPrint or set resource limits for process number PID. If no LIMIT specified\n(or read-only -ap selected) display current value (sizes in bytes).\nDefault is ulimit -P $PPID -Sf\" (show soft filesize of your shell).\n\n-S  Set/show soft limit          -H  Set/show hard (maximum) limit\n-a  Show all limits              -c  Core file size\n-d  Process data segment         -e  Max scheduling priority\n-f  Output file size             -i  Pending signal count\n-l  Locked memory                -m  Resident Set Size\n-n  Number of open files         -p  Pipe buffer\n-q  Posix message queue          -r  Max Real-time priority\n-R  Realtime latency (usec)      -s  Stack size\n-t  Total CPU time (in seconds)  -u  Maximum processes (under this UID)\n-v  Virtual memory size          -P  PID to affect (default $PPID)"
 
 #define HELP_tty "usage: tty [-s]\n\nShow filename of terminal connected to stdin.\n\nPrints \"not a tty\" and exits with nonzero status if no terminal\nis connected to stdin.\n\n-s	Silent, exit code only"
 
@@ -552,7 +552,7 @@
 
 #define HELP_whoami "usage: whoami\n\nPrint the current user name."
 
-#define HELP_logname "usage: logname\n\nPrint the current user name."
+#define HELP_logname "usage: logname/whoami\n\nPrint the current user name."
 
 #define HELP_groups "usage: groups [user]\n\nPrint the groups a user is in."
 

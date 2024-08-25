@@ -968,6 +968,7 @@ if (defined(ohos_lite)) {
         "openssl:libcrypto_shared",
         "openssl:libssl_shared",
         "selinux:libselinux",
+        "zlib:libz",
       ]
       symlink_target_name += [ "chcon" ]
       symlink_target_name -= [ "restorecon" ]
