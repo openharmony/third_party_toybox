@@ -670,7 +670,7 @@ struct group *xgetgrgid(gid_t gid)
 {
   struct group *group = getgrgid(gid);
 
-  if (!group) perror_exit("gid %ld", (long)gid);
+  if (!group) perror_exit("bad gid %ld", (long)gid);
   return group;
 }
 
@@ -706,7 +706,7 @@ struct passwd *xgetpwnam(char *name)
 {
   struct passwd *up = getpwnam(name);
 
-  if (!up) perror_exit("user '%s'", name);
+  if (!up) perror_exit("bad user '%s'", name);
   return up;
 }
 
@@ -714,7 +714,7 @@ struct group *xgetgrnam(char *name)
 {
   struct group *gr = getgrnam(name);
 
-  if (!gr) perror_exit("group '%s'", name);
+  if (!gr) perror_exit("bad group '%s'", name);
   return gr;
 }
 
