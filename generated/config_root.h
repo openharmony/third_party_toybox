@@ -714,8 +714,8 @@
 #endif // WITH_SELINUX
 #define CFG_TOYBOX_SMACK 0
 #define USE_TOYBOX_SMACK(...)
-#define CFG_TOYBOX_LIBZ 1
-#define USE_TOYBOX_LIBZ(...) __VA_ARGS__
+#define CFG_TOYBOX_LIBZ 0
+#define USE_TOYBOX_LIBZ(...)
 #define CFG_TOYBOX_FLOAT 1
 #define USE_TOYBOX_FLOAT(...) __VA_ARGS__
 #define CFG_TOYBOX_HELP 1
