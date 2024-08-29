@@ -431,7 +431,7 @@
 # define USE_CHCON(...)
 #endif // WITH_SELINUX
 #define CFG_CHROOT 1
-#define USE_CHROOT(...)
+#define USE_CHROOT(...) __VA_ARGS__
 #define CFG_CHRT 0
 #define USE_CHRT(...)
 #define CFG_CHVT 1
