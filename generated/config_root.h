@@ -12,7 +12,13 @@
 #define CFG_WGET_LIBTLS 0
 #define USE_WGET_LIBTLS(...)
 #define CFG_WGET_OPENSSL 1
-#define USE_WGET_OPENSSL(...)
+#define USE_WGET_OPENSSL(...) __VA_ARGS__
+#define CFG_MKPASSWD 1
+#define USE_MKPASSWD(...) __VA_ARGS__
+#define CFG_TOYBOX_PRLIMIT 1
+#define USE_TOYBOX_PRLIMIT(...) __VA_ARGS__
+#define CFG_ULIMIT 1
+#define USE_ULIMIT(...) __VA_ARGS__
 #else
 #define CFG_DIFF 0
 #define USE_DIFF(...)
@@ -28,6 +34,12 @@
 #define USE_WGET_LIBTLS(...)
 #define CFG_WGET_OPENSSL 0
 #define USE_WGET_OPENSSL(...)
+#define CFG_MKPASSWD 1
+#define USE_MKPASSWD(...) __VA_ARGS__
+#define CFG_TOYBOX_PRLIMIT 1
+#define USE_TOYBOX_PRLIMIT(...) __VA_ARGS__
+#define CFG_ULIMIT 1
+#define USE_ULIMIT(...) __VA_ARGS__
 #endif
 #ifdef WITH_SELINUX
 #define CFG_SHA256SUM 1
@@ -58,8 +70,6 @@
 #define USE_TOYBOX_ANDROID_SCHEDPOLICY(...)
 #define CFG_TOYBOX_FORK 1
 #define USE_TOYBOX_FORK(...) __VA_ARGS__
-#define CFG_TOYBOX_PRLIMIT 1
-#define USE_TOYBOX_PRLIMIT(...) __VA_ARGS__
 #define CFG_TOYBOX_GETRANDOM 1
 #define USE_TOYBOX_GETRANDOM(...) __VA_ARGS__
 #define CFG_BASENAME 1
@@ -231,8 +241,6 @@
 #define USE_TRUE(...) __VA_ARGS__
 #define CFG_TTY 1
 #define USE_TTY(...) __VA_ARGS__
-#define CFG_ULIMIT 1
-#define USE_ULIMIT(...) __VA_ARGS__
 #define CFG_ARCH 1
 #define USE_ARCH(...) __VA_ARGS__
 #define CFG_UNAME 1
@@ -502,8 +510,6 @@
 #define USE_MCOOKIE(...) __VA_ARGS__
 #define CFG_MIX 1
 #define USE_MIX(...) __VA_ARGS__
-#define CFG_MKPASSWD 1
-#define USE_MKPASSWD(...) __VA_ARGS__
 #define CFG_MKSWAP 1
 #define USE_MKSWAP(...) __VA_ARGS__
 #define CFG_MODINFO 1
