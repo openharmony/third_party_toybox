@@ -73,17 +73,6 @@
 #undef FOR_ascii
 #endif
 
-// base32 diw#<0=76[!dw] diw#<0=76[!dw]
-#undef OPTSTR_base32
-#define OPTSTR_base32 "diw#<0=76[!dw]"
-#ifdef CLEANUP_base32
-#undef CLEANUP_base32
-#undef FOR_base32
-#undef FLAG_w
-#undef FLAG_i
-#undef FLAG_d
-#endif
-
 // base64 diw#<0=76[!dw] diw#<0=76[!dw]
 #undef OPTSTR_base64
 #define OPTSTR_base64 "diw#<0=76[!dw]"
@@ -724,13 +713,12 @@
 #undef FOR_dos2unix
 #endif
 
-// du d#<0=-1hmlcaHkKLsxb[-HL][-kKmh] d#<0=-1hmlcaHkKLsxb[-HL][-kKmh]
+// du d#<0=-1hmlcaHkKLsx[-HL][-kKmh] d#<0=-1hmlcaHkKLsx[-HL][-kKmh]
 #undef OPTSTR_du
-#define OPTSTR_du "d#<0=-1hmlcaHkKLsxb[-HL][-kKmh]"
+#define OPTSTR_du "d#<0=-1hmlcaHkKLsx[-HL][-kKmh]"
 #ifdef CLEANUP_du
 #undef CLEANUP_du
 #undef FOR_du
-#undef FLAG_b
 #undef FLAG_x
 #undef FLAG_s
 #undef FLAG_L
@@ -1272,15 +1260,13 @@
 #undef FLAG_fast
 #endif
 
-// i2cdetect >3aFlqry[!qr] >3aFlqry[!qr]
+// i2cdetect >3aFly >3aFly
 #undef OPTSTR_i2cdetect
-#define OPTSTR_i2cdetect ">3aFlqry[!qr]"
+#define OPTSTR_i2cdetect ">3aFly"
 #ifdef CLEANUP_i2cdetect
 #undef CLEANUP_i2cdetect
 #undef FOR_i2cdetect
 #undef FLAG_y
-#undef FLAG_r
-#undef FLAG_q
 #undef FLAG_l
 #undef FLAG_F
 #undef FLAG_a
@@ -1760,7 +1746,7 @@
 #undef FLAG_b
 #endif
 
-// mdev   s
+// mdev s s
 #undef OPTSTR_mdev
 #define OPTSTR_mdev "s"
 #ifdef CLEANUP_mdev
@@ -1961,9 +1947,9 @@
 #undef FLAG_n
 #endif
 
-// netcat ^tElLw#<1W#<1p#<1>65535q#<1s:f:46uU[!tlL][!Lw][!46U] ^tElLw#<1W#<1p#<1>65535q#<1s:f:46uU[!tlL][!Lw][!46U]
+// netcat ^tlLw#<1W#<1p#<1>65535q#<1s:f:46uU[!tlL][!Lw][!46U] ^tlLw#<1W#<1p#<1>65535q#<1s:f:46uU[!tlL][!Lw][!46U]
 #undef OPTSTR_netcat
-#define OPTSTR_netcat "^tElLw#<1W#<1p#<1>65535q#<1s:f:46uU[!tlL][!Lw][!46U]"
+#define OPTSTR_netcat "^tlLw#<1W#<1p#<1>65535q#<1s:f:46uU[!tlL][!Lw][!46U]"
 #ifdef CLEANUP_netcat
 #undef CLEANUP_netcat
 #undef FOR_netcat
@@ -1979,7 +1965,6 @@
 #undef FLAG_w
 #undef FLAG_L
 #undef FLAG_l
-#undef FLAG_E
 #undef FLAG_t
 #endif
 
@@ -2176,9 +2161,9 @@
 #undef FLAG_c
 #endif
 
-// pidof so:x so:x
+// pidof <1so:x <1so:x
 #undef OPTSTR_pidof
-#define OPTSTR_pidof "so:x"
+#define OPTSTR_pidof "<1so:x"
 #ifdef CLEANUP_pidof
 #undef CLEANUP_pidof
 #undef FOR_pidof
@@ -2247,14 +2232,13 @@
 #undef FLAG_x
 #endif
 
-// printenv (null)0 (null)0
+// printenv 0(null) 0(null)
 #undef OPTSTR_printenv
-#define OPTSTR_printenv "(null)0"
+#define OPTSTR_printenv "0(null)"
 #ifdef CLEANUP_printenv
 #undef CLEANUP_printenv
 #undef FOR_printenv
 #undef FLAG_0
-#undef FLAG_null
 #endif
 
 // printf <1?^ <1?^
@@ -2436,9 +2420,9 @@
 #undef FLAG_f
 #endif
 
-// rmdir <1(ignore-fail-on-non-empty)p(parents) <1(ignore-fail-on-non-empty)p(parents)
+// rmdir <1(ignore-fail-on-non-empty)p <1(ignore-fail-on-non-empty)p
 #undef OPTSTR_rmdir
-#define OPTSTR_rmdir "<1(ignore-fail-on-non-empty)p(parents)"
+#define OPTSTR_rmdir "<1(ignore-fail-on-non-empty)p"
 #ifdef CLEANUP_rmdir
 #undef CLEANUP_rmdir
 #undef FOR_rmdir
@@ -2668,13 +2652,12 @@
 #undef FLAG_g
 #endif
 
-// split >2a#<1=2>9b#<1l#<1n#<1[!bl][!bn][!ln] >2a#<1=2>9b#<1l#<1n#<1[!bl][!bn][!ln]
+// split >2a#<1=2>9b#<1l#<1[!bl] >2a#<1=2>9b#<1l#<1[!bl]
 #undef OPTSTR_split
-#define OPTSTR_split ">2a#<1=2>9b#<1l#<1n#<1[!bl][!bn][!ln]"
+#define OPTSTR_split ">2a#<1=2>9b#<1l#<1[!bl]"
 #ifdef CLEANUP_split
 #undef CLEANUP_split
 #undef FOR_split
-#undef FLAG_n
 #undef FLAG_l
 #undef FLAG_b
 #undef FLAG_a
@@ -3360,15 +3343,13 @@
 #undef FLAG_m
 #endif
 
-// wget   <1>1(max-redirect)#<0=20d(debug)O(output-document):
+// wget   (no-check-certificate)O:
 #undef OPTSTR_wget
-#define OPTSTR_wget "<1>1(max-redirect)#<0=20d(debug)O(output-document):"
+#define OPTSTR_wget "(no-check-certificate)O:"
 #ifdef CLEANUP_wget
 #undef CLEANUP_wget
 #undef FOR_wget
-#undef FLAG_p
 #undef FLAG_O
-#undef FLAG_d
 #undef FLAG_no_check_certificate
 #endif
 
@@ -3513,15 +3494,6 @@
 #ifndef TT
 #define TT this.ascii
 #endif
-#endif
-
-#ifdef FOR_base32
-#ifndef TT
-#define TT this.base32
-#endif
-#define FLAG_w (1<<0)
-#define FLAG_i (1<<1)
-#define FLAG_d (1<<2)
 #endif
 
 #ifdef FOR_base64
@@ -4024,24 +3996,24 @@
 #ifndef TT
 #define TT this.diff
 #endif
-#define FLAG_U (1<<0)
-#define FLAG_r (1<<1)
-#define FLAG_N (1<<2)
-#define FLAG_S (1<<3)
-#define FLAG_L (1<<4)
-#define FLAG_a (1<<5)
-#define FLAG_q (1<<6)
-#define FLAG_s (1<<7)
-#define FLAG_T (1<<8)
-#define FLAG_i (1<<9)
-#define FLAG_w (1<<10)
-#define FLAG_t (1<<11)
-#define FLAG_u (1<<12)
-#define FLAG_b (1<<13)
-#define FLAG_d (1<<14)
-#define FLAG_B (1<<15)
-#define FLAG_strip_trailing_cr (1<<16)
-#define FLAG_color (1<<17)
+#define FLAG_U (FORCED_FLAG<<0)
+#define FLAG_r (FORCED_FLAG<<1)
+#define FLAG_N (FORCED_FLAG<<2)
+#define FLAG_S (FORCED_FLAG<<3)
+#define FLAG_L (FORCED_FLAG<<4)
+#define FLAG_a (FORCED_FLAG<<5)
+#define FLAG_q (FORCED_FLAG<<6)
+#define FLAG_s (FORCED_FLAG<<7)
+#define FLAG_T (FORCED_FLAG<<8)
+#define FLAG_i (FORCED_FLAG<<9)
+#define FLAG_w (FORCED_FLAG<<10)
+#define FLAG_t (FORCED_FLAG<<11)
+#define FLAG_u (FORCED_FLAG<<12)
+#define FLAG_b (FORCED_FLAG<<13)
+#define FLAG_d (FORCED_FLAG<<14)
+#define FLAG_B (FORCED_FLAG<<15)
+#define FLAG_strip_trailing_cr (FORCED_FLAG<<16)
+#define FLAG_color (FORCED_FLAG<<17)
 #endif
 
 #ifdef FOR_dirname
@@ -4081,19 +4053,18 @@
 #ifndef TT
 #define TT this.du
 #endif
-#define FLAG_b (1<<0)
-#define FLAG_x (1<<1)
-#define FLAG_s (1<<2)
-#define FLAG_L (1<<3)
-#define FLAG_K (1<<4)
-#define FLAG_k (1<<5)
-#define FLAG_H (1<<6)
-#define FLAG_a (1<<7)
-#define FLAG_c (1<<8)
-#define FLAG_l (1<<9)
-#define FLAG_m (1<<10)
-#define FLAG_h (1<<11)
-#define FLAG_d (1<<12)
+#define FLAG_x (1<<0)
+#define FLAG_s (1<<1)
+#define FLAG_L (1<<2)
+#define FLAG_K (1<<3)
+#define FLAG_k (1<<4)
+#define FLAG_H (1<<5)
+#define FLAG_a (1<<6)
+#define FLAG_c (1<<7)
+#define FLAG_l (1<<8)
+#define FLAG_m (1<<9)
+#define FLAG_h (1<<10)
+#define FLAG_d (1<<11)
 #endif
 
 #ifdef FOR_dumpleases
@@ -4542,11 +4513,9 @@
 #define TT this.i2cdetect
 #endif
 #define FLAG_y (1<<0)
-#define FLAG_r (1<<1)
-#define FLAG_q (1<<2)
-#define FLAG_l (1<<3)
-#define FLAG_F (1<<4)
-#define FLAG_a (1<<5)
+#define FLAG_l (1<<1)
+#define FLAG_F (1<<2)
+#define FLAG_a (1<<3)
 #endif
 
 #ifdef FOR_i2cdump
@@ -5126,8 +5095,7 @@
 #define FLAG_w (1<<9)
 #define FLAG_L (1<<10)
 #define FLAG_l (1<<11)
-#define FLAG_E (1<<12)
-#define FLAG_t (1<<13)
+#define FLAG_t (1<<12)
 #endif
 
 #ifdef FOR_netstat
@@ -5361,7 +5329,6 @@
 #define TT this.printenv
 #endif
 #define FLAG_0 (1<<0)
-#define FLAG_null (1<<1)
 #endif
 
 #ifdef FOR_printf
@@ -5711,10 +5678,9 @@
 #ifndef TT
 #define TT this.split
 #endif
-#define FLAG_n (1<<0)
-#define FLAG_l (1<<1)
-#define FLAG_b (1<<2)
-#define FLAG_a (1<<3)
+#define FLAG_l (1<<0)
+#define FLAG_b (1<<1)
+#define FLAG_a (1<<2)
 #endif
 
 #ifdef FOR_stat
@@ -6039,26 +6005,26 @@
 #ifndef TT
 #define TT this.traceroute
 #endif
-#define FLAG_4 (1<<0)
-#define FLAG_6 (1<<1)
-#define FLAG_F (1<<2)
-#define FLAG_U (1<<3)
-#define FLAG_I (1<<4)
-#define FLAG_l (1<<5)
-#define FLAG_d (1<<6)
-#define FLAG_n (1<<7)
-#define FLAG_v (1<<8)
-#define FLAG_r (1<<9)
-#define FLAG_m (1<<10)
-#define FLAG_p (1<<11)
-#define FLAG_q (1<<12)
-#define FLAG_s (1<<13)
-#define FLAG_t (1<<14)
-#define FLAG_w (1<<15)
-#define FLAG_g (1<<16)
-#define FLAG_z (1<<17)
-#define FLAG_f (1<<18)
-#define FLAG_i (1<<19)
+#define FLAG_4 (FORCED_FLAG<<0)
+#define FLAG_6 (FORCED_FLAG<<1)
+#define FLAG_F (FORCED_FLAG<<2)
+#define FLAG_U (FORCED_FLAG<<3)
+#define FLAG_I (FORCED_FLAG<<4)
+#define FLAG_l (FORCED_FLAG<<5)
+#define FLAG_d (FORCED_FLAG<<6)
+#define FLAG_n (FORCED_FLAG<<7)
+#define FLAG_v (FORCED_FLAG<<8)
+#define FLAG_r (FORCED_FLAG<<9)
+#define FLAG_m (FORCED_FLAG<<10)
+#define FLAG_p (FORCED_FLAG<<11)
+#define FLAG_q (FORCED_FLAG<<12)
+#define FLAG_s (FORCED_FLAG<<13)
+#define FLAG_t (FORCED_FLAG<<14)
+#define FLAG_w (FORCED_FLAG<<15)
+#define FLAG_g (FORCED_FLAG<<16)
+#define FLAG_z (FORCED_FLAG<<17)
+#define FLAG_f (FORCED_FLAG<<18)
+#define FLAG_i (FORCED_FLAG<<19)
 #endif
 
 #ifdef FOR_true
@@ -6293,10 +6259,8 @@
 #ifndef TT
 #define TT this.wget
 #endif
-#define FLAG_p (1<<0)
-#define FLAG_O (1<<1)
-#define FLAG_d (1<<2)
-#define FLAG_no_check_certificate (1<<3)
+#define FLAG_O (FORCED_FLAG<<0)
+#define FLAG_no_check_certificate (FORCED_FLAG<<1)
 #endif
 
 #ifdef FOR_which
