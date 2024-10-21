@@ -193,10 +193,10 @@ void ftpget_main(void)
         port += 256*p1;
         break;
       }
-	}
+    }
     if (!s || port<1 || port>65535) {
       error_msg("ftpget_main line %d, port %d toybox buf %s\r\n", __LINE__, port, toybuf);
-      ftp_line("QUIT", 0, 0);
+      ftp_line("QUIT", 0, -1);
       if (TT.fd >= 0) {
         xclose(TT.fd);
       }
@@ -215,7 +215,7 @@ void ftpget_main(void)
         sscanf(toybuf, "%*u %llu", &lenr);
       } else if (get) {
         error_msg("ftpget_main line %d, port %d get %d toybox buf %s\r\n", __LINE__, port, get, toybuf);
-        ftp_line("QUIT", 0, 0);
+        ftp_line("QUIT", 0, -1);
         if (TT.fd >= 0) {
           xclose(TT.fd);
         }

@@ -390,7 +390,7 @@ void xpipe(int *pp)
 
 void xclose(int fd)
 {
-  if (fd != -1 && close(fd)) perror_exit("xclose");
+  if (close(fd)) perror_exit("xclose");
 }
 
 int xdup(int fd)
@@ -729,7 +729,7 @@ void xsetuser(struct passwd *pwd)
 
 // This can return null (meaning file not found).  It just won't return null
 // for memory allocation reasons.
-char *xreadlinkat(int dir, char *name)
+char *xreadlink(char *name)
 {
   int len, size = 0;
   char *buf = 0;
@@ -738,7 +738,7 @@ char *xreadlinkat(int dir, char *name)
   for(;;) {
     size +=64;
     buf = xrealloc(buf, size);
-    len = readlinkat(dir, name, buf, size);
+    len = readlink(name, buf, size);
 
     if (len<0) {
       free(buf);
@@ -750,12 +750,6 @@ char *xreadlinkat(int dir, char *name)
     }
   }
 }
-
-char *xreadlink(char *name)
-{
-  return xreadlinkat(AT_FDCWD, name);
-}
-
 
 char *xreadfile(char *name, char *buf, off_t len)
 {
@@ -900,10 +894,6 @@ long long xparsemillitime(char *arg)
   return (l*1000LL)+ll;
 }
 
-void xparsetimespec(char *arg, struct timespec *ts)
-{
-  ts->tv_sec = xparsetime(arg, 9, &ts->tv_nsec);
-}
 
 
 // Compile a regular expression into a regex_t

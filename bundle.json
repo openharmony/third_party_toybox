@@ -17,7 +17,7 @@
         "name": "toybox",
         "subsystem": "thirdparty",
         "syscap": [],
-        "features": [ "toybox_extended_cmd" ],
+        "features": [],
         "adapted_system_type": [
             "standard",
             "small"

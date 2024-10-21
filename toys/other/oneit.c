@@ -68,7 +68,7 @@ void oneit_main(void)
   // Setup signal handlers for signals of interest
   for (i = 0; i<ARRAY_LEN(pipes); i++) xsignal(pipes[i], oneit_signaled);
 
-  if (FLAG(3)) {
+  if (toys.optflags & FLAG_3) {
     // Ensure next available filehandles are #3 and #4
     while (xopen_stdio("/", 0) < 3);
     close(3);
@@ -87,10 +87,10 @@ void oneit_main(void)
       // We ignore the return value of write (what would we do with it?)
       // but save it in a variable we never read to make fortify shut up.
       // (Real problem is if pid2 never reads, write() fills pipe and blocks.)
-      while (pid != wait(&i)) if (FLAG(3)) i = write(4, &pid, 4);
-      if (FLAG(n)) continue;
+      while (pid != wait(&i)) if (toys.optflags & FLAG_3) i = write(4, &pid, 4);
+      if (toys.optflags & FLAG_n) continue;
 
-      oneit_signaled(FLAG(p) ? SIGUSR2 : SIGTERM);
+      oneit_signaled((toys.optflags & FLAG_p) ? SIGUSR2 : SIGTERM);
     } else {
       // Redirect stdio to /dev/tty0, with new session ID, so ctrl-c works.
       setsid();
