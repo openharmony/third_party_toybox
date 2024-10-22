@@ -27,7 +27,3 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 TOYBOX_SRC_DIR = [ "//third_party/toybox" ]
-
-declare_args() {
-  toybox_extended_cmd = false
-}
