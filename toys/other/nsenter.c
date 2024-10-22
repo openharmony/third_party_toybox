@@ -82,9 +82,9 @@ GLOBALS(
 
 static void write_ugid_map(char *map, unsigned eugid)
 {
-  int fd = xopen(map, O_WRONLY);
+  int bytes = sprintf(toybuf, "0 %u 1", eugid), fd = xopen(map, O_WRONLY);
 
-  dprintf(fd, "0 %u 1", eugid);
+  xwrite(fd, toybuf, bytes);
   xclose(fd);
 }
 
