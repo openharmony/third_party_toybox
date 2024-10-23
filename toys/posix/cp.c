@@ -15,45 +15,40 @@
 // options shared between mv/cp must be in same order (right to left)
 // for FLAG macros to work out right in shared infrastructure.
 
-USE_CP(NEWTOY(cp, "<2"USE_CP_PRESERVE("(preserve):;")"D(parents)RHLPprdaslvnF(remove-destination)fi[-HLPd][-ni]", TOYFLAG_BIN))
-USE_MV(NEWTOY(mv, "<2vnF(remove-destination)fi[-ni]", TOYFLAG_BIN))
-USE_INSTALL(NEWTOY(install, "<1cdDpsvm:o:g:", TOYFLAG_USR|TOYFLAG_BIN))
+USE_CP(NEWTOY(cp, "<1(preserve):;D(parents)RHLPprudaslvnF(remove-destination)fit:T[-HLPd][-niu][+Rr]", TOYFLAG_BIN))
+USE_MV(NEWTOY(mv, "<1v(verbose)nF(remove-destination)fit:T[-ni]", TOYFLAG_BIN))
+USE_INSTALL(NEWTOY(install, "<1cdDp(preserve-timestamps)svt:m:o:g:", TOYFLAG_USR|TOYFLAG_BIN))
 
 config CP
   bool "cp"
   default y
   help
-    usage: cp [-adlnrsvfipRHLP] SOURCE... DEST
+    usage: cp [-adfHiLlnPpRrsTv] [--preserve=motcxa] [-t TARGET] SOURCE... [DEST]
 
     Copy files from SOURCE to DEST.  If more than one SOURCE, DEST must
     be a directory.
 
-    -D	Create leading dirs under DEST (--parents)
-    -f	Delete destination files we can't write to
-    -F	Delete any existing destination file first (--remove-destination)
-    -i	Interactive, prompt before overwriting existing DEST
-    -p	Preserve timestamps, ownership, and mode
-    -R	Recurse into subdirectories (DEST must be a directory)
-    -H	Follow symlinks listed on command line
-    -L	Follow all symlinks
-    -P	Do not follow symlinks [default]
     -a	Same as -dpr
+    -D	Create leading dirs under DEST (--parents)
     -d	Don't dereference symlinks
+    -F	Delete any existing destination file first (--remove-destination)
+    -f	Delete destination files we can't write to
+    -H	Follow symlinks listed on command line
+    -i	Interactive, prompt before overwriting existing DEST
+    -L	Follow all symlinks
     -l	Hard link instead of copy
     -n	No clobber (don't overwrite DEST)
+    -u	Update (keep newest mtime)
+    -P	Do not follow symlinks
+    -p	Preserve timestamps, ownership, and mode
+    -R	Recurse into subdirectories (DEST must be a directory)
     -r	Synonym for -R
     -s	Symlink instead of copy
+    -t	Copy to TARGET dir (no DEST)
+    -T	DEST always treated as file, max 2 arguments
     -v	Verbose
 
-config CP_PRESERVE
-  bool "cp --preserve support"
-  default y
-  depends on CP
-  help
-    usage: cp [--preserve=motcxa]
-
-    --preserve takes either a comma separated list of attributes, or the first
-    letter(s) of:
+    Arguments to --preserve are the first letter(s) of:
 
             mode - permissions (ignore umask for rwx, copy suid and sticky bit)
        ownership - user and group
@@ -66,18 +61,20 @@ config MV
   bool "mv"
   default y
   help
-    usage: mv [-fivn] SOURCE... DEST
+    usage: mv [-finTv] [-t TARGET] SOURCE... [DEST]
 
     -f	Force copy by deleting destination file
     -i	Interactive, prompt before overwriting existing DEST
-    -v	Verbose
     -n	No clobber (don't overwrite DEST)
+    -t	Move to TARGET dir (no DEST)
+    -T	DEST always treated as file, max 2 arguments
+    -v	Verbose
 
 config INSTALL
   bool "install"
   default y
   help
-    usage: install [-dDpsv] [-o USER] [-g GROUP] [-m MODE] [SOURCE...] DEST
+    usage: install [-dDpsv] [-o USER] [-g GROUP] [-m MODE] [-t TARGET] [SOURCE...] [DEST]
 
     Copy files and set attributes.
 
@@ -88,6 +85,7 @@ config INSTALL
     -o	Make copy belong to USER
     -p	Preserve timestamps
     -s	Call "strip -p"
+    -t	Copy files to TARGET dir (no DEST)
     -v	Verbose
 */
 
@@ -99,11 +97,11 @@ GLOBALS(
   union {
     // install's options
     struct {
-      char *g, *o, *m;
+      char *g, *o, *m, *t;
     } i;
     // cp's options
     struct {
-      char *preserve;
+      char *t, *preserve;
     } c;
   };
 
@@ -126,9 +124,10 @@ struct cp_preserve {
 static int cp_node(struct dirtree *try)
 {
   int fdout = -1, cfd = try->parent ? try->parent->extra : AT_FDCWD,
+      save = DIRTREE_SAVE*(CFG_MV && toys.which->name[0] == 'm'), rc = 0,
       tfd = dirtree_parentfd(try);
   unsigned flags = toys.optflags;
-  char *catch = try->parent ? try->name : TT.destname, *err = "%s";
+  char *s = 0, *catch = try->parent ? try->name : TT.destname, *err = "%s";
   struct stat cst;
 
   if (!dirtree_notdotdot(try)) return 0;
@@ -137,48 +136,45 @@ static int cp_node(struct dirtree *try)
   if (S_ISDIR(try->st.st_mode) && try->again) {
     fdout = try->extra;
     err = 0;
-  } else {
 
+    // If mv child had a problem, free data and don't try to delete parent dir.
+    if (try->child) {
+      save = 0;
+      llist_traverse(try->child, free);
+    }
+  } else {
     // -d is only the same as -r for symlinks, not for directories
     if (S_ISLNK(try->st.st_mode) && (flags & FLAG_d)) flags |= FLAG_r;
 
     // Detect recursive copies via repeated top node (cp -R .. .) or
     // identical source/target (fun with hardlinks).
-    if ((TT.top.st_dev == try->st.st_dev && TT.top.st_ino == try->st.st_ino
-         && (catch = TT.destname))
-        || (!fstatat(cfd, catch, &cst, 0) && cst.st_dev == try->st.st_dev
-         && cst.st_ino == try->st.st_ino))
+    if ((same_file(&TT.top, &try->st) && (catch = TT.destname))
+        || (!fstatat(cfd, catch, &cst, 0) && same_file(&cst, &try->st)))
     {
       error_msg("'%s' is '%s'", catch, err = dirtree_path(try, 0));
       free(err);
 
-      return 0;
+      return save;
     }
 
-    // Handle -invF
-
+    // Handle -inuvF
     if (!faccessat(cfd, catch, F_OK, 0) && !S_ISDIR(cst.st_mode)) {
-      char *s;
-
-      if (S_ISDIR(try->st.st_mode)) {
+      if (S_ISDIR(try->st.st_mode))
         error_msg("dir at '%s'", s = dirtree_path(try, 0));
-        free(s);
-        return 0;
-      } else if ((flags & FLAG_F) && unlinkat(cfd, catch, 0)) {
+      else if ((flags & FLAG_F) && unlinkat(cfd, catch, 0))
         error_msg("unlink '%s'", catch);
-        return 0;
-      } else if (flags & FLAG_n) return 0;
       else if (flags & FLAG_i) {
         fprintf(stderr, "%s: overwrite '%s'", toys.which->name,
           s = dirtree_path(try, 0));
-        free(s);
-        if (!yesno(1)) return 0;
-      }
+        if (yesno(0)) rc++;
+      } else if (!((flags&FLAG_u) && nanodiff(&try->st.st_mtim, &cst.st_mtim)>0)
+                 && !(flags & FLAG_n)) rc++;
+      free(s);
+      if (!rc) return save;
     }
 
     if (flags & FLAG_v) {
-      char *s = dirtree_path(try, 0);
-      printf("%s '%s'\n", toys.which->name, s);
+      printf("%s '%s'\n", toys.which->name, s = dirtree_path(try, 0));
       free(s);
     }
 
@@ -192,7 +188,7 @@ static int cp_node(struct dirtree *try)
       if (S_ISDIR(try->st.st_mode)) {
         struct stat st2;
 
-        if (!(flags & (FLAG_a|FLAG_r|FLAG_R))) {
+        if (!(flags & (FLAG_a|FLAG_r))) {
           err = "Skipped dir '%s'";
           catch = try->name;
           break;
@@ -208,7 +204,7 @@ static int cp_node(struct dirtree *try)
         if (!mkdirat(cfd, catch, try->st.st_mode | 0200) || errno == EEXIST)
           if (-1 != (try->extra = openat(cfd, catch, O_NOFOLLOW)))
             if (!fstat(try->extra, &st2) && S_ISDIR(st2.st_mode))
-              return DIRTREE_COMEAGAIN | (DIRTREE_SYMFOLLOW*!!FLAG(L));
+              return DIRTREE_COMEAGAIN | DIRTREE_SYMFOLLOW*FLAG(L);
 
       // Hardlink
 
@@ -244,15 +240,13 @@ static int cp_node(struct dirtree *try)
 
       // Do something _other_ than copy contents of a file?
       } else if (!S_ISREG(try->st.st_mode)
-                 && (try->parent || (flags & (FLAG_a|FLAG_r))))
+                 && (try->parent || (flags & (FLAG_a|FLAG_P|FLAG_r))))
       {
-        int i;
-
         // make symlink, or make block/char/fifo/socket
         if (S_ISLNK(try->st.st_mode)
-            ? ((i = readlinkat0(tfd, try->name, toybuf, sizeof(toybuf))) &&
-               ((!unlinkat(cfd, catch, 0) || ENOENT == errno) &&
-                !symlinkat(toybuf, cfd, catch)))
+            ? readlinkat0(tfd, try->name, toybuf, sizeof(toybuf)) &&
+              (!unlinkat(cfd, catch, 0) || ENOENT == errno) &&
+              !symlinkat(toybuf, cfd, catch)
             : !mknodat(cfd, catch, try->st.st_mode, try->st.st_rdev))
         {
           err = 0;
@@ -261,7 +255,7 @@ static int cp_node(struct dirtree *try)
 
       // Copy contents of file.
       } else {
-        int fdin;
+        int fdin, ii;
 
         fdin = openat(tfd, try->name, O_RDONLY);
         if (fdin < 0) {
@@ -286,8 +280,9 @@ static int cp_node(struct dirtree *try)
             xattr_flist(fdin, list, listlen);
             list[listlen-1] = 0; // I do not trust this API.
             for (name = list; name-list < listlen; name += strlen(name)+1) {
-              if (!(TT.pflags&_CP_xattr) && strncmp(name, "security.", 9))
-                continue;
+              // context copies security, xattr copies everything else
+              ii = strncmp(name, "security.", 9) ? _CP_xattr : _CP_context;
+              if (!(TT.pflags&ii)) continue;
               if ((len = xattr_fget(fdin, name, 0, 0))>0) {
                 value = xmalloc(len);
                 if (len == xattr_fget(fdin, name, value, len))
@@ -307,8 +302,6 @@ static int cp_node(struct dirtree *try)
 
   // Did we make a thing?
   if (fdout != -1) {
-    int rc;
-
     // Inability to set --preserve isn't fatal, some require root access.
 
     // ownership
@@ -342,39 +335,51 @@ static int cp_node(struct dirtree *try)
       xclose(fdout);
     }
 
-    if (CFG_MV && toys.which->name[0] == 'm')
+    if (save)
       if (unlinkat(tfd, try->name, S_ISDIR(try->st.st_mode) ? AT_REMOVEDIR :0))
         err = "%s";
   }
 
   if (err) {
-    char *f = 0;
-
     if (catch == try->name) {
-      f = dirtree_path(try, 0);
+      s = dirtree_path(try, 0);
       while (try->parent) try = try->parent;
-      catch = xmprintf("%s%s", TT.destname, f+strlen(try->name));
-      free(f);
-      f = catch;
-    }
+      catch = xmprintf("%s%s", TT.destname, s+strlen(try->name));
+      free(s);
+      s = catch;
+    } else s = 0;
     perror_msg(err, catch);
-    free(f);
+    free(s);
   }
   return 0;
 }
 
 void cp_main(void)
 {
-  char *destname = toys.optargs[--toys.optc];
-  int i, destdir = !stat(destname, &TT.top) && S_ISDIR(TT.top.st_mode);
+  char *tt = *toys.which->name == 'i' ? TT.i.t : TT.c.t,
+    *destname = tt ? : toys.optargs[--toys.optc];
+  int i, destdir = !stat(destname, &TT.top);
 
-  if ((toys.optc>1 || FLAG(D)) && !destdir)
-    error_exit("'%s' not directory", destname);
+  if (!toys.optc) error_exit("Needs 2 arguments");
+  if (!destdir && errno==ENOENT && FLAG(D)) {
+    if (tt && mkpathat(AT_FDCWD, tt, 0777, MKPATHAT_MAKE|MKPATHAT_MKLAST))
+      perror_exit("-t '%s'", tt);
+    destdir = 1;
+  } else {
+    destdir = destdir && S_ISDIR(TT.top.st_mode);
+    if (!destdir && (toys.optc>1 || FLAG(D) || tt))
+      error_exit("'%s' not directory", destname);
+  }
+
+  if (FLAG(T)) {
+    if (toys.optc>1) help_exit("Max 2 arguments");
+    if (destdir) error_exit("'%s' is a directory", destname);
+  }
 
   if (FLAG(a)||FLAG(p)) TT.pflags = _CP_mode|_CP_ownership|_CP_timestamps;
 
   // Not using comma_args() (yet?) because interpeting as letters.
-  if (CFG_CP_PRESERVE && FLAG(preserve)) {
+  if (FLAG(preserve)) {
     char *pre = xstrdup(TT.c.preserve ? TT.c.preserve : "mot"), *s;
 
     if (comma_remove(pre, "all")) TT.pflags = ~0;
@@ -401,13 +406,11 @@ void cp_main(void)
 
   // Loop through sources
   for (i=0; i<toys.optc; i++) {
-    char *src = toys.optargs[i], *trail = src;
-    int rc = 1;
+    char *src = toys.optargs[i], *trail;
+    int send = 1;
 
-    if (CFG_MV && toys.which->name[0] == 'm') {
-      while (*++trail);
-      if (*--trail == '/') *trail = 0;
-    }
+    if (!(trail = strrchr(src, '/')) || trail[1]) trail = 0;
+    else while (trail>src && *trail=='/') *trail-- = 0;
 
     if (destdir) {
       char *s = FLAG(D) ? src : getbasename(src);
@@ -424,33 +427,32 @@ void cp_main(void)
       }
     } else TT.destname = destname;
 
+    // "mv across devices" triggers cp fallback path, so set that as default
     errno = EXDEV;
-    if (CFG_MV && toys.which->name[0] == 'm') {
-      int force = FLAG(f), no_clobber = FLAG(n);
-
-      if (!force || no_clobber) {
+    if (CFG_MV && *toys.which->name == 'm') {
+      if (!FLAG(f) || FLAG(n)) {
         struct stat st;
         int exists = !stat(TT.destname, &st);
 
         // Prompt if -i or file isn't writable.  Technically "is writable" is
         // more complicated (022 is not writeable by the owner, just everybody
         // _else_) but I don't care.
-        if (exists && (FLAG(i) || !(st.st_mode & 0222))) {
+        if (exists && (FLAG(i) || (!(st.st_mode & 0222) && isatty(0)))) {
           fprintf(stderr, "%s: overwrite '%s'", toys.which->name, TT.destname);
-          if (!yesno(1)) rc = 0;
+          if (!yesno(0)) send = 0;
           else unlink(TT.destname);
         }
         // if -n and dest exists, don't try to rename() or copy
-        if (exists && no_clobber) rc = 0;
+        if (exists && FLAG(n)) send = 0;
       }
-      if (rc) rc = rename(src, TT.destname);
-      if (errno && !*trail) *trail = '/';
+      if (send) send = rename(src, TT.destname);
+      if (trail) trail[1] = '/';
     }
 
-    // Copy if we didn't mv, skipping nonexistent sources
-    if (rc) {
+    // Copy if we didn't mv or hit an error, skipping nonexistent sources
+    if (send) {
       if (errno!=EXDEV || dirtree_flagread(src, DIRTREE_SHUTUP+
-        DIRTREE_SYMFOLLOW*!!(FLAG(H)||FLAG(L)), TT.callback))
+        DIRTREE_SYMFOLLOW*(FLAG(H)|FLAG(L)), TT.callback))
           perror_msg("bad '%s'", src);
     }
     if (destdir) free(TT.destname);
@@ -459,19 +461,19 @@ void cp_main(void)
 
 void mv_main(void)
 {
-  toys.optflags |= FLAG_d|FLAG_p|FLAG_R;
+  toys.optflags |= FLAG_d|FLAG_p|FLAG_r;
+  TT.pflags =~0;
 
   cp_main();
 }
 
 // Export cp flags into install's flag context.
 
-static inline int cp_flag_F(void) { return FLAG_F; };
-static inline int cp_flag_p(void) { return FLAG_p; };
-static inline int cp_flag_v(void) { return FLAG_v; };
+static inline int cp_flag_F(void) { return FLAG_F; }
+static inline int cp_flag_p(void) { return FLAG_p; }
+static inline int cp_flag_v(void) { return FLAG_v; }
 
 // Switch to install's flag context
-#define CLEANUP_cp
 #define FOR_install
 #include <generated/flags.h>
 
@@ -494,34 +496,32 @@ static int install_node(struct dirtree *try)
 void install_main(void)
 {
   char **ss;
-  int flags = toys.optflags;
 
   TT.uid = TT.i.o ? xgetuid(TT.i.o) : -1;
   TT.gid = TT.i.g ? xgetgid(TT.i.g) : -1;
 
-  if (flags & FLAG_d) {
+  if (FLAG(d)) {
     for (ss = toys.optargs; *ss; ss++) {
-      if (mkpathat(AT_FDCWD, *ss, 0777, MKPATHAT_MKLAST | MKPATHAT_MAKE)) perror_msg_raw(*ss);
-      if (flags & (FLAG_g|FLAG_o))
+      if (FLAG(v)) printf("%s\n", *ss);
+      if (mkpathat(AT_FDCWD, *ss, 0777, MKPATHAT_MKLAST | MKPATHAT_MAKE))
+        perror_msg_raw(*ss);
+      if (FLAG(g)||FLAG(o))
         if (lchown(*ss, TT.uid, TT.gid)) perror_msg("chown '%s'", *ss);
-      if (flags & FLAG_v) printf("%s\n", *ss);
     }
 
     return;
   }
 
   if (FLAG(D)) {
-    TT.destname = toys.optargs[toys.optc-1];
-    if (mkpathat(AT_FDCWD, TT.destname, 0, MKPATHAT_MAKE))
-      perror_exit("-D '%s'", TT.destname);
-    if (toys.optc == 1) return;
+    char *destname = TT.i.t ? : (TT.destname = toys.optargs[toys.optc-1]);
+    if (mkpathat(AT_FDCWD, destname, 0777, MKPATHAT_MAKE|MKPATHAT_MKLAST*FLAG(t)))
+      perror_exit("-D '%s'", destname);
+    if (toys.optc == !FLAG(t)) return;
   }
-  if (toys.optc < 2) error_exit("needs 2 args");
 
   // Translate flags from install to cp
-  toys.optflags = cp_flag_F();
-  if (flags & FLAG_v) toys.optflags |= cp_flag_v();
-  if (flags & (FLAG_p|FLAG_o|FLAG_g)) toys.optflags |= cp_flag_p();
+  toys.optflags = cp_flag_F() + cp_flag_v()*FLAG(v)
+    + cp_flag_p()*(FLAG(p)|FLAG(o)|FLAG(g));
 
   TT.callback = install_node;
   cp_main();

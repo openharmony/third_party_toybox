@@ -508,11 +508,6 @@ int strcasestart(char **a, char *b)
   return i;
 }
 
-int same_file(struct stat *st1, struct stat *st2)
-{
-  return st1->st_ino==st2->st_ino && st1->st_dev==st2->st_dev;
-}
-
 // Return how long the file at fd is, if there's any way to determine it.
 off_t fdlength(int fd)
 {
@@ -1152,24 +1147,18 @@ match:
 }
 
 // display first "dgt" many digits of number plus unit (kilo-exabytes)
-int human_readable_long(char *buf, unsigned long long num, int dgt, int unit,
-  int style)
+int human_readable_long(char *buf, unsigned long long num, int dgt, int style)
 {
   unsigned long long snap = 0;
-  int len, divisor = (style&HR_1000) ? 1000 : 1024;
+  int len, unit, divisor = (style&HR_1000) ? 1000 : 1024;
 
   // Divide rounding up until we have 3 or fewer digits. Since the part we
   // print is decimal, the test is 999 even when we divide by 1024.
-  // The largest unit we can detect is 1<<64 = 18 Exabytes, but we added
-  // Zettabyte and Yottabyte in case "unit" starts above zero.
-  for (;;unit++) {
-    if ((len = snprintf(0, 0, "%llu", num))<=dgt) break;
+  // We can't run out of units because 1<<64 is 18 exabytes.
+  for (unit = 0; snprintf(0, 0, "%llu", num)>dgt; unit++)
     num = ((snap = num)+(divisor/2))/divisor;
-  }
-  if (CFG_TOYBOX_DEBUG && unit>8) return sprintf(buf, "%.*s", dgt, "TILT");
-
   len = sprintf(buf, "%llu", num);
-  if (!(style & HR_NODOT) && unit && len == 1) {
+  if (unit && len == 1) {
     // Redo rounding for 1.2M case, this works with and without HR_1000.
     num = snap/divisor;
     snap -= num*divisor;
@@ -1179,7 +1168,7 @@ int human_readable_long(char *buf, unsigned long long num, int dgt, int unit,
   }
   if (style & HR_SPACE) buf[len++] = ' ';
   if (unit) {
-    unit = " kMGTPEZY"[unit];
+    unit = " kMGTPE"[unit];
 
     if (!(style&HR_1000)) unit = toupper(unit);
     buf[len++] = unit;
@@ -1192,7 +1181,7 @@ int human_readable_long(char *buf, unsigned long long num, int dgt, int unit,
 // Give 3 digit estimate + units ala 999M or 1.7T
 int human_readable(char *buf, unsigned long long num, int style)
 {
-  return human_readable_long(buf, num, 3, 0, style);
+  return human_readable_long(buf, num, 3, style);
 }
 
 // The qsort man page says you can use alphasort, the posix committee
@@ -1454,25 +1443,9 @@ int is_tar_header(void *pkt)
   char *p = pkt;
   int i = 0;
 
-  if (p[257] && smemcmp("ustar", p+257, 5)) return 0;
+  if (p[257] && memcmp("ustar", p+257, 5)) return 0;
   if (p[148] != '0' && p[148] != ' ') return 0;
   sscanf(p+148, "%8o", &i);
 
   return i && tar_cksum(pkt) == i;
-}
-
-// ASAN flips out about memcmp("a", "abc", 4) but the result is well-defined.
-// This one's guaranteed to stop at len _or_ the first difference.
-int smemcmp(char *one, char *two, unsigned long len)
-{
-  int ii = 0;
-
-  // NULL sorts after anything else
-  if (one == two) return 0;
-  if (!one) return 1;
-  if (!two) return -1;
-
-  while (len--) if ((ii = *one++ - *two++)) break;
-
-  return ii;
 }

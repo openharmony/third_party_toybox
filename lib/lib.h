@@ -244,6 +244,7 @@ int unescape2(char **c, int echo);
 char *strend(char *str, char *suffix);
 int strstart(char **a, char *b);
 int strcasestart(char **a, char *b);
+int same_file(struct stat *st1, struct stat *st2);
 off_t fdlength(int fd);
 void loopfiles_rw(char **argv, int flags, int permissions,
   void (*function)(int fd, char *name));
@@ -283,11 +284,14 @@ void reset_env(struct passwd *p, int clear);
 void loggit(int priority, char *format, ...);
 unsigned tar_cksum(void *data);
 int is_tar_header(void *pkt);
+int smemcmp(char *one, char *two, unsigned long len);
 
-#define HR_SPACE 1 // Space between number and units
-#define HR_B     2 // Use "B" for single byte units
-#define HR_1000  4 // Use decimal instead of binary units
-int human_readable_long(char *buf, unsigned long long num, int dgt, int style);
+#define HR_SPACE  1 // Space between number and units
+#define HR_B      2 // Use "B" for single byte units
+#define HR_1000   4 // Use decimal instead of binary units
+#define HR_NODOT  8 // No tenths for single digit units
+int human_readable_long(char *buf, unsigned long long num, int dgt, int unit,
+  int style);
 int human_readable(char *buf, unsigned long long num, int style);
 
 // env.c
