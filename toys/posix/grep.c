@@ -4,12 +4,15 @@
  *
  * See http://pubs.opengroup.org/onlinepubs/9699919799/utilities/grep.html
  *
- * Posix doesn't even specify -r: too many deviations to document.
- * TODO: -i is only ascii case insensitive, not unicode.
+ * Posix doesn't even specify -r, documenting deviations from it is silly.
+* echo hello | grep -w ''
+* echo '' | grep -w ''
+* echo hello | grep -f </dev/null
+*
 
-USE_GREP(NEWTOY(grep, "(line-buffered)(color):;(exclude-dir)*S(exclude)*M(include)*ZzEFHIab(byte-offset)h(no-filename)ino(only-matching)rRsvwc(count)L(files-without-match)l(files-with-matches)q(quiet)(silent)e*f*C#B#A#m#x[!wx][!EF]", TOYFLAG_BIN|TOYFLAG_ARGFAIL(2)|TOYFLAG_LINEBUF))
-USE_EGREP(OLDTOY(egrep, grep, TOYFLAG_BIN|TOYFLAG_ARGFAIL(2)|TOYFLAG_LINEBUF))
-USE_FGREP(OLDTOY(fgrep, grep, TOYFLAG_BIN|TOYFLAG_ARGFAIL(2)|TOYFLAG_LINEBUF))
+USE_GREP(NEWTOY(grep, "(line-buffered)(color):;(exclude-dir)*S(exclude)*M(include)*ZzEFHIab(byte-offset)h(no-filename)ino(only-matching)rRsvwcl(files-with-matches)q(quiet)(silent)e*f*C#B#A#m#x[!wx][!EFw]", TOYFLAG_BIN|TOYFLAG_ARGFAIL(2)))
+USE_EGREP(OLDTOY(egrep, grep, TOYFLAG_BIN|TOYFLAG_ARGFAIL(2)))
+USE_FGREP(OLDTOY(fgrep, grep, TOYFLAG_BIN|TOYFLAG_ARGFAIL(2)))
 
 config GREP
   bool "grep"
@@ -41,10 +44,9 @@ config GREP
     -x  whole line               -z  input NUL terminated
 
     display modes: (default: matched line)
-    -L  filenames with no match  -Z  output is NUL terminated
-    -c  count of matching lines  -l  filenames with a match
+    -c  count of matching lines  -l  show only matching filenames
     -o  only matching part       -q  quiet (errors only)
-    -s  silent (no error msg)
+    -s  silent (no error msg)    -Z  output NUL terminated
 
     output prefix (default: filename if checking more than 1 file)
     -H  force filename           -b  byte offset of match
@@ -63,6 +65,7 @@ config FGREP
 
 #define FOR_grep
 #include "toys.h"
+#include <regex.h>
 
 GLOBALS(
   long m, A, B, C;
@@ -71,8 +74,8 @@ GLOBALS(
 
   char *purple, *cyan, *red, *green, *grey;
   struct double_list *reg;
-  int found, tried, delim;
-  struct arg_list *fixed[256];
+  char indelim, outdelim;
+  int found, tried;
 )
 
 struct reg {
@@ -93,21 +96,23 @@ static void outline(char *line, char dash, char *name, long lcount, long bcount,
 {
   if (!trim && FLAG(o)) return;
   if (name && FLAG(H)) printf("%s%s%s%c", TT.purple, name, TT.cyan, dash);
-  if (FLAG(c)) xprintf("%s%ld%c", TT.grey, lcount, TT.delim);
-  else if (lcount && FLAG(n)) numdash(lcount, dash);
+  if (FLAG(c)) {
+    printf("%s%ld", TT.grey, lcount);
+    xputc(TT.outdelim);
+  } else if (lcount && FLAG(n)) numdash(lcount, dash);
   if (bcount && FLAG(b)) numdash(bcount-1, dash);
   if (line) {
     if (FLAG(color)) xputsn(FLAG(o) ? TT.red : TT.grey);
     // support embedded NUL bytes in output
     xputsl(line, trim);
-    xputc(TT.delim);
+    xputc(TT.outdelim);
   }
 }
 
 // Show matches in one file
 static void do_grep(int fd, char *name)
 {
-  long lcount = 0, mcount = 0, offset = 0, after = 0, before = 0, new = 1;
+  long lcount = 0, mcount = 0, offset = 0, after = 0, before = 0;
   struct double_list *dlb = 0;
   char *bars = 0;
   FILE *file;
@@ -140,88 +145,82 @@ static void do_grep(int fd, char *name)
 
   // Loop through lines of input
   for (;;) {
-    char *line = 0, *start, *ss, *pp;
+    char *line = 0, *start;
     struct reg *shoe;
     size_t ulen;
     long len;
-    int matched = 0, rc = 1, move = 0, ii;
+    int matched = 0, rc = 1;
 
     // get next line, check and trim delimiter
     lcount++;
     errno = 0;
-    ulen = len = getdelim(&line, &ulen, TT.delim, file);
-    if (len == -1 && errno) perror_msg("%s", name);
+    ulen = len = getdelim(&line, &ulen, TT.indelim, file);
+    if (errno) perror_msg("%s", name);
     if (len<1) break;
-    if (line[ulen-1] == TT.delim) line[--ulen] = 0;
+    if (line[ulen-1] == TT.indelim) line[--ulen] = 0;
 
     // Prepare for next line
     start = line;
-    for (shoe = (void *)TT.reg; shoe; shoe = shoe->next) shoe->rc = 0;
+    if (TT.reg) for (shoe = (void *)TT.reg; shoe; shoe = shoe->next)
+      shoe->rc = 0;
 
     // Loop to handle multiple matches in same line
-    if (new) do {
+    do {
       regmatch_t *mm = (void *)toybuf;
-      struct arg_list *seek;
 
-      mm->rm_so = mm->rm_eo = 0;
-      rc = 1;
+      // Handle "fixed" (literal) matches
+      if (FLAG(F)) {
+        struct arg_list *seek, fseek;
+        char *s = 0;
 
-      // Handle "fixed" (literal) matches (if any)
-      if (TT.e && *start) for (ss = start; ss-line<ulen; ss++) {
-        ii = FLAG(i) ? toupper(*ss) : *ss;
-        for (seek = TT.fixed[ii]; seek; seek = seek->next) {
-          if (*(pp = seek->arg)=='^' && !FLAG(F)) {
-            if (ss!=start) continue;
-            pp++;
-          }
-          for (ii = 0; pp[ii] && ss[ii]; ii++) {
-            if (!FLAG(F)) {
-              if (pp[ii]=='.') continue;
-              if (pp[ii]=='\\' && pp[ii+1]) pp++;
-              else if (pp[ii]=='$' && !pp[ii+1]) break;
-            }
-            if (FLAG(i)) {
-              if (toupper(pp[ii])!=toupper(ss[ii])) break;
-            } else if (pp[ii]!=ss[ii]) break;
-          }
-          if (pp[ii] && (pp[ii]!='$' || pp[ii+1] || ss[ii])) continue;
-          mm->rm_eo = (mm->rm_so = ss-start)+ii;
+        for (seek = TT.e; seek; seek = seek->next) {
+          if (FLAG(x)) {
+            if (!(FLAG(i) ? strcasecmp : strcmp)(seek->arg, line)) s = line;
+          } else if (!*seek->arg) {
+            // No need to set fseek.next because this will match every line.
+            seek = &fseek;
+            fseek.arg = s = line;
+          } else if (FLAG(i)) s = strcasestr(start, seek->arg);
+          else s = strstr(start, seek->arg);
+
+          if (s) break;
+        }
+
+        if (s) {
           rc = 0;
+          mm->rm_so = (s-start);
+          mm->rm_eo = (s-start)+strlen(seek->arg);
+        } else rc = 1;
 
-          goto got;
+      // Handle regex matches
+      } else {
+        int baseline = mm->rm_eo;
+
+        mm->rm_so = mm->rm_eo = INT_MAX;
+        rc = 1;
+        for (shoe = (void *)TT.reg; shoe; shoe = shoe->next) {
+
+          // Do we need to re-check this regex?
+          if (!shoe->rc) {
+            shoe->m.rm_so -= baseline;
+            shoe->m.rm_eo -= baseline;
+            if (!matched || shoe->m.rm_so<0)
+              shoe->rc = regexec0(&shoe->r, start, ulen-(start-line), 1,
+                                  &shoe->m, start==line ? 0 : REG_NOTBOL);
+          }
+
+          // If we got a match, is it a _better_ match?
+          if (!shoe->rc && (shoe->m.rm_so < mm->rm_so ||
+              (shoe->m.rm_so == mm->rm_so && shoe->m.rm_eo >= mm->rm_eo)))
+          {
+            mm = &shoe->m;
+            rc = 0;
+          }
         }
-        if (FLAG(x)) break;
       }
 
-      // Empty pattern always matches
-      if (rc && *TT.fixed && !FLAG(o)) rc = 0;
-got:
-      // Handle regex matches (if any)
-      for (shoe = (void *)TT.reg; shoe; shoe = shoe->next) {
-        // Do we need to re-check this regex?
-        if (!shoe->rc) {
-          shoe->m.rm_so -= move;
-          shoe->m.rm_eo -= move;
-          if (!matched || shoe->m.rm_so<0)
-            shoe->rc = regexec0(&shoe->r, start, ulen-(start-line), 1,
-                                &shoe->m, start==line ? 0 : REG_NOTBOL);
-        }
-
-        // If we got a match, is it a _better_ match?
-        if (!shoe->rc && (rc || shoe->m.rm_so < mm->rm_so ||
-            (shoe->m.rm_so == mm->rm_so && shoe->m.rm_eo >= mm->rm_eo)))
-        {
-          mm = &shoe->m;
-          rc = 0;
-        }
-      }
-
-      if (!rc && FLAG(o) && !mm->rm_eo && ulen>start-line) {
-        move = 1;
-        continue;
-      }
-
-      if (!rc && FLAG(x) && (mm->rm_so || ulen-(start-line)!=mm->rm_eo)) rc = 1;
+      if (!rc && FLAG(x))
+        if (mm->rm_so || line[mm->rm_eo]) rc = 1;
 
       if (!rc && FLAG(w)) {
         char c = 0;
@@ -235,16 +234,18 @@ got:
           if (!isalnum(c) && c != '_') c = 0;
         }
         if (c) {
-          move = mm->rm_so+1;
+          start += mm->rm_so+1;
           continue;
         }
       }
 
       if (FLAG(v)) {
         if (FLAG(o)) {
-          if (rc) mm->rm_eo = ulen-(start-line);
-          else if (!mm->rm_so) {
-            move = mm->rm_eo;
+          if (rc) {
+            mm->rm_so = 0;
+            mm->rm_eo = ulen-(start-line);
+          } else if (!mm->rm_so) {
+            start += mm->rm_eo;
             continue;
           } else mm->rm_eo = mm->rm_so;
         } else {
@@ -261,14 +262,12 @@ got:
       }
       matched++;
       TT.found = 1;
-
-      // Are we NOT showing the matching text?
       if (FLAG(q)) {
         toys.exitval = 0;
         xexit();
       }
-      if (FLAG(L) || FLAG(l)) {
-        if (FLAG(l)) xprintf("%s%c", name, '\n'*!FLAG(Z));
+      if (FLAG(l)) {
+        xprintf("%s%c", name, TT.outdelim);
         free(line);
         fclose(file);
         return;
@@ -296,17 +295,19 @@ got:
             outline(FLAG(color) ? 0 : line, ':', name, lcount, bcount, ulen);
           if (FLAG(color)) {
             xputsn(TT.grey);
-            if (mm->rm_so) xputsl(start, mm->rm_so);
+            if (mm->rm_so) xputsl(line, mm->rm_so);
             xputsn(TT.red);
-            xputsl(start+mm->rm_so, mm->rm_eo-mm->rm_so);
+            xputsl(line+mm->rm_so, mm->rm_eo-mm->rm_so);
           }
 
           if (TT.A) after = TT.A+1;
         }
       }
 
-      if (mm->rm_so == (move = mm->rm_eo)) break;
-    } while (*(start += move));
+      start += mm->rm_eo;
+      if (mm->rm_so == mm->rm_eo) break;
+      if (!FLAG(o) && FLAG(color)) break;
+    } while (*start);
     offset += len;
 
     if (matched) {
@@ -314,7 +315,7 @@ got:
       if (FLAG(color) && !FLAG(o)) {
         xputsn(TT.grey);
         if (ulen > start-line) xputsl(start, ulen-(start-line));
-        xputc(TT.delim);
+        xputc(TT.outdelim);
       }
       mcount++;
     } else {
@@ -348,46 +349,44 @@ got:
     }
     free(line);
 
-    if (FLAG(m) && mcount >= TT.m) {
-      if (!after) break;
-      new = 0;
-    }
+    if (FLAG(m) && mcount >= TT.m) break;
   }
 
-  if (FLAG(L)) xprintf("%s%c", name, TT.delim);
-  else if (FLAG(c)) outline(0, ':', name, mcount, 0, 1);
+  if (FLAG(c)) outline(0, ':', name, mcount, 0, 1);
 
   // loopfiles will also close the fd, but this frees an (opaque) struct.
   fclose(file);
-  llist_traverse(dlb, llist_free_double);
-}
+  while (dlb) {
+    struct double_list *dl = dlist_pop(&dlb);
 
-static int lensort(struct arg_list **a, struct arg_list **b)
-{
-  long la = strlen((*a)->arg), lb = strlen((*b)->arg);
-
-  if (la<lb) return -1;
-  if (la>lb) return 1;
-
-  return 0;
+    free(dl->data);
+    free(dl);
+  }
 }
 
 static void parse_regex(void)
 {
-  struct arg_list *al, *new, *list = NULL, **last;
-  char *s, *ss, *special = "\\.^$[()|*+?{";
-  int len, ii, key;
+  struct arg_list *al, *new, *list = NULL;
+  char *s, *ss;
 
   // Add all -f lines to -e list. (Yes, this is leaking allocation context for
   // exit to free. Not supporting nofork for this command any time soon.)
   al = TT.f ? TT.f : TT.e;
   while (al) {
-    if (TT.f) {
-      if (!*(s = xreadfile(al->arg, 0, 0))) {
-        free(s);
-        s = 0;
-      } else if (*(ss = s+strlen(s)-1)=='\n') *ss = 0;
-    } else s = al->arg;
+    if (TT.f) s = ss = xreadfile(al->arg, 0, 0);
+    else s = ss = al->arg;
+
+    // Split lines at \n, add individual lines to new list.
+    do {
+// TODO: NUL terminated input shouldn't split -e at \n
+      ss = strchr(s, '\n');
+      if (ss) *(ss++) = 0;
+      new = xmalloc(sizeof(struct arg_list));
+      new->next = list;
+      new->arg = s;
+      list = new;
+      s = ss;
+    } while (ss && *s);
 
     // Advance, when we run out of -f switch to -e.
     al = al->next;
@@ -395,71 +394,20 @@ static void parse_regex(void)
       TT.f = 0;
       al = TT.e;
     }
-    if (!s) continue;
-
-    // NOTE: even with -z, -f is still \n delimited. Blank line = match all
-    // Split lines at \n, add individual lines to new list.
-    do {
-      if ((ss = strchr(s, '\n'))) *(ss++) = 0;
-      new = xmalloc(sizeof(struct arg_list));
-      new->next = list;
-      new->arg = s;
-      list = new;
-      s = ss;
-    } while (s);
   }
   TT.e = list;
 
-  // Convert to regex where appropriate
-  for (last = &TT.e; *last;) {
-    // Can we use the fast path?
-    s = (*last)->arg;
-    if ('.'!=*s && !FLAG(F) && strcmp(s, "^$")) for (; *s; s++) {
-      if (*s=='\\') {
-        if (!s[1] || !strchr(special, *++s)) break;
-        if (!FLAG(E) && *s=='(') break;
-      } else if (*s>127 || strchr(special+4, *s)) break;
-    }
-
-    // Add entry to fast path (literal-ish match) or slow path (regexec)
-    if (!*s || FLAG(F)) last = &((*last)->next);
-    else {
+  if (!FLAG(F)) {
+    // Convert regex list
+    for (al = TT.e; al; al = al->next) {
       struct reg *shoe;
 
+      if (FLAG(o) && !*al->arg) continue;
       dlist_add_nomalloc(&TT.reg, (void *)(shoe = xmalloc(sizeof(struct reg))));
-      xregcomp(&shoe->r, (*last)->arg, REG_EXTENDED*FLAG(E)|REG_ICASE*FLAG(i));
-      al = *last;
-      *last = (*last)->next;
-      free(al);
+      xregcomp(&shoe->r, al->arg,
+               (REG_EXTENDED*!!FLAG(E))|(REG_ICASE*!!FLAG(i)));
     }
-  }
-  dlist_terminate(TT.reg);
-
-  // Sort fast path patterns into buckets by first character
-  for (al = TT.e; al; al = new) {
-    new = al->next;
-    if (FLAG(F)) key = 0;
-    else {
-      key = '^'==*al->arg;
-      if ('\\'==al->arg[key]) key++;
-      else if ('$'==al->arg[key] && !al->arg[key+1]) key++;
-    }
-    key = al->arg[key];
-    if (FLAG(i)) key = toupper(key);
-    al->next = TT.fixed[key];
-    TT.fixed[key] = al;
-  }
-
-  // Sort each fast path pattern set by length so first hit is longest match
-  if (TT.e) for (key = 0; key<256; key++) {
-    if (!TT.fixed[key]) continue;
-    for (len = 0, al = TT.fixed[key]; al; al = al->next) len++;
-    last = xmalloc(len*sizeof(void *));
-    for (len = 0, al = TT.fixed[key]; al; al = al->next) last[len++] = al;
-    qsort(last, len, sizeof(void *), (void *)lensort);
-    for (ii = 0; ii<len; ii++) last[ii]->next = ii ? last[ii-1] : 0;
-    TT.fixed[key] = last[len-1];
-    free(last);
+    dlist_terminate(TT.reg);
   }
 }
 
@@ -473,7 +421,7 @@ static int do_grep_r(struct dirtree *new)
   if (S_ISDIR(new->st.st_mode)) {
     for (al = TT.exclude_dir; al; al = al->next)
       if (!fnmatch(al->arg, new->name, 0)) return 0;
-    return DIRTREE_RECURSE|DIRTREE_SYMFOLLOW*FLAG(R);
+    return DIRTREE_RECURSE|(FLAG(R)?DIRTREE_SYMFOLLOW:0);
   }
   if (TT.S || TT.M) {
     for (al = TT.S; al; al = al->next)
@@ -505,11 +453,11 @@ void grep_main(void)
     toys.optflags &= ~FLAG_color;
 
   if (FLAG(color)) {
-    TT.purple = "\e[35m";
-    TT.cyan = "\e[36m";
-    TT.red = "\e[1;31m";
-    TT.green = "\e[32m";
-    TT.grey = "\e[m";
+    TT.purple = "\033[35m";
+    TT.cyan = "\033[36m";
+    TT.red = "\033[1;31m";
+    TT.green = "\033[32m";
+    TT.grey = "\033[0m";
   } else TT.purple = TT.cyan = TT.red = TT.green = TT.grey = "";
 
   if (FLAG(R)) toys.optflags |= FLAG_r;
@@ -520,7 +468,8 @@ void grep_main(void)
   if (!TT.A) TT.A = TT.C;
   if (!TT.B) TT.B = TT.C;
 
-  TT.delim = '\n' * !FLAG(z);
+  TT.indelim = '\n' * !FLAG(z);
+  TT.outdelim = '\n' * !FLAG(Z);
 
   // Handle egrep and fgrep
   if (*toys.which->name == 'e') toys.optflags |= FLAG_E;

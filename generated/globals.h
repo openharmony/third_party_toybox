@@ -1311,8 +1311,8 @@ struct grep_data {
 
   char *purple, *cyan, *red, *green, *grey;
   struct double_list *reg;
-  int found, tried, delim;
-  struct arg_list *fixed[256];
+  char indelim, outdelim;
+  int found, tried;
 };
 
 // toys/posix/head.c
