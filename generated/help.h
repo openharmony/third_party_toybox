@@ -122,7 +122,7 @@
 
 #define HELP_rfkill "usage: rfkill COMMAND [DEVICE]\n\nEnable/disable wireless devices.\n\nCommands:\nlist [DEVICE]   List current state\nblock DEVICE    Disable device\nunblock DEVICE  Enable device\n\nDEVICE is an index number, or one of:\nall, wlan(wifi), bluetooth, uwb(ultrawideband), wimax, wwan, gps, fm."
 
-#define HELP_ping "usage: ping [OPTIONS] HOST\n\nCheck network connectivity by sending packets to a host and reporting\nits response.\n\nSend ICMP ECHO_REQUEST packets to ipv4 or ipv6 addresses and prints each\necho it receives back, with round trip time. Returns true if host alive.\n\nOptions:\n-4, -6		Force IPv4 or IPv6\n-c CNT		Send CNT many packets (default 3, 0 = infinite)\n-f		Flood (print . and \\b to show drops, default -c 15 -i 0.2)\n-i TIME		Interval between packets (default 1, need root for < 0.2)\n-I IFACE/IP	Source interface or address\n-m MARK		Tag outgoing packets using SO_MARK\n-q		Quiet (stops after one returns true if host is alive)\n-s SIZE		Data SIZE in bytes (default 56)\n-t TTL		Set Time To Live (number of hops)\n-W SEC		Seconds to wait for response after last -c packet (default 3)\n-w SEC		Exit after this many seconds"
+#define HELP_ping "usage: ping/ping6 [OPTIONS] HOST\n\nCheck network connectivity by sending packets to a host and reporting\nits response.\n\nSend ICMP ECHO_REQUEST packets to ipv4 or ipv6 addresses and prints each\necho it receives back, with round trip time. Returns true if host alive.\n\nOptions:\n-4, -6		Force IPv4 or IPv6\n-c CNT		Send CNT many packets (default 3, 0 = infinite)\n-f		Flood (print . and \\b to show drops, default -c 15 -i 0.2)\n-i TIME		Interval between packets (default 1, need root for < 0.2)\n-I IFACE/IP	Source interface or address\n-m MARK		Tag outgoing packets using SO_MARK\n-q		Quiet (stops after one returns true if host is alive)\n-s SIZE		Data SIZE in bytes (default 56)\n-t TTL		Set Time To Live (number of hops)\n-W SEC		Seconds to wait for response after last -c packet (default 3)\n-w SEC		Exit after this many seconds"
 
 #define HELP_netstat "usage: netstat [-pWrxwutneal]\n\nDisplay networking information. Default is netstat -tuwx\n\n-r	Routing table\n-a	All sockets (not just connected)\n-l	Listening server sockets\n-t	TCP sockets\n-u	UDP sockets\n-w	Raw sockets\n-x	Unix sockets\n-e	Extended info\n-n	Don't resolve names\n-W	Wide display\n-p	Show PID/program name of sockets"
 
@@ -134,7 +134,7 @@
 
 #define HELP_ftpput "An ftpget that defaults to -s instead of -g"
 
-#define HELP_ftpget "usage: ftpget [-cvgslLmMdD] [-p PORT] [-P PASSWORD] [-u USER] HOST [LOCAL] REMOTE\n\nTalk to ftp server. By default get REMOTE file via passive anonymous\ntransfer, optionally saving under a LOCAL name. Can also send, list, etc.\n\n-c	Continue partial transfer\n-p	Use PORT instead of \"21\"\n-P	Use PASSWORD instead of \"ftpget@\"\n-u	Use USER instead of \"anonymous\"\n-v	Verbose\n\nWays to interact with FTP server:\n-d	Delete file\n-D	Remove directory\n-g	Get file (default)\n-l	List directory\n-L	List (filenames only)\n-m	Move file on server from LOCAL to REMOTE\n-M	mkdir\n-s	Send file"
+#define HELP_ftpget "usage: ftpget/ftpput [-cvgslLmMdD] [-p PORT] [-P PASSWORD] [-u USER] HOST [LOCAL] REMOTE\n\nTalk to ftp server. By default get REMOTE file via passive anonymous\ntransfer, optionally saving under a LOCAL name. Can also send, list, etc.\n\n-c	Continue partial transfer\n-p	Use PORT instead of \"21\"\n-P	Use PASSWORD instead of \"ftpget@\"\n-u	Use USER instead of \"anonymous\"\n-v	Verbose\n\nWays to interact with FTP server:\n-d	Delete file\n-D	Remove directory\n-g	Get file (default)\n-l	List directory\n-L	List (filenames only)\n-m	Move file on server from LOCAL to REMOTE\n-M	mkdir\n-s	Send file"
 
 #define HELP_yes "usage: yes [args...]\n\nRepeatedly output line until killed. If no args, output 'y'."
 
@@ -290,7 +290,7 @@
 
 #define HELP_count "usage: count\n\nCopy stdin to stdout, displaying simple progress indicator to stderr."
 
-#define HELP_clear "Clear the screen."
+#define HELP_clear "usage: clear\n\nClear the screen."
 
 #define HELP_chvt "usage: chvt N\n\nChange to virtual terminal number N. (This only works in text mode.)\n\nVirtual terminals are the Linux VGA text mode displays, ordinarily\nswitched between via alt-F1, alt-F2, etc. Use ctrl-alt-F1 to switch\nfrom X to a virtual terminal, and alt-F6 (or F7, or F8) to get back."
 
@@ -328,7 +328,7 @@
 
 #define HELP_tr "usage: tr [-cds] SET1 [SET2]\n\nTranslate, squeeze, or delete characters from stdin, writing to stdout\n\n-c/-C  Take complement of SET1\n-d     Delete input characters coded SET1\n-s     Squeeze multiple output characters of SET2 into one character"
 
-#define HELP_traceroute "usage: traceroute [-46FUIldnvr] [-f 1ST_TTL] [-m MAXTTL] [-p PORT] [-q PROBES]\n[-s SRC_IP] [-t TOS] [-w WAIT_SEC] [-g GATEWAY] [-i IFACE] [-z PAUSE_MSEC] HOST [BYTES]\n\ntraceroute6 [-dnrv] [-m MAXTTL] [-p PORT] [-q PROBES][-s SRC_IP] [-t TOS] [-w WAIT_SEC]\n  [-i IFACE] HOST [BYTES]\n\nTrace the route to HOST\n\n-4,-6 Force IP or IPv6 name resolution\n-F    Set the don't fragment bit (supports IPV4 only)\n-U    Use UDP datagrams instead of ICMP ECHO (supports IPV4 only)\n-I    Use ICMP ECHO instead of UDP datagrams (supports IPV4 only)\n-l    Display the TTL value of the returned packet (supports IPV4 only)\n-d    Set SO_DEBUG options to socket\n-n    Print numeric addresses\n-v    verbose\n-r    Bypass routing tables, send directly to HOST\n-m    Max time-to-live (max number of hops)(RANGE 1 to 255)\n-p    Base UDP port number used in probes(default 33434)(RANGE 1 to 65535)\n-q    Number of probes per TTL (default 3)(RANGE 1 to 255)\n-s    IP address to use as the source address\n-t    Type-of-service in probe packets (default 0)(RANGE 0 to 255)\n-w    Time in seconds to wait for a response (default 3)(RANGE 0 to 86400)\n-g    Loose source route gateway (8 max) (supports IPV4 only)\n-z    Pause Time in ms (default 0)(RANGE 0 to 86400) (supports IPV4 only)\n-f    Start from the 1ST_TTL hop (instead from 1)(RANGE 1 to 255) (supports IPV4 only)\n-i    Specify a network interface to operate with"
+#define HELP_traceroute "usage: traceroute [-46FUIldnvr] [-f 1ST_TTL] [-m MAXTTL] [-p PORT] [-q PROBES]\n[-s SRC_IP] [-t TOS] [-w WAIT_SEC] [-g GATEWAY] [-i IFACE] [-z PAUSE_MSEC] HOST [BYTES]\n\nusage: traceroute6 [-dnrv] [-m MAXTTL] [-p PORT] [-q PROBES][-s SRC_IP] [-t TOS] [-w WAIT_SEC]\n  [-i IFACE] HOST [BYTES]\n\nTrace the route to HOST\n\n-4,-6 Force IP or IPv6 name resolution\n-F    Set the don't fragment bit (supports IPV4 only)\n-U    Use UDP datagrams instead of ICMP ECHO (supports IPV4 only)\n-I    Use ICMP ECHO instead of UDP datagrams (supports IPV4 only)\n-l    Display the TTL value of the returned packet (supports IPV4 only)\n-d    Set SO_DEBUG options to socket\n-n    Print numeric addresses\n-v    verbose\n-r    Bypass routing tables, send directly to HOST\n-m    Max time-to-live (max number of hops)(RANGE 1 to 255)\n-p    Base UDP port number used in probes(default 33434)(RANGE 1 to 65535)\n-q    Number of probes per TTL (default 3)(RANGE 1 to 255)\n-s    IP address to use as the source address\n-t    Type-of-service in probe packets (default 0)(RANGE 0 to 255)\n-w    Time in seconds to wait for a response (default 3)(RANGE 0 to 86400)\n-g    Loose source route gateway (8 max) (supports IPV4 only)\n-z    Pause Time in ms (default 0)(RANGE 0 to 86400) (supports IPV4 only)\n-f    Start from the 1ST_TTL hop (instead from 1)(RANGE 1 to 255) (supports IPV4 only)\n-i    Specify a network interface to operate with"
 
 #define HELP_tftpd "usage: tftpd [-cr] [-u USER] [DIR]\n\nTransfer file from/to tftp server.\n\n-r	read only\n-c	Allow file creation via upload\n-u	run as USER\n-l	Log to syslog (inetd mode requires this)"
 
@@ -458,7 +458,7 @@
 
 #define HELP_tty "usage: tty [-s]\n\nShow filename of terminal connected to stdin.\n\nPrints \"not a tty\" and exits with nonzero status if no terminal\nis connected to stdin.\n\n-s	Silent, exit code only"
 
-#define HELP_true "Return zero."
+#define HELP_true "usage: true\n\nReturn zero."
 
 #define HELP_touch "usage: touch [-amch] [-d DATE] [-t TIME] [-r FILE] FILE...\n\nUpdate the access and modification times of each FILE to the current time.\n\n-a	Change access time\n-m	Change modification time\n-c	Don't create file\n-h	Change symlink\n-d	Set time to DATE (in YYYY-MM-DDThh:mm:SS[.frac][tz] format)\n-t	Set time to TIME (in [[CC]YY]MMDDhhmm[.ss][frac] format)\n-r	Set time same as reference FILE"
 
@@ -556,7 +556,7 @@
 
 #define HELP_file "usage: file [-bhLs] [file...]\n\nExamine the given files and describe their content types.\n\n-b	Brief (no filename)\n-h	Don't follow symlinks (default)\n-L	Follow symlinks\n-s	Show block/char device contents"
 
-#define HELP_false "Return nonzero."
+#define HELP_false "usage: false\n\nReturn nonzero."
 
 #define HELP_expand "usage: expand [-t TABLIST] [FILE...]\n\nExpand tabs to spaces according to tabstops.\n\n-t	TABLIST\n\nSpecify tab stops, either a single number instead of the default 8,\nor a comma separated list of increasing numbers representing tabstop\npositions (absolute, not increments) with each additional tab beyond\nthat becoming one space."
 
