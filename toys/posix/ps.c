@@ -1508,6 +1508,14 @@ static void bargraph(char *label, unsigned width, unsigned long span[4])
   printf("\e[0m]");
 }
 
+// add cmp_lt to support compare with tid.
+static int cmp_lt(struct procpid *x, struct procpid *y)
+{
+  // returns 1 if x < y with key = (slot[SLOT_pid], slot[SLOT_tid])
+  return (x->slot[SLOT_pid] < y->slot[SLOT_pid]) ||
+         (x->slot[SLOT_pid] == y->slot[SLOT_pid] && x->slot[SLOT_tid] < y->slot[SLOT_tid]);
+}
+
 static void top_common(
   int (*filter)(long long *oslot, long long *nslot, int milis))
 {
@@ -1575,7 +1583,7 @@ static void top_common(
                      *ntb = new.count ? *new.tb : 0;
 
       // If we just have old for this process, it exited. Discard it.
-      if (old.count && (!new.count || *otb->slot < *ntb->slot)) {
+      if (old.count && (!new.count || cmp_lt(otb, ntb))) {
         old.tb++;
         old.count--;
 
@@ -1583,7 +1591,7 @@ static void top_common(
       }
 
       // If we just have new, use it verbatim
-      if (!old.count || *otb->slot > *ntb->slot) mix.tb[mix.count] = ntb;
+      if (!old.count || cmp_lt(ntb, otb)) mix.tb[mix.count] = ntb;
       else {
         // Keep or discard
         if (filter(otb->slot, ntb->slot, new.whence-old.whence)) {
