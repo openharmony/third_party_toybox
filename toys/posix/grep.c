@@ -150,6 +150,7 @@ static void do_grep(int fd, char *name)
     size_t ulen;
     long len;
     int matched = 0, rc = 1;
+    if (FLAG(m) && mcount >= TT.m) break;
 
     // get next line, check and trim delimiter
     lcount++;
@@ -349,7 +350,6 @@ static void do_grep(int fd, char *name)
     }
     free(line);
 
-    if (FLAG(m) && mcount >= TT.m) break;
   }
 
   if (FLAG(c)) outline(0, ':', name, mcount, 0, 1);
