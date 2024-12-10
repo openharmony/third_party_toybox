@@ -2,7 +2,7 @@
     "name": "@ohos/toybox",
     "description": "all-in-one Linux command line",
     "version": "3.1",
-    "license": "Public Domain",
+    "license": "BSD Zero Clause License",
     "publishAs": "code-segment",
     "segment": {
         "destPath": "third_party/toybox"
