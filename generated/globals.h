@@ -124,7 +124,7 @@ struct pidof_data {
 struct seq_data {
   char *s, *f;
 
-  int precision;
+  int precision, buflen;
 };
 
 // toys/lsb/su.c
