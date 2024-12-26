@@ -43,12 +43,13 @@
  *       at right edge? (Not adjusting to screen size at all? Header wraps?)
  * TODO: top: thread support and SMP
  * TODO: pgrep -f only searches the amount of cmdline that fits in toybuf.
+ * TODO: pgrep qemu-system-i386 never matches because one char too long
 
 USE_PS(NEWTOY(ps, "k(sort)*P(ppid)*aAdeflMno*O*p(pid)*s*t*Tu*U*g*G*wZ[!ol][+Ae][!oO]", TOYFLAG_BIN|TOYFLAG_LOCALE))
 // stayroot because iotop needs root to read other process' proc/$$/io
 // TOP and IOTOP have a large common option block used for common processing,
 // the default values are different but the flags are in the same order.
-USE_TOP(NEWTOY(top, ">0O*" "Hk*o*p*u*s#<1d%<100=3000m#n#<1bq[!oO]", TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_LOCALE))
+USE_TOP(NEWTOY(top, ">0O*h" "Hk*o*p*u*s#<1d%<100=3000m#n#<1bq[!oO]", TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_LOCALE))
 USE_IOTOP(NEWTOY(iotop, ">0AaKO" "Hk*o*p*u*s#<1=7d%<100=3000m#n#<1bq", TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_STAYROOT|TOYFLAG_LOCALE))
 USE_PGREP(NEWTOY(pgrep, "?cld:u*U*t*s*P*g*G*fnovxL:[-no]", TOYFLAG_USR|TOYFLAG_BIN))
 USE_PKILL(NEWTOY(pkill,    "?Vu*U*t*s*P*g*G*fnovxl:[-no]", TOYFLAG_USR|TOYFLAG_BIN))
@@ -88,11 +89,12 @@ config TOP
   bool "top"
   default y
   help
-    usage: top [-Hbq] [-k FIELD,] [-o FIELD,] [-s SORT] [-n NUMBER] [-m LINES] [-d SECONDS] [-p PID,] [-u USER,]
+    usage: top [-Hhbq] [-k FIELD,] [-o FIELD,] [-s SORT] [-n NUMBER] [-m LINES] [-d SECONDS] [-p PID,] [-u USER,]
 
     Show process activity in real time.
 
     -H	Show threads
+    -h	Usage graphs instead of text
     -k	Fallback sort FIELDS (default -S,-%CPU,-ETIME,-PID)
     -o	Show FIELDS (def PID,USER,PR,NI,VIRT,RES,SHR,S,%CPU,%MEM,TIME+,CMDLINE)
     -O	Add FIELDS (replacing PR,NI,VIRT,RES,SHR,S from default)
@@ -105,8 +107,8 @@ config TOP
     -u	Show these USERs
     -q	Quiet (no header lines)
 
-    Cursor LEFT/RIGHT to change sort, UP/DOWN move list, space to force
-    update, R to reverse sort, Q to exit.
+    Cursor UP/DOWN or LEFT/RIGHT to move list, SHIFT LEFT/RIGHT to change sort,
+    space to force update, R to reverse sort, Q to exit.
 
 # Requires CONFIG_IRQ_TIME_ACCOUNTING in the kernel for /proc/$$/io
 config IOTOP
@@ -207,13 +209,16 @@ GLOBALS(
     } pgrep;
   };
 
-  struct ptr_len gg, GG, pp, PP, ss, tt, uu, UU;
+  struct ps_ptr_len {
+    void *ptr;
+    long len;
+  } gg, GG, pp, PP, ss, tt, uu, UU;
   struct dirtree *threadparent;
-  unsigned width, height;
+  unsigned width, height, scroll;
   dev_t tty;
   void *fields, *kfields;
   long long ticks, bits, time;
-  int kcount, forcek, sortpos;
+  int kcount, forcek, sortpos, pidlen;
   int (*match_process)(long long *slot);
   void (*show_process)(void *tb);
 )
@@ -316,8 +321,8 @@ struct typography {
   signed char width, slot;
 } static const typos[] = TAGGED_ARRAY(PS,
   // Numbers. (What's in slot[] is what's displayed, sorted numerically.)
-  {"PID", "Process ID", 5, SLOT_pid},
-  {"PPID", "Parent Process ID", 5, SLOT_ppid},
+  {"PID", "Process ID", 6, SLOT_pid},
+  {"PPID", "Parent Process ID", 6, SLOT_ppid},
   {"PRI", "Priority (dynamic 0 to 139)", 3, SLOT_priority},
   {"NI", "Niceness (static 19 to -20)", 3, SLOT_nice},
   {"ADDR", "Instruction pointer", 4+sizeof(long), SLOT_eip},
@@ -459,7 +464,7 @@ static void help_help(void)
 // process match filter for top/ps/pgrep: Return 0 to discard, nonzero to keep
 static int shared_match_process(long long *slot)
 {
-  struct ptr_len match[] = {
+  struct ps_ptr_len match[] = {
     {&TT.gg, SLOT_gid}, {&TT.GG, SLOT_rgid}, {&TT.pp, SLOT_pid},
     {&TT.PP, SLOT_ppid}, {&TT.ss, SLOT_sid}, {&TT.tt, SLOT_ttynr},
     {&TT.uu, SLOT_uid}, {&TT.UU, SLOT_ruid}
@@ -469,7 +474,7 @@ static int shared_match_process(long long *slot)
 
   // Do we have -g -G -p -P -s -t -u -U options selecting processes?
   for (i = 0; i < ARRAY_LEN(match); i++) {
-    struct ptr_len *mm = match[i].ptr;
+    struct ps_ptr_len *mm = match[i].ptr;
 
     if (mm->len) {
       ll = mm->ptr;
@@ -599,7 +604,7 @@ static char *string_field(struct procpid *tb, struct ofields *field)
     }
     if (which <= PS_SHR) ll *= sysconf(_SC_PAGESIZE);
     if (TT.forcek) sprintf(out, "%lldk", ll/1024);
-    else human_readable_long(s, ll, i-1, 0);
+    else human_readable_long(s, ll, i-1, 0, 0);
 
   // Posix doesn't specify what flags should say. Man page says
   // 1 for PF_FORKNOEXEC and 4 for PF_SUPERPRIV from linux/sched.h
@@ -637,11 +642,14 @@ static char *string_field(struct procpid *tb, struct ofields *field)
 static void show_ps(void *p)
 {
   struct procpid *tb = p;
-  struct ofields *field;
-  int pad, len, width = TT.width, abslen, sign, olen, extra = 0;
+  struct ofields *field = TT.fields;
+  int pad, len, width = TT.width, abslen, sign, olen, scroll, extra = 0;
+
+  // Skip TT.scroll many fields (but not last one)
+  for (scroll = TT.scroll; scroll && field->next; scroll--) field = field->next;
 
   // Loop through fields to display
-  for (field = TT.fields; field; field = field->next) {
+  for (; field; field = field->next) {
     char *out = string_field(tb, field);
 
     // Output the field, appropriately padded
@@ -837,7 +845,7 @@ static int get_ps(struct dirtree *new)
     off_t temp = 6;
 
     sprintf(buf, "%lld/exe", slot[SLOT_tid]);
-    if (readfileat(fd, buf, buf, &temp) && !memcmp(buf, "\177ELF", 4)) {
+    if (readfileat(fd, buf, buf, &temp) && !smemcmp(buf, "\177ELF", 4)) {
       if (buf[4] == 1) slot[SLOT_bits] = 32;
       else if (buf[4] == 2) slot[SLOT_bits] = 64;
     }
@@ -1111,8 +1119,9 @@ static char *parse_ko(void *data, char *type, int length)
   }
   if (i==ARRAY_LEN(typos)) return type;
   if (!field->title) field->title = typos[field->which].name;
-  if (!field->len) field->len = typos[field->which].width;
-  else if (typos[field->which].width<0) field->len *= -1;
+  k = i<2 ? TT.pidlen : typos[field->which].width;
+  if (!field->len) field->len = k;
+  else if (k<0) field->len *= -1;
   dlist_add_nomalloc(data, (void *)field);
 
   return 0;
@@ -1123,7 +1132,10 @@ static char *parse_ko(void *data, char *type, int length)
 static long long get_headers(struct ofields *field, char *buf, int blen)
 {
   long long bits = 0;
-  int len = 0;
+  int len = 0, scroll;
+
+  // Skip TT.scroll many fields (but not last one)
+  for (scroll = TT.scroll; scroll && field->next; scroll--) field = field->next;
 
   for (; field; field = field->next) {
     len += snprintf(buf+len, blen-len, " %*s"+!bits, field->len,
@@ -1137,7 +1149,7 @@ static long long get_headers(struct ofields *field, char *buf, int blen)
 // Parse command line options -p -s -t -u -U -g -G
 static char *parse_rest(void *data, char *str, int len)
 {
-  struct ptr_len *pl = (struct ptr_len *)data;
+  struct ps_ptr_len *pl = (struct ps_ptr_len *)data;
   long *ll = pl->ptr;
   char *end;
   int num = 0;
@@ -1279,11 +1291,9 @@ static void default_ko(char *s, void *fields, char *err, struct arg_list *arg)
   if (x) help_help();
 }
 
-void ps_main(void)
+static void common_setup(void)
 {
-  char **arg;
-  struct dirtree *dt;
-  char *not_o;
+  char buf[128];
   int i;
 
   TT.ticks = sysconf(_SC_CLK_TCK); // units for starttime/uptime
@@ -1293,6 +1303,20 @@ void ps_main(void)
 
     if (!fstat(i, &st)) TT.tty = st.st_rdev;
   }
+
+  if (readfile("/proc/sys/kernel/pid_max", buf, 128))
+    while (isdigit(buf[TT.pidlen])) TT.pidlen++;
+  else TT.pidlen = 6;
+}
+
+void ps_main(void)
+{
+  char **arg;
+  struct dirtree *dt;
+  char *not_o;
+  int i;
+
+  common_setup();
 
   // If we can't query terminal size pad to 80 but do -w
   TT.width = 80;
@@ -1324,7 +1348,7 @@ void ps_main(void)
     not_o = "F,S,UID,%sPPID,C,PRI,NI,BIT,SZ,WCHAN,TTY,TIME,CMD";
   else if (CFG_TOYBOX_ON_ANDROID)
     sprintf(not_o = toybuf+128,
-            "USER,%%sPPID,VSIZE,RSS,WCHAN:10,ADDR:10,S,%s",
+            "USER,%%sPPID,VSIZE:10,RSS,WCHAN:10,ADDR:10,S,%s",
             FLAG(T) ? "CMD" : "NAME");
   sprintf(toybuf, not_o, FLAG(T) ? "PID,TID," : "PID,");
 
@@ -1387,6 +1411,7 @@ void ps_main(void)
     if (CFG_TOYBOX_FREE) free(tbsort);
   }
 
+  if (!TT.kcount) toys.exitval = 1;
   if (CFG_TOYBOX_FREE) {
     free(TT.gg.ptr);
     free(TT.GG.ptr);
@@ -1400,7 +1425,6 @@ void ps_main(void)
   }
 }
 
-#define CLEANUP_ps
 #define FOR_top
 #include "generated/flags.h"
 
@@ -1443,8 +1467,8 @@ static int header_line(int line, int rev)
 
   if (FLAG(b)) puts(toybuf);
   else {
-    printf("%s%-*.*s%s\r\n", rev?"\033[7m":"", rev?TT.width:0, TT.width, toybuf,
-      rev?"\033[0m":"");
+    printf("%s%-*.*s%s\r\n", rev?"\e[7m":"", rev?TT.width:0, TT.width, toybuf,
+      rev?"\e[0m":"");
   }
 
   return line-1;
@@ -1452,7 +1476,36 @@ static int header_line(int line, int rev)
 
 static void top_cursor_cleanup(void)
 {
-  tty_esc("?25h");
+  xputsn("\e[?25h");
+}
+
+// Show a three color bar graph. spans: 0 total size, 1used, 2 nice, 3 sys
+static void bargraph(char *label, unsigned width, unsigned long span[4])
+{
+  char percent[16];
+  long long ll;
+  unsigned i, color, len;
+
+  if (!*span) ++*span;
+  i = ((span[1]+(unsigned long long)span[2]+span[3])*1000)/ *span;
+  len = sprintf(percent, "%u.%u", i/10, i%10);
+
+  printf("%s[", label);
+  for (ll = i = color = 0; i<width; i++) {
+    while (ll<1 && color<4) {
+      if (color++!=3) {
+        ll += span[color]*width;
+        if (ll<*span/2) continue;
+      }
+      // green, red, blue, grey
+      if (color==4) printf("\e[1;2;37m");
+      else printf("\e[%um", (char[]){32,34,31}[color-1]);
+      break;
+    }
+    if (color<4) ll -= *span;
+    printf("%c", width-i>len ? (color==4 ? ' ' : '|') : percent[len-(width-i)]);
+  }
+  printf("\e[0m]");
 }
 
 static void top_common(
@@ -1468,15 +1521,15 @@ static void top_common(
     "iow", "irq", "sirq", "host"};
   unsigned tock = 0;
   int i, lines, topoff = 0, done = 0;
-  char stdout_buf[BUFSIZ];
+  char stdout_buf[8192];
 
   if (!TT.fields) perror_exit("no -o");
 
   // Avoid flicker and hide the cursor in interactive mode.
   if (!FLAG(b)) {
-    setbuf(stdout, stdout_buf);
+    setbuffer(stdout, stdout_buf, sizeof(stdout_buf));
     sigatexit(top_cursor_cleanup);
-    tty_esc("?25l");
+    xputsn("\e[?25l");
   }
 
   toys.signal = SIGWINCH;
@@ -1517,13 +1570,12 @@ static void top_common(
     mix.tb = xmalloc((old.count+new.count)*sizeof(struct procpid));
     mix.count = 0;
 
-    int merge_idx = (FLAG(H) || (TT.bits&(_PS_TID|_PS_TCNT))) ? SLOT_tid : SLOT_pid;
     while (old.count || new.count) {
       struct procpid *otb = old.count ? *old.tb : 0,
                      *ntb = new.count ? *new.tb : 0;
 
       // If we just have old for this process, it exited. Discard it.
-      if (old.count && (!new.count || otb->slot[merge_idx] < ntb->slot[merge_idx])) {
+      if (old.count && (!new.count || *otb->slot < *ntb->slot)) {
         old.tb++;
         old.count--;
 
@@ -1531,7 +1583,7 @@ static void top_common(
       }
 
       // If we just have new, use it verbatim
-      if (!old.count || otb->slot[merge_idx] > ntb->slot[merge_idx]) mix.tb[mix.count] = ntb;
+      if (!old.count || *otb->slot > *ntb->slot) mix.tb[mix.count] = ntb;
       else {
         // Keep or discard
         if (filter(otb->slot, ntb->slot, new.whence-old.whence)) {
@@ -1552,7 +1604,7 @@ static void top_common(
       if (recalc) {
         qsort(mix.tb, mix.count, sizeof(struct procpid *), (void *)ksort);
         if (!FLAG(b)) {
-          printf("\033[H\033[J");
+          printf("\e[H\e[J");
           if (toys.signal) {
             toys.signal = 0;
             terminal_probesize(&TT.width, &TT.height);
@@ -1568,7 +1620,8 @@ static void top_common(
           char hr[4][32];
           long long ll, up = 0;
           long run[6];
-          int j;
+          int j, k, cpus = sysconf(_SC_NPROCESSORS_CONF);
+
 
           // Count running, sleeping, stopped, zombie processes.
           // The kernel has more states (and different sets in different
@@ -1581,8 +1634,8 @@ static void top_common(
             run[1+stridx("RTtZ", *string_field(mix.tb[i], &field))]++;
           sprintf(toybuf,
             "%ss: %d total, %3ld running, %3ld sleeping, %3ld stopped, "
-            "%3ld zombie", FLAG(H)?"Thread":"Task", mix.count, run[1], run[0],
-            run[2]+run[3], run[4]);
+            "%3ld zombie", FLAG(H) ? "Thread" : "Task", mix.count, run[1],
+            run[0], run[2]+run[3], run[4]);
           lines = header_line(lines, 0);
 
           if (readfile("/proc/meminfo", toybuf+256, sizeof(toybuf)-256)) {
@@ -1590,32 +1643,37 @@ static void top_common(
               j = i%3;
               pos = strafter(toybuf+256, (char *[]){"MemTotal:","\nMemFree:",
                     "\nBuffers:","\nSwapTotal:","\nSwapFree:","\nCached:"}[i]);
-              human_readable_long(hr[j+!!j], 1024*(run[i] = pos?atol(pos):0),
-                8, 0);
-              if (j==1) human_readable_long(hr[1], 1024*(run[i-1]-run[i]), 8,0);
+              run[i] = pos ? atol(pos) : 0;
+              if (FLAG(h)) continue;
+              k = (*run>=10000000);
+              human_readable_long(hr[j+!!j], run[i]>>(10*k), 9, k+1, HR_NODOT);
+              if (j==1) human_readable_long(hr[1], (run[i-1]-run[i])>>(10*k),
+                8, k+1, HR_NODOT);
               else if (j==2) {
-                sprintf(toybuf, (i<3)
-                  ? "  Mem: %9s total, %9s used, %9s free, %9s buffers"
-                  : " Swap: %9s total, %9s used, %9s free, %9s cached",
-                  hr[0], hr[1], hr[2], hr[3]);
+                sprintf(toybuf, " %s:%10s total,%10s used,%10s free,%10s %s",
+                  (i<3) ? " Mem" : "Swap", hr[0], hr[1], hr[2], hr[3],
+                  (i<3) ? "buffers" : "cached");
                 lines = header_line(lines, 0);
               }
             }
-          }
+            if (FLAG(h)) {
+              unsigned long swp[] = {run[3], 0, 0, run[3]-run[4]},
+                mem[] = {run[0], run[0]-run[1]-run[2]-run[5], run[2], run[5]};
 
+              bargraph("Mem", 34, mem);
+              bargraph(" Swp", 34, swp);
+              xprintf("\r\n");
+            }
+          }
           pos = toybuf;
-          i = sysconf(_SC_NPROCESSORS_CONF);
-          pos += sprintf(pos, "%d%%cpu", i*100);
-          j = 4+(i>10);
+          pos += sprintf(pos, "%d%%cpu", cpus*100);
+          j = 4+(cpus>10);
 
           // If a processor goes idle it's powered down and its idle ticks don't
           // advance, so calculate idle time as potential time - used.
           if (mix.count) up = mix.tb[0]->slot[SLOT_upticks];
-          if (!up) {
-            up = 1;
-            memset(stats, 0, sizeof(stats));
-          }
-          now = up*i;
+          if (!up) up = 1;
+          now = up*cpus;
           ll = stats[3] = stats[11] = 0;
           for (i = 0; i<8; i++) ll += stats[i]-stats[i+8];
           stats[3] = now - llabs(ll);
@@ -1624,7 +1682,7 @@ static void top_common(
             ll = (llabs(stats[i]-stats[i+8])*1000)/up;
             pos += sprintf(pos, "% *lld%%%s", j, (ll+5)/10, cpufields[i]);
           }
-          lines = header_line(lines, 0);
+        // Display "iotop" header.
         } else {
           struct ofields *field;
           struct procpid tb;
@@ -1646,9 +1704,10 @@ static void top_common(
               field->len, string_field(&tb, field));
           }
           *--pos = 0;
-          lines = header_line(lines, 0);
         }
 
+        lines = header_line(lines, 0);
+        // print line of header labels for currently displayed fields
         get_headers(TT.fields, pos = toybuf, sizeof(toybuf));
         for (i = 0, is = ' '; *pos; pos++) {
           was = is;
@@ -1661,18 +1720,16 @@ static void top_common(
         *pos = 0;
         lines = header_line(lines, 1);
       }
-      if (!recalc && !FLAG(b))
-        printf("\033[%dH\033[J", 1+TT.height-lines);
-      recalc = 1;
+      if (!recalc && !FLAG(b)) printf("\e[%dH\e[J", 1+TT.height-lines);
 
       for (i = 0; i<lines && i+topoff<mix.count; i++) {
         // Running processes are shown in bold.
         int bold = !FLAG(b) && mix.tb[i+topoff]->state == 'R';
 
         if (!FLAG(b) && i) putchar('\n');
-        if (bold) printf("\033[1m");
+        if (bold) printf("\e[1m");
         show_ps(mix.tb[i+topoff]);
-        if (bold) printf("\033[m");
+        if (bold) printf("\e[m");
       }
 
       if (TT.top.n && !--TT.top.n) {
@@ -1692,6 +1749,7 @@ static void top_common(
         break;
       } else fflush(stdout);
 
+      recalc = 1;
       i = scan_key_getsize(scratch, timeout-now, &TT.width, &TT.height);
       if (i==-1 || i==3 || toupper(i)=='Q') {
         done++;
@@ -1709,21 +1767,18 @@ static void top_common(
         ((struct ofields *)TT.kfields)->reverse *= -1;
       else {
         i -= 256;
-        if (i == KEY_LEFT) setsort(TT.sortpos-1);
-        else if (i == KEY_RIGHT) setsort(TT.sortpos+1);
-        // KEY_UP is 0, so at end of strchr
-        else if (strchr((char []){KEY_DOWN,KEY_PGUP,KEY_PGDN,KEY_UP}, i)) {
-          recalc = 0;
-
-          if (i == KEY_UP) topoff--;
-          else if (i == KEY_DOWN) topoff++;
-          else if (i == KEY_PGDN) topoff += lines;
-          else if (i == KEY_PGUP) topoff -= lines;
-          if (topoff<0) topoff = 0; 
-          if (topoff>mix.count) topoff = mix.count;
-        }
+        if (i == (KEY_SHIFT|KEY_LEFT)) setsort(TT.sortpos-1);
+        else if (i == (KEY_SHIFT|KEY_RIGHT)) setsort(TT.sortpos+1);
+        else if (i == KEY_RIGHT) TT.scroll++;
+        else if (i == KEY_LEFT && TT.scroll) TT.scroll--;
+        else if (recalc-- && i == KEY_UP) topoff--;
+        else if (i == KEY_DOWN) topoff++;
+        else if (i == KEY_PGDN) topoff += lines;
+        else if (i == KEY_PGUP) topoff -= lines;
+        else continue;
+        if (topoff<0) topoff = 0;
+        if (topoff>mix.count) topoff = mix.count;
       }
-      continue;
     }
 
     free(mix.tb);
@@ -1736,8 +1791,7 @@ static void top_common(
 
 static void top_setup(char *defo, char *defk)
 {
-  TT.ticks = sysconf(_SC_CLK_TCK); // units for starttime/uptime
-  TT.tty = tty_fd() != -1;
+  common_setup();
 
   // Are we doing "batch" output or interactive?
   if (FLAG(b)) TT.width = TT.height = 99999;
@@ -1779,7 +1833,6 @@ void top_main(void)
   top_common(merge_deltas);
 }
 
-#define CLEANUP_top
 #define FOR_iotop
 #include "generated/flags.h"
 
@@ -1790,12 +1843,12 @@ static int iotop_filter(long long *oslot, long long *nslot, int milis)
   if (!FLAG(a)) merge_deltas(oslot, nslot, milis);
   else oslot[SLOT_upticks] = ((millitime()-TT.time)*TT.ticks)/1000;
 
-  return !FLAG(O)||oslot[SLOT_iobytes+!FLAG(A)];
+  return !FLAG(O) || oslot[SLOT_iobytes+!FLAG(A)];
 }
 
 void iotop_main(void)
 {
-  char *s1 = 0, *s2 = 0, *d = "D"+!!FLAG(A);
+  char *s1 = 0, *s2 = 0, *d = "D"+FLAG(A);
 
   if (FLAG(K)) TT.forcek++;
 
@@ -1810,7 +1863,6 @@ void iotop_main(void)
 // context, so force pgrep's flags on even when building pkill standalone.
 // (All the pgrep/pkill functions drop out when building ps standalone.)
 #define FORCE_FLAGS
-#define CLEANUP_iotop
 #define FOR_pgrep
 #include "generated/flags.h"
 
@@ -1831,9 +1883,7 @@ static void do_pgk(struct procpid *tb)
   }
   if (!FLAG(c) && (!TT.pgrep.signal || TT.tty)) {
     printf("%lld", *tb->slot);
-    if (FLAG(l))
-      printf(" %s", tb->str+tb->offset[4]*!!FLAG(f));
-    
+    if (FLAG(l)) printf(" %s", tb->str+tb->offset[4]*FLAG(f));
     printf("%s", TT.pgrep.d ? TT.pgrep.d : "\n");
   }
 }
@@ -1843,7 +1893,7 @@ static void match_pgrep(void *p)
   struct procpid *tb = p;
   regmatch_t match;
   struct regex_list *reg;
-  char *name = tb->str+tb->offset[4]*!!FLAG(f);
+  char *name = tb->str+tb->offset[4]*FLAG(f);
 
   // Never match ourselves.
   if (TT.pgrep.self == *tb->slot) return;
@@ -1924,7 +1974,6 @@ void pgrep_main(void)
   if (TT.pgrep.d) xputc('\n');
 }
 
-#define CLEANUP_pgrep
 #define FOR_pkill
 #include "generated/flags.h"
 
