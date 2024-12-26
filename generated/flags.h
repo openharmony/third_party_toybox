@@ -340,12 +340,14 @@
 #undef FOR_count
 #endif
 
-// cp <2(preserve):;D(parents)RHLPprdaslvnF(remove-destination)fi[-HLPd][-ni] <2(preserve):;D(parents)RHLPprdaslvnF(remove-destination)fi[-HLPd][-ni]
+// cp <1(preserve):;D(parents)RHLPprudaslvnF(remove-destination)fit:T[-HLPd][-niu][+Rr] <1(preserve):;D(parents)RHLPprudaslvnF(remove-destination)fit:T[-HLPd][-niu][+Rr]
 #undef OPTSTR_cp
-#define OPTSTR_cp "<2(preserve):;D(parents)RHLPprdaslvnF(remove-destination)fi[-HLPd][-ni]"
+#define OPTSTR_cp "<1(preserve):;D(parents)RHLPprudaslvnF(remove-destination)fit:T[-HLPd][-niu][+Rr]"
 #ifdef CLEANUP_cp
 #undef CLEANUP_cp
 #undef FOR_cp
+#undef FLAG_T
+#undef FLAG_t
 #undef FLAG_i
 #undef FLAG_f
 #undef FLAG_F
@@ -355,6 +357,7 @@
 #undef FLAG_s
 #undef FLAG_a
 #undef FLAG_d
+#undef FLAG_u
 #undef FLAG_r
 #undef FLAG_p
 #undef FLAG_P
@@ -1362,15 +1365,16 @@
 #undef FOR_insmod
 #endif
 
-// install <1cdDpsvm:o:g: <1cdDpsvm:o:g:
+// install <1cdDp(preserve-timestamps)svt:m:o:g: <1cdDp(preserve-timestamps)svt:m:o:g:
 #undef OPTSTR_install
-#define OPTSTR_install "<1cdDpsvm:o:g:"
+#define OPTSTR_install "<1cdDp(preserve-timestamps)svt:m:o:g:"
 #ifdef CLEANUP_install
 #undef CLEANUP_install
 #undef FOR_install
 #undef FLAG_g
 #undef FLAG_o
 #undef FLAG_m
+#undef FLAG_t
 #undef FLAG_v
 #undef FLAG_s
 #undef FLAG_p
@@ -1924,12 +1928,14 @@
 #undef FLAG_q
 #endif
 
-// mv <2vnF(remove-destination)fi[-ni] <2vnF(remove-destination)fi[-ni]
+// mv <1v(verbose)nF(remove-destination)fit:T[-ni] <1v(verbose)nF(remove-destination)fit:T[-ni]
 #undef OPTSTR_mv
-#define OPTSTR_mv "<2vnF(remove-destination)fi[-ni]"
+#define OPTSTR_mv "<1v(verbose)nF(remove-destination)fit:T[-ni]"
 #ifdef CLEANUP_mv
 #undef CLEANUP_mv
 #undef FOR_mv
+#undef FLAG_T
+#undef FLAG_t
 #undef FLAG_i
 #undef FLAG_f
 #undef FLAG_F
@@ -2983,9 +2989,9 @@
 #undef FLAG_foreground
 #endif
 
-// top >0O*Hk*o*p*u*s#<1d%<100=3000m#n#<1bq[!oO] >0O*Hk*o*p*u*s#<1d%<100=3000m#n#<1bq[!oO]
+// top >0O*hHk*o*p*u*s#<1d%<100=3000m#n#<1bq[!oO] >0O*hHk*o*p*u*s#<1d%<100=3000m#n#<1bq[!oO]
 #undef OPTSTR_top
-#define OPTSTR_top ">0O*Hk*o*p*u*s#<1d%<100=3000m#n#<1bq[!oO]"
+#define OPTSTR_top ">0O*hHk*o*p*u*s#<1d%<100=3000m#n#<1bq[!oO]"
 #ifdef CLEANUP_top
 #undef CLEANUP_top
 #undef FOR_top
@@ -3000,6 +3006,7 @@
 #undef FLAG_o
 #undef FLAG_k
 #undef FLAG_H
+#undef FLAG_h
 #undef FLAG_O
 #endif
 
@@ -3723,26 +3730,30 @@
 #endif
 
 #ifdef FOR_cp
+#define CLEANUP_cp
 #ifndef TT
 #define TT this.cp
 #endif
-#define FLAG_i (1<<0)
-#define FLAG_f (1<<1)
-#define FLAG_F (1<<2)
-#define FLAG_n (1<<3)
-#define FLAG_v (1<<4)
-#define FLAG_l (1<<5)
-#define FLAG_s (1<<6)
-#define FLAG_a (1<<7)
-#define FLAG_d (1<<8)
-#define FLAG_r (1<<9)
-#define FLAG_p (1<<10)
-#define FLAG_P (1<<11)
-#define FLAG_L (1<<12)
-#define FLAG_H (1<<13)
-#define FLAG_R (1<<14)
-#define FLAG_D (1<<15)
-#define FLAG_preserve (1<<16)
+#define FLAG_T (1LL<<0)
+#define FLAG_t (1LL<<1)
+#define FLAG_i (1LL<<2)
+#define FLAG_f (1LL<<3)
+#define FLAG_F (1LL<<4)
+#define FLAG_n (1LL<<5)
+#define FLAG_v (1LL<<6)
+#define FLAG_l (1LL<<7)
+#define FLAG_s (1LL<<8)
+#define FLAG_a (1LL<<9)
+#define FLAG_d (1LL<<10)
+#define FLAG_u (1LL<<11)
+#define FLAG_r (1LL<<12)
+#define FLAG_p (1LL<<13)
+#define FLAG_P (1LL<<14)
+#define FLAG_L (1LL<<15)
+#define FLAG_H (1LL<<16)
+#define FLAG_R (1LL<<17)
+#define FLAG_D (1LL<<18)
+#define FLAG_preserve (1LL<<19)
 #endif
 
 #ifdef FOR_cpio
@@ -4591,18 +4602,20 @@
 #endif
 
 #ifdef FOR_install
+#define CLEANUP_install
 #ifndef TT
 #define TT this.install
 #endif
-#define FLAG_g (1<<0)
-#define FLAG_o (1<<1)
-#define FLAG_m (1<<2)
-#define FLAG_v (1<<3)
-#define FLAG_s (1<<4)
-#define FLAG_p (1<<5)
-#define FLAG_D (1<<6)
-#define FLAG_d (1<<7)
-#define FLAG_c (1<<8)
+#define FLAG_g (1LL<<0)
+#define FLAG_o (1LL<<1)
+#define FLAG_m (1LL<<2)
+#define FLAG_t (1LL<<3)
+#define FLAG_v (1LL<<4)
+#define FLAG_s (1LL<<5)
+#define FLAG_p (1LL<<6)
+#define FLAG_D (1LL<<7)
+#define FLAG_d (1LL<<8)
+#define FLAG_c (1LL<<9)
 #endif
 
 #ifdef FOR_ionice
@@ -4622,24 +4635,25 @@
 #endif
 
 #ifdef FOR_iotop
+#define CLEANUP_iotop
 #ifndef TT
 #define TT this.iotop
 #endif
-#define FLAG_q (1<<0)
-#define FLAG_b (1<<1)
-#define FLAG_n (1<<2)
-#define FLAG_m (1<<3)
-#define FLAG_d (1<<4)
-#define FLAG_s (1<<5)
-#define FLAG_u (1<<6)
-#define FLAG_p (1<<7)
-#define FLAG_o (1<<8)
-#define FLAG_k (1<<9)
-#define FLAG_H (1<<10)
-#define FLAG_O (1<<11)
-#define FLAG_K (1<<12)
-#define FLAG_a (1<<13)
-#define FLAG_A (1<<14)
+#define FLAG_q (1LL<<0)
+#define FLAG_b (1LL<<1)
+#define FLAG_n (1LL<<2)
+#define FLAG_m (1LL<<3)
+#define FLAG_d (1LL<<4)
+#define FLAG_s (1LL<<5)
+#define FLAG_u (1LL<<6)
+#define FLAG_p (1LL<<7)
+#define FLAG_o (1LL<<8)
+#define FLAG_k (1LL<<9)
+#define FLAG_H (1LL<<10)
+#define FLAG_O (1LL<<11)
+#define FLAG_K (1LL<<12)
+#define FLAG_a (1LL<<13)
+#define FLAG_A (1LL<<14)
 #endif
 
 #ifdef FOR_ip
@@ -5061,14 +5075,17 @@
 #endif
 
 #ifdef FOR_mv
+#define CLEANUP_mv
 #ifndef TT
 #define TT this.mv
 #endif
-#define FLAG_i (1<<0)
-#define FLAG_f (1<<1)
-#define FLAG_F (1<<2)
-#define FLAG_n (1<<3)
-#define FLAG_v (1<<4)
+#define FLAG_T (1LL<<0)
+#define FLAG_t (1LL<<1)
+#define FLAG_i (1LL<<2)
+#define FLAG_f (1LL<<3)
+#define FLAG_F (1LL<<4)
+#define FLAG_n (1LL<<5)
+#define FLAG_v (1LL<<6)
 #endif
 
 #ifdef FOR_nbd_client
@@ -5242,25 +5259,26 @@
 #endif
 
 #ifdef FOR_pgrep
+#define CLEANUP_pgrep
 #ifndef TT
 #define TT this.pgrep
 #endif
-#define FLAG_L (1<<0)
-#define FLAG_x (1<<1)
-#define FLAG_v (1<<2)
-#define FLAG_o (1<<3)
-#define FLAG_n (1<<4)
-#define FLAG_f (1<<5)
-#define FLAG_G (1<<6)
-#define FLAG_g (1<<7)
-#define FLAG_P (1<<8)
-#define FLAG_s (1<<9)
-#define FLAG_t (1<<10)
-#define FLAG_U (1<<11)
-#define FLAG_u (1<<12)
-#define FLAG_d (1<<13)
-#define FLAG_l (1<<14)
-#define FLAG_c (1<<15)
+#define FLAG_L (1LL<<0)
+#define FLAG_x (1LL<<1)
+#define FLAG_v (1LL<<2)
+#define FLAG_o (1LL<<3)
+#define FLAG_n (1LL<<4)
+#define FLAG_f (1LL<<5)
+#define FLAG_G (1LL<<6)
+#define FLAG_g (1LL<<7)
+#define FLAG_P (1LL<<8)
+#define FLAG_s (1LL<<9)
+#define FLAG_t (1LL<<10)
+#define FLAG_U (1LL<<11)
+#define FLAG_u (1LL<<12)
+#define FLAG_d (1LL<<13)
+#define FLAG_l (1LL<<14)
+#define FLAG_c (1LL<<15)
 #endif
 
 #ifdef FOR_pidof
@@ -5297,23 +5315,24 @@
 #endif
 
 #ifdef FOR_pkill
+#define CLEANUP_pkill
 #ifndef TT
 #define TT this.pkill
 #endif
-#define FLAG_l (1<<0)
-#define FLAG_x (1<<1)
-#define FLAG_v (1<<2)
-#define FLAG_o (1<<3)
-#define FLAG_n (1<<4)
-#define FLAG_f (1<<5)
-#define FLAG_G (1<<6)
-#define FLAG_g (1<<7)
-#define FLAG_P (1<<8)
-#define FLAG_s (1<<9)
-#define FLAG_t (1<<10)
-#define FLAG_U (1<<11)
-#define FLAG_u (1<<12)
-#define FLAG_V (1<<13)
+#define FLAG_l (1LL<<0)
+#define FLAG_x (1LL<<1)
+#define FLAG_v (1LL<<2)
+#define FLAG_o (1LL<<3)
+#define FLAG_n (1LL<<4)
+#define FLAG_f (1LL<<5)
+#define FLAG_G (1LL<<6)
+#define FLAG_g (1LL<<7)
+#define FLAG_P (1LL<<8)
+#define FLAG_s (1LL<<9)
+#define FLAG_t (1LL<<10)
+#define FLAG_U (1LL<<11)
+#define FLAG_u (1LL<<12)
+#define FLAG_V (1LL<<13)
 #endif
 
 #ifdef FOR_pmap
@@ -5338,31 +5357,32 @@
 #endif
 
 #ifdef FOR_ps
+#define CLEANUP_ps
 #ifndef TT
 #define TT this.ps
 #endif
-#define FLAG_Z (1<<0)
-#define FLAG_w (1<<1)
-#define FLAG_G (1<<2)
-#define FLAG_g (1<<3)
-#define FLAG_U (1<<4)
-#define FLAG_u (1<<5)
-#define FLAG_T (1<<6)
-#define FLAG_t (1<<7)
-#define FLAG_s (1<<8)
-#define FLAG_p (1<<9)
-#define FLAG_O (1<<10)
-#define FLAG_o (1<<11)
-#define FLAG_n (1<<12)
-#define FLAG_M (1<<13)
-#define FLAG_l (1<<14)
-#define FLAG_f (1<<15)
-#define FLAG_e (1<<16)
-#define FLAG_d (1<<17)
-#define FLAG_A (1<<18)
-#define FLAG_a (1<<19)
-#define FLAG_P (1<<20)
-#define FLAG_k (1<<21)
+#define FLAG_Z (1LL<<0)
+#define FLAG_w (1LL<<1)
+#define FLAG_G (1LL<<2)
+#define FLAG_g (1LL<<3)
+#define FLAG_U (1LL<<4)
+#define FLAG_u (1LL<<5)
+#define FLAG_T (1LL<<6)
+#define FLAG_t (1LL<<7)
+#define FLAG_s (1LL<<8)
+#define FLAG_p (1LL<<9)
+#define FLAG_O (1LL<<10)
+#define FLAG_o (1LL<<11)
+#define FLAG_n (1LL<<12)
+#define FLAG_M (1LL<<13)
+#define FLAG_l (1LL<<14)
+#define FLAG_f (1LL<<15)
+#define FLAG_e (1LL<<16)
+#define FLAG_d (1LL<<17)
+#define FLAG_A (1LL<<18)
+#define FLAG_a (1LL<<19)
+#define FLAG_P (1LL<<20)
+#define FLAG_k (1LL<<21)
 #endif
 
 #ifdef FOR_pwd
@@ -5954,21 +5974,23 @@
 #endif
 
 #ifdef FOR_top
+#define CLEANUP_top
 #ifndef TT
 #define TT this.top
 #endif
-#define FLAG_q (1<<0)
-#define FLAG_b (1<<1)
-#define FLAG_n (1<<2)
-#define FLAG_m (1<<3)
-#define FLAG_d (1<<4)
-#define FLAG_s (1<<5)
-#define FLAG_u (1<<6)
-#define FLAG_p (1<<7)
-#define FLAG_o (1<<8)
-#define FLAG_k (1<<9)
-#define FLAG_H (1<<10)
-#define FLAG_O (1<<11)
+#define FLAG_q (1LL<<0)
+#define FLAG_b (1LL<<1)
+#define FLAG_n (1LL<<2)
+#define FLAG_m (1LL<<3)
+#define FLAG_d (1LL<<4)
+#define FLAG_s (1LL<<5)
+#define FLAG_u (1LL<<6)
+#define FLAG_p (1LL<<7)
+#define FLAG_o (1LL<<8)
+#define FLAG_k (1LL<<9)
+#define FLAG_H (1LL<<10)
+#define FLAG_h (1LL<<11)
+#define FLAG_O (1LL<<12)
 #endif
 
 #ifdef FOR_touch
