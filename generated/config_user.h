@@ -41,6 +41,13 @@
 #define CFG_ULIMIT 0
 #define USE_ULIMIT(...)
 #endif
+#ifdef TOYBOX_ENABLE_BRCTL
+#define CFG_BRCTL 1
+#define USE_BRCTL(...) __VA_ARGS__
+#else
+#define CFG_BRCTL 0
+#define USE_BRCTL(...)
+#endif
 #ifdef WITH_SELINUX
 #define CFG_SHA256SUM 1
 #define USE_SHA256SUM(...) __VA_ARGS__
@@ -267,8 +274,6 @@
 #define USE_BC(...)
 #define CFG_BOOTCHARTD 0
 #define USE_BOOTCHARTD(...)
-#define CFG_BRCTL 0
-#define USE_BRCTL(...)
 #define CFG_CROND 0
 #define USE_CROND(...)
 #define CFG_CRONTAB 0

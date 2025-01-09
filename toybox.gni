@@ -30,4 +30,5 @@ TOYBOX_SRC_DIR = [ "//third_party/toybox" ]
 
 declare_args() {
   toybox_extended_cmd = false
+  toybox_enable_brctl = false
 }
