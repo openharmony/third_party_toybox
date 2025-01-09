@@ -991,6 +991,12 @@ if (defined(ohos_lite)) {
         ]
       }
 
+      if (toybox_enable_brctl) {
+        defines += [ "TOYBOX_ENABLE_BRCTL" ]
+        sources += [ "toys/pending/brctl.c" ]
+        symlink_target_name += [ "brctl" ]
+      }
+
       if (build_variant == "user") {
         defines += [ "TOYBOX_BUILD_USER" ]
       }
