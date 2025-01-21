@@ -1073,11 +1073,11 @@ struct cp_data {
   union {
     // install's options
     struct {
-      char *g, *o, *m;
+      char *g, *o, *m, *t;
     } i;
     // cp's options
     struct {
-      char *preserve;
+      char *t, *preserve;
     } c;
   };
 
@@ -1321,13 +1321,16 @@ struct ps_data {
     } pgrep;
   };
 
-  struct ptr_len gg, GG, pp, PP, ss, tt, uu, UU;
+  struct ps_ptr_len {
+    void *ptr;
+    long len;
+  } gg, GG, pp, PP, ss, tt, uu, UU;
   struct dirtree *threadparent;
-  unsigned width, height;
+  unsigned width, height, scroll;
   dev_t tty;
   void *fields, *kfields;
   long long ticks, bits, time;
-  int kcount, forcek, sortpos;
+  int kcount, forcek, sortpos, pidlen;
   int (*match_process)(long long *slot);
   void (*show_process)(void *tb);
 };
