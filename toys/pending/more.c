@@ -53,6 +53,9 @@ static int prompt(FILE *cin, const char* fmt, ...)
   vfprintf(stdout, fmt, ap);
   va_end(ap);
 
+  // Clean up styles after Ctrl+C and other operations.
+  printf("\33[0m");
+
   while (1) {
     fflush(NULL);
     input_key = tolower(getc(cin));
@@ -61,7 +64,7 @@ static int prompt(FILE *cin, const char* fmt, ...)
       fflush(NULL);
       return input_key;
     }
-    printf("\33[7m(Enter:Next line Space:Next page Q:Quit R:Show the rest)");
+    printf("\33[7m(Enter:Next line Space:Next page Q:Quit R:Show the rest)\33[0m");
   }
 }
 
