@@ -1159,7 +1159,7 @@ struct wget_data {
   char *filename;
   long redirects;
 
-  int sock;
+  int sock, https;
   char *url;
 #if CFG_WGET_LIBTLS
   struct tls *tls;
