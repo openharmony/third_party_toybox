@@ -159,6 +159,11 @@ static void do_grep(int fd, char *name)
     if (len<1) break;
     if (line[ulen-1] == TT.indelim) line[--ulen] = 0;
 
+    // avoid stack leak when dealing with NUL bytes
+    if (!FLAG(z)) {
+      ulen = strlen(line);
+    }
+
     // Prepare for next line
     start = line;
     if (TT.reg) for (shoe = (void *)TT.reg; shoe; shoe = shoe->next)
