@@ -509,8 +509,6 @@
 #define USE_SETFATTR(...) __VA_ARGS__
 #define CFG_SETSID 1
 #define USE_SETSID(...) __VA_ARGS__
-#define CFG_SHA3SUM 0
-#define USE_SHA3SUM(...)
 #define CFG_SHRED 1
 #define USE_SHRED(...) __VA_ARGS__
 #define CFG_STAT 1
