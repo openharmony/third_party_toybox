@@ -489,8 +489,6 @@
 #define USE_PRINTENV(...) __VA_ARGS__
 #define CFG_PWDX 1
 #define USE_PWDX(...) __VA_ARGS__
-#define CFG_PWGEN 0
-#define USE_PWGEN(...)
 #define CFG_READAHEAD 1
 #define USE_READAHEAD(...) __VA_ARGS__
 #define CFG_READLINK 1
