@@ -78,12 +78,14 @@ config WGET_OPENSSL
 
 #define WGET_IS_HTTP  (strncmp(TT.url, "http://", 7) == 0)
 #define WGET_IS_HTTPS (WGET_SSL && (strncmp(TT.url, "https://", 8) == 0))
+#define HTTPS (WGET_SSL && TT.https)
 
 GLOBALS(
   char *filename;
   long redirects;
 
   int sock;
+  int sock, https;
   char *url;
 #if CFG_WGET_LIBTLS
   struct tls *tls;
@@ -103,30 +105,25 @@ static char *wget_strncaseafter(char *haystack, char *needle)
 // get http info in URL
 static void wget_info(char *url, char **host, char **port, char **path)
 {
-  *host = strafter(url, "://");
-  *path = strchr(*host, '/');
+  char *ss = url;
 
-  if ((*path = strchr(*host, '/'))) {
-    **path = '\0';
-    *path = *path + 1;
-  } else {
-    *path = "";
+  // Must start with case insensitive http:// or https://
+  if (strncasecmp(url, "http", 4)) url = 0;
+  else {
+    url += 4;
+    if ((TT.https = WGET_SSL && toupper(*url=='s'))) url++;
+    if (!strstart(&url, "://")) url = 0;
   }
+  if (!url) error_exit("unsupported protocol: %s", ss);
+  if ((*path = strchr(*host = url, '/'))) *((*path)++) = 0;
+  else *path = "";
 
-  if ( *host[0] == '[' && strchr(*host, ']') ) { // IPv6
-    *port = strafter(*host, "]:");
-    *host = *host + 1;
-    strchr(*host, ']')[0] = '\0';
-  } else { // IPv4
-    if ((*port = strchr(*host, ':'))) {
-      **port = '\0';
-      *port = *port + 1;
-    }
-  }
-
-  if (!*port && WGET_IS_HTTP) *port = "80";
-  else if (!*port && WGET_IS_HTTPS) *port = "443";
-  else if (!*port) error_exit("unsupported protocol");
+  // Get port number and trim literal IPv6 addresses
+  if (**host=='[' && (ss = strchr(++*host, ']'))) {
+    *ss++ = 0;
+    *port = (*ss==':') ? ++ss : 0;
+  } else if ((*port = strchr(*host, ':'))) *((*port)++) = 0;
+  if (!*port) *port = HTTPS ? "443" : "80";
 }
 
 static void wget_connect(char *host, char *port)
