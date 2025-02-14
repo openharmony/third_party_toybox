@@ -361,6 +361,8 @@ int pollinate(int in1, int in2, int out1, int out2, int timeout, int shutdown_ti
 char *ntop(struct sockaddr *sa);
 void xsendto(int sockfd, void *buf, size_t len, struct sockaddr *dest);
 int xrecvwait(int fd, char *buf, int len, union socksaddr *sa, int timeout);
+char *escape_url(char *str, char *and);
+char *unescape_url(char *str, int do_cut);
 
 // password.c
 int get_salt(char *salt, char * algo);
