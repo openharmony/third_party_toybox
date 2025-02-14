@@ -324,7 +324,7 @@
 
 #define HELP_xzcat "usage: xzcat [filename...]\n\nDecompress listed files to stdout. Use stdin if no files listed."
 
-#define HELP_wget "usage: wget -O filename URL\n-O filename: specify output filename\nURL: uniform resource location, FTP/HTTP only, not HTTPS\n\nexamples:\n  wget -O index.html http://www.example.com\n  wget -O sample.jpg ftp://ftp.example.com:21/sample.jpg"
+#define HELP_wget "usage: wget [OPTIONS]... [URL]\n    --max-redirect          maximum redirections allowed\n-d, --debug                 print lots of debugging information\n-O, --output-document=FILE  specify output filename\n-p, --post-data=DATA        send data in body of POST request\n\nexamples:\n  wget http://www.example.com"
 
 #define HELP_vi "usage: vi FILE\nVisual text editor. Predates the existence of standardized cursor keys,\nso the controls are weird and historical."
 
