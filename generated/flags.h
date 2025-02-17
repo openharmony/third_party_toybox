@@ -3381,16 +3381,16 @@
 #undef FLAG_m
 #endif
 
-// wget   <1>1(max-redirect)#<0=20d(debug)O(output-document):
+// wget   <1>1(max-redirect)#<0=20d(debug)O(output-document):p(post-data):
 #undef OPTSTR_wget
-#define OPTSTR_wget "<1>1(max-redirect)#<0=20d(debug)O(output-document):"
+#define OPTSTR_wget "<1>1(max-redirect)#<0=20d(debug)O(output-document):p(post-data):"
 #ifdef CLEANUP_wget
 #undef CLEANUP_wget
 #undef FOR_wget
 #undef FLAG_p
 #undef FLAG_O
 #undef FLAG_d
-#undef FLAG_no_check_certificate
+#undef FLAG_max_redirect
 #endif
 
 // which <1a <1a
@@ -6338,13 +6338,14 @@
 #endif
 
 #ifdef FOR_wget
+#define CLEANUP_wget
 #ifndef TT
 #define TT this.wget
 #endif
-#define FLAG_p (1<<0)
-#define FLAG_O (1<<1)
-#define FLAG_d (1<<2)
-#define FLAG_no_check_certificate (1<<3)
+#define FLAG_p (1LL<<0)
+#define FLAG_O (1LL<<1)
+#define FLAG_d (1LL<<2)
+#define FLAG_max_redirect (1LL<<3)
 #endif
 
 #ifdef FOR_which

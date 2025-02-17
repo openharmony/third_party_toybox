@@ -975,11 +975,11 @@ if (defined(ohos_lite)) {
       if (toybox_extended_cmd) {
         defines += [ "TOYBOX_EXTENDED_CMD" ]
         sources += [
+          "toys/net/wget.c",
           "toys/pending/awk.c",
           "toys/pending/diff.c",
           "toys/pending/telnet.c",
           "toys/pending/traceroute.c",
-          "toys/pending/wget.c",
         ]
         symlink_target_name += [
           "traceroute",

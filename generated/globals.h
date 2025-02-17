@@ -1156,14 +1156,14 @@ struct vi_data {
 // toys/pending/wget.c
 
 struct wget_data {
-  char *filename;
-  long redirects;
+  char *p, *O;
+  long max_redirect;
 
   int sock, https;
   char *url;
 #if CFG_WGET_LIBTLS
   struct tls *tls;
-#elif CFG_WGET_OPENSSL
+#elif CFG_TOYBOX_LIBCRYPTO
   struct ssl_ctx_st *ctx;
   struct ssl_st *ssl;
 #endif
