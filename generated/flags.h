@@ -1065,6 +1065,7 @@
 #undef FLAG_e
 #undef FLAG_q
 #undef FLAG_l
+#undef FLAG_L
 #undef FLAG_c
 #undef FLAG_w
 #undef FLAG_v
