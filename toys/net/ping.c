@@ -215,6 +215,30 @@ void ping_main(void)
 
   memset(&msg, 0, sizeof(msg));
   // left enought space to store ttl value
+  
+#ifdef TOYBOX_OH_ADAPT
+  /* fix "ping -s 65500" fail problem*/
+  char *mybuff = malloc(65536);
+  if (mybuff) {
+    len = CMSG_SPACE(sizeof(uint8_t));
+    iov.iov_base = (void *)mybuff;
+    iov.iov_len = 65536 - len;
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+    msg.msg_control = &mybuff[iov.iov_len];
+    msg.msg_controllen = len;
+
+    ih = mybuff;
+  } else {
+    len = CMSG_SPACE(sizeof(uint8_t));
+    iov.iov_base = (void *)toybuf;
+    iov.iov_len = sizeof(toybuf) - len;
+    msg.msg_iov = &iov;
+    msg.msg_iovlen = 1;
+    msg.msg_control = &toybuf[iov.iov_len];
+    msg.msg_controllen = len;
+  }
+#else
   len = CMSG_SPACE(sizeof(uint8_t));
   iov.iov_base = (void *)toybuf;
   iov.iov_len = sizeof(toybuf) - len;
@@ -222,6 +246,7 @@ void ping_main(void)
   msg.msg_iovlen = 1;
   msg.msg_control = &toybuf[iov.iov_len];
   msg.msg_controllen = len;
+#endif
 
   sigatexit(summary);
 
@@ -251,8 +276,20 @@ void ping_main(void)
       ih->un.echo.sequence = ++seq;
       if (TT.s >= 4) *(unsigned *)(ih+1) = tnow;
 
+#ifdef TOYBOX_OH_ADAPT
+      /* fix "ping -s 65500" fail problem*/
+      if (mybuff) {
+        ih->checksum = pingchksum((void *)mybuff, TT.s+sizeof(*ih));
+        xsendto(TT.sock, mybuff, TT.s+sizeof(*ih), TT.sa);
+      } else {
+        ih->checksum = pingchksum((void *)toybuf, TT.s+sizeof(*ih));
+        xsendto(TT.sock, toybuf, TT.s+sizeof(*ih), TT.sa);
+      }
+#else
       ih->checksum = pingchksum((void *)toybuf, TT.s+sizeof(*ih));
       xsendto(TT.sock, toybuf, TT.s+sizeof(*ih), TT.sa);
+#endif
+
       TT.sent++;
       if (FLAG(f) && !FLAG(q)) xputc('.');
 

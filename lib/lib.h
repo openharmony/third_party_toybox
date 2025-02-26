@@ -34,6 +34,11 @@ struct double_list {
   char *data;
 };
 
+struct dev_ino {
+  dev_t dev;
+  ino_t ino;
+};
+
 struct num_cache {
   struct num_cache *next;
   long long num;
@@ -245,6 +250,7 @@ char *strend(char *str, char *suffix);
 int strstart(char **a, char *b);
 int strcasestart(char **a, char *b);
 int same_file(struct stat *st1, struct stat *st2);
+int same_dev_ino(struct stat *st, struct dev_ino *di);
 off_t fdlength(int fd);
 void loopfiles_rw(char **argv, int flags, int permissions,
   void (*function)(int fd, char *name));

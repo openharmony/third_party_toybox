@@ -445,7 +445,16 @@ void cp_main(void)
         // if -n and dest exists, don't try to rename() or copy
         if (exists && FLAG(n)) send = 0;
       }
+#ifdef TOYBOX_OH_ADAPT
+      /* fix "mv -v 123.txt test/" not print detail log problem*/
+      if (send) {
+        if (FLAG(v))
+          printf("renamed '%s' -> '%s'\n", src, TT.destname);
+        send = rename(src, TT.destname);
+      }
+#else
       if (send) send = rename(src, TT.destname);
+#endif
       if (trail) trail[1] = '/';
     }
 
