@@ -335,12 +335,13 @@
 #undef FOR_clear
 #endif
 
-// cmp <1>2ls(silent)(quiet)[!ls] <1>2ls(silent)(quiet)[!ls]
+// cmp <1>4ls(silent)(quiet)n#<1[!ls] <1>4ls(silent)(quiet)n#<1[!ls]
 #undef OPTSTR_cmp
-#define OPTSTR_cmp "<1>2ls(silent)(quiet)[!ls]"
+#define OPTSTR_cmp "<1>4ls(silent)(quiet)n#<1[!ls]"
 #ifdef CLEANUP_cmp
 #undef CLEANUP_cmp
 #undef FOR_cmp
+#undef FLAG_n
 #undef FLAG_s
 #undef FLAG_l
 #endif
@@ -448,9 +449,9 @@
 #undef FLAG_c
 #endif
 
-// cut b*|c*|f*|F*|C*|O(output-delimiter):d:sDn[!cbf] b*|c*|f*|F*|C*|O(output-delimiter):d:sDn[!cbf]
+// cut b*|c*|f*|F(regex-fields)*|C*|O(output-delimiter):d:sD(allow-duplicates)n[!cbfF] b*|c*|f*|F(regex-fields)*|C*|O(output-delimiter):d:sD(allow-duplicates)n[!cbfF]
 #undef OPTSTR_cut
-#define OPTSTR_cut "b*|c*|f*|F*|C*|O(output-delimiter):d:sDn[!cbf]"
+#define OPTSTR_cut "b*|c*|f*|F(regex-fields)*|C*|O(output-delimiter):d:sD(allow-duplicates)n[!cbfF]"
 #ifdef CLEANUP_cut
 #undef CLEANUP_cut
 #undef FOR_cut
@@ -1075,9 +1076,9 @@
 #undef FLAG_t
 #endif
 
-// grep (line-buffered)(color):;(exclude-dir)*S(exclude)*M(include)*ZzEFHIab(byte-offset)h(no-filename)ino(only-matching)rRsvwcl(files-with-matches)q(quiet)(silent)e*f*C#B#A#m#x[!wx][!EFw] (line-buffered)(color):;(exclude-dir)*S(exclude)*M(include)*ZzEFHIab(byte-offset)h(no-filename)ino(only-matching)rRsvwcl(files-with-matches)q(quiet)(silent)e*f*C#B#A#m#x[!wx][!EFw]
+// grep (line-buffered)(color):;(exclude-dir)*S(exclude)*M(include)*ZzEFHIab(byte-offset)h(no-filename)ino(only-matching)rRsvwc(count)L(files-without-match)l(files-with-matches)q(quiet)(silent)e*f*C#B#A#m#x[!wx][!EF] (line-buffered)(color):;(exclude-dir)*S(exclude)*M(include)*ZzEFHIab(byte-offset)h(no-filename)ino(only-matching)rRsvwc(count)L(files-without-match)l(files-with-matches)q(quiet)(silent)e*f*C#B#A#m#x[!wx][!EF]
 #undef OPTSTR_grep
-#define OPTSTR_grep "(line-buffered)(color):;(exclude-dir)*S(exclude)*M(include)*ZzEFHIab(byte-offset)h(no-filename)ino(only-matching)rRsvwcl(files-with-matches)q(quiet)(silent)e*f*C#B#A#m#x[!wx][!EFw]"
+#define OPTSTR_grep "(line-buffered)(color):;(exclude-dir)*S(exclude)*M(include)*ZzEFHIab(byte-offset)h(no-filename)ino(only-matching)rRsvwc(count)L(files-without-match)l(files-with-matches)q(quiet)(silent)e*f*C#B#A#m#x[!wx][!EF]"
 #ifdef CLEANUP_grep
 #undef CLEANUP_grep
 #undef FOR_grep
@@ -1645,14 +1646,15 @@
 #undef FLAG_S
 #endif
 
-// ls (color):;(full-time)(show-control-chars)ZgoACFHLRSabcdfhikl@mnpqrstux1[-Cxm1][-Cxml][-Cxmo][-Cxmg][-cu][-ftS][-HL][!qb] (color):;(full-time)(show-control-chars)ZgoACFHLRSabcdfhikl@mnpqrstux1[-Cxm1][-Cxml][-Cxmo][-Cxmg][-cu][-ftS][-HL][!qb]
+// ls (sort):(color):;(full-time)(block-size)#=1024<1(show-control-chars)?(group-directories-first)tZgoACFHLNRSUXabcdfhikl@mnpqrstuw#=80<0x1[-Cxm1][-Cxml][-Cxmo][-Cxmg][-cu][-ftS][-HL][-Nqb] (sort):(color):;(full-time)(block-size)#=1024<1(show-control-chars)?(group-directories-first)tZgoACFHLNRSUXabcdfhikl@mnpqrstuw#=80<0x1[-Cxm1][-Cxml][-Cxmo][-Cxmg][-cu][-ftS][-HL][-Nqb]
 #undef OPTSTR_ls
-#define OPTSTR_ls "(color):;(full-time)(show-control-chars)ZgoACFHLRSabcdfhikl@mnpqrstux1[-Cxm1][-Cxml][-Cxmo][-Cxmg][-cu][-ftS][-HL][!qb]"
+#define OPTSTR_ls "(sort):(color):;(full-time)(block-size)#=1024<1(show-control-chars)?(group-directories-first)tZgoACFHLNRSUXabcdfhikl@mnpqrstuw#=80<0x1[-Cxm1][-Cxml][-Cxmo][-Cxmg][-cu][-ftS][-HL][-Nqb]"
 #ifdef CLEANUP_ls
 #undef CLEANUP_ls
 #undef FOR_ls
 #undef FLAG_1
 #undef FLAG_x
+#undef FLAG_w
 #undef FLAG_u
 #undef FLAG_t
 #undef FLAG_s
@@ -1670,8 +1672,11 @@
 #undef FLAG_c
 #undef FLAG_b
 #undef FLAG_a
+#undef FLAG_X
+#undef FLAG_U
 #undef FLAG_S
 #undef FLAG_R
+#undef FLAG_N
 #undef FLAG_L
 #undef FLAG_H
 #undef FLAG_F
@@ -1680,9 +1685,13 @@
 #undef FLAG_o
 #undef FLAG_g
 #undef FLAG_Z
+#undef FLAG_X7E
+#undef FLAG_X21
 #undef FLAG_show_control_chars
+#undef FLAG_block_size
 #undef FLAG_full_time
 #undef FLAG_color
+#undef FLAG_sort
 #endif
 
 // lsattr vldaR vldaR
@@ -1706,7 +1715,7 @@
 #undef FOR_lsmod
 #endif
 
-// lsof   lp*t
+// lsof lp*t lp*t
 #undef OPTSTR_lsof
 #define OPTSTR_lsof "lp*t"
 #ifdef CLEANUP_lsof
@@ -2207,9 +2216,14 @@
 #undef FLAG_s
 #endif
 
-// ping <1>1m#t#<0>255=64c#<0=3s#<0>4088=56i%W#<0=3w#<0qf46I:[-46] <1>1m#t#<0>255=64c#<0=3s#<0>4088=56i%W#<0=3w#<0qf46I:[-46]
+// ping <1>1m#t#<0>255=64c#<0=3s#<0>65512=56i%W#<0=3w#<0qf46I:[-46] <1>1m#t#<0>255=64c#<0=3s#<0>65512=56i%W#<0=3w#<0qf46I:[-46]
 #undef OPTSTR_ping
+#ifdef TOYBOX_OH_ADAPT
+/* fix "ping -s 65500" fail problem*/
+#define OPTSTR_ping "<1>1m#t#<0>255=64c#<0=3s#<0>65512=56i%W#<0=3w#<0qf46I:[-46]"
+#else
 #define OPTSTR_ping "<1>1m#t#<0>255=64c#<0=3s#<0>4088=56i%W#<0=3w#<0qf46I:[-46]"
+#endif
 #ifdef CLEANUP_ping
 #undef CLEANUP_ping
 #undef FOR_ping
@@ -3761,11 +3775,13 @@
 #endif
 
 #ifdef FOR_cmp
+#define CLEANUP_cmp
 #ifndef TT
 #define TT this.cmp
 #endif
-#define FLAG_s (1<<0)
-#define FLAG_l (1<<1)
+#define FLAG_n (1LL<<0)
+#define FLAG_s (1LL<<1)
+#define FLAG_l (1LL<<2)
 #endif
 
 #ifdef FOR_comm
@@ -3859,19 +3875,20 @@
 #endif
 
 #ifdef FOR_cut
+#define CLEANUP_cut
 #ifndef TT
 #define TT this.cut
 #endif
-#define FLAG_n (1<<0)
-#define FLAG_D (1<<1)
-#define FLAG_s (1<<2)
-#define FLAG_d (1<<3)
-#define FLAG_O (1<<4)
-#define FLAG_C (1<<5)
-#define FLAG_F (1<<6)
-#define FLAG_f (1<<7)
-#define FLAG_c (1<<8)
-#define FLAG_b (1<<9)
+#define FLAG_n (1LL<<0)
+#define FLAG_D (1LL<<1)
+#define FLAG_s (1LL<<2)
+#define FLAG_d (1LL<<3)
+#define FLAG_O (1LL<<4)
+#define FLAG_C (1LL<<5)
+#define FLAG_F (1LL<<6)
+#define FLAG_f (1LL<<7)
+#define FLAG_c (1LL<<8)
+#define FLAG_b (1LL<<9)
 #endif
 
 #ifdef FOR_date
@@ -4392,41 +4409,43 @@
 #endif
 
 #ifdef FOR_grep
+#define CLEANUP_grep
 #ifndef TT
 #define TT this.grep
 #endif
-#define FLAG_x (1<<0)
-#define FLAG_m (1<<1)
-#define FLAG_A (1<<2)
-#define FLAG_B (1<<3)
-#define FLAG_C (1<<4)
-#define FLAG_f (1<<5)
-#define FLAG_e (1<<6)
-#define FLAG_q (1<<7)
-#define FLAG_l (1<<8)
-#define FLAG_c (1<<9)
-#define FLAG_w (1<<10)
-#define FLAG_v (1<<11)
-#define FLAG_s (1<<12)
-#define FLAG_R (1<<13)
-#define FLAG_r (1<<14)
-#define FLAG_o (1<<15)
-#define FLAG_n (1<<16)
-#define FLAG_i (1<<17)
-#define FLAG_h (1<<18)
-#define FLAG_b (1<<19)
-#define FLAG_a (1<<20)
-#define FLAG_I (1<<21)
-#define FLAG_H (1<<22)
-#define FLAG_F (1<<23)
-#define FLAG_E (1<<24)
-#define FLAG_z (1<<25)
-#define FLAG_Z (1<<26)
-#define FLAG_M (1<<27)
-#define FLAG_S (1<<28)
-#define FLAG_exclude_dir (1<<29)
-#define FLAG_color (1<<30)
-#define FLAG_line_buffered (1<<31)
+#define FLAG_x (1LL<<0)
+#define FLAG_m (1LL<<1)
+#define FLAG_A (1LL<<2)
+#define FLAG_B (1LL<<3)
+#define FLAG_C (1LL<<4)
+#define FLAG_f (1LL<<5)
+#define FLAG_e (1LL<<6)
+#define FLAG_q (1LL<<7)
+#define FLAG_l (1LL<<8)
+#define FLAG_L (1LL<<9)
+#define FLAG_c (1LL<<10)
+#define FLAG_w (1LL<<11)
+#define FLAG_v (1LL<<12)
+#define FLAG_s (1LL<<13)
+#define FLAG_R (1LL<<14)
+#define FLAG_r (1LL<<15)
+#define FLAG_o (1LL<<16)
+#define FLAG_n (1LL<<17)
+#define FLAG_i (1LL<<18)
+#define FLAG_h (1LL<<19)
+#define FLAG_b (1LL<<20)
+#define FLAG_a (1LL<<21)
+#define FLAG_I (1LL<<22)
+#define FLAG_H (1LL<<23)
+#define FLAG_F (1LL<<24)
+#define FLAG_E (1LL<<25)
+#define FLAG_z (1LL<<26)
+#define FLAG_Z (1LL<<27)
+#define FLAG_M (1LL<<28)
+#define FLAG_S (1LL<<29)
+#define FLAG_exclude_dir (1LL<<30)
+#define FLAG_color (1LL<<31)
+#define FLAG_line_buffered (1LL<<32)
 #endif
 
 #ifdef FOR_groupadd
@@ -4871,41 +4890,50 @@
 #endif
 
 #ifdef FOR_ls
+#define CLEANUP_ls
 #ifndef TT
 #define TT this.ls
 #endif
-#define FLAG_1 (1<<0)
-#define FLAG_x (1<<1)
-#define FLAG_u (1<<2)
-#define FLAG_t (1<<3)
-#define FLAG_s (1<<4)
-#define FLAG_r (1<<5)
-#define FLAG_q (1<<6)
-#define FLAG_p (1<<7)
-#define FLAG_n (1<<8)
-#define FLAG_m (1<<9)
-#define FLAG_l (1<<10)
-#define FLAG_k (1<<11)
-#define FLAG_i (1<<12)
-#define FLAG_h (1<<13)
-#define FLAG_f (1<<14)
-#define FLAG_d (1<<15)
-#define FLAG_c (1<<16)
-#define FLAG_b (1<<17)
-#define FLAG_a (1<<18)
-#define FLAG_S (1<<19)
-#define FLAG_R (1<<20)
-#define FLAG_L (1<<21)
-#define FLAG_H (1<<22)
-#define FLAG_F (1<<23)
-#define FLAG_C (1<<24)
-#define FLAG_A (1<<25)
-#define FLAG_o (1<<26)
-#define FLAG_g (1<<27)
-#define FLAG_Z (1<<28)
-#define FLAG_show_control_chars (1<<29)
-#define FLAG_full_time (1<<30)
-#define FLAG_color (1<<31)
+#define FLAG_1 (1LL<<0)
+#define FLAG_x (1LL<<1)
+#define FLAG_w (1LL<<2)
+#define FLAG_u (1LL<<3)
+#define FLAG_t (1LL<<4)
+#define FLAG_s (1LL<<5)
+#define FLAG_r (1LL<<6)
+#define FLAG_q (1LL<<7)
+#define FLAG_p (1LL<<8)
+#define FLAG_n (1LL<<9)
+#define FLAG_m (1LL<<10)
+#define FLAG_l (1LL<<11)
+#define FLAG_k (1LL<<12)
+#define FLAG_i (1LL<<13)
+#define FLAG_h (1LL<<14)
+#define FLAG_f (1LL<<15)
+#define FLAG_d (1LL<<16)
+#define FLAG_c (1LL<<17)
+#define FLAG_b (1LL<<18)
+#define FLAG_a (1LL<<19)
+#define FLAG_X (1LL<<20)
+#define FLAG_U (1LL<<21)
+#define FLAG_S (1LL<<22)
+#define FLAG_R (1LL<<23)
+#define FLAG_N (1LL<<24)
+#define FLAG_L (1LL<<25)
+#define FLAG_H (1LL<<26)
+#define FLAG_F (1LL<<27)
+#define FLAG_C (1LL<<28)
+#define FLAG_A (1LL<<29)
+#define FLAG_o (1LL<<30)
+#define FLAG_g (1LL<<31)
+#define FLAG_Z (1LL<<32)
+#define FLAG_X7E (1LL<<33)
+#define FLAG_X21 (1LL<<34)
+#define FLAG_show_control_chars (1LL<<35)
+#define FLAG_block_size (1LL<<36)
+#define FLAG_full_time (1LL<<37)
+#define FLAG_color (1LL<<38)
+#define FLAG_sort (1LL<<39)
 #endif
 
 #ifdef FOR_lsattr
@@ -4926,12 +4954,13 @@
 #endif
 
 #ifdef FOR_lsof
+#define CLEANUP_lsof
 #ifndef TT
 #define TT this.lsof
 #endif
-#define FLAG_t (FORCED_FLAG<<0)
-#define FLAG_p (FORCED_FLAG<<1)
-#define FLAG_l (FORCED_FLAG<<2)
+#define FLAG_t (1LL<<0)
+#define FLAG_p (1LL<<1)
+#define FLAG_l (1LL<<2)
 #endif
 
 #ifdef FOR_lspci
@@ -5340,12 +5369,13 @@
 #endif
 
 #ifdef FOR_pidof
+#define CLEANUP_pidof
 #ifndef TT
 #define TT this.pidof
 #endif
-#define FLAG_x (1<<0)
-#define FLAG_o (1<<1)
-#define FLAG_s (1<<2)
+#define FLAG_x (1LL<<0)
+#define FLAG_o (1LL<<1)
+#define FLAG_s (1LL<<2)
 #endif
 
 #ifdef FOR_ping

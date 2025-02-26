@@ -122,6 +122,10 @@ extern char toybuf[4096], libbuf[4096];
 extern char **environ;
 
 #define FLAG(x) (!!(toys.optflags&FLAG_##x))  // Return 1 if flag set, 0 if not
+#ifdef TOYBOX_OH_ADAPT
+/* fix "ps -eo pid,cmd,%cpu --sort=-%CPU"sort not correct problem */
+#define EXP 1e-6 // for double comparison
+#endif
 
 #define GLOBALS(...)
 #define ARRAY_LEN(array) (sizeof(array)/sizeof(*array))
