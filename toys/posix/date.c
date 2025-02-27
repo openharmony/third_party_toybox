@@ -54,7 +54,11 @@ config DATE
 #include "toys.h"
 
 GLOBALS(
+#ifdef TOYBOX_OH_ADAPT
+  char *r, *d;
+#else
   char *r, *D, *d;
+#endif
 
   unsigned nano;
 )
@@ -126,12 +130,16 @@ void date_main(void)
   }
 
   if (TT.d) {
+#ifdef TOYBOX_OH_ADAPT
+    parse_date(TT.d, &t);
+#else
     if (TT.D) {
       struct tm tm = {};
       char *s = strptime(TT.d, TT.D+(*TT.D=='+'), &tm);
 
       t = (s && *s) ? xvali_date(&tm, s) : xvali_date(0, TT.d);
     } else parse_date(TT.d, &t);
+#endif
   } else {
     struct timespec ts;
     struct stat st;
