@@ -466,9 +466,13 @@
 #undef FLAG_b
 #endif
 
-// date d:D:r:u[!dr] d:D:r:u[!dr]
+// date d:r:u[!dr] d:r:u[!dr]
 #undef OPTSTR_date
+#ifdef TOYBOX_OH_ADAPT
+#define OPTSTR_date "d:r:u[!dr]"
+#else
 #define OPTSTR_date "d:D:r:u[!dr]"
+#endif
 #ifdef CLEANUP_date
 #undef CLEANUP_date
 #undef FOR_date
