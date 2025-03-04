@@ -216,6 +216,7 @@ if (defined(ohos_lite)) {
     defines = [
       "_DEFAULT_SOURCE",
       "OHOS_LITE",
+      "TOYBOX_OH_ADAPT",
     ]
 
     configs -= [ "//build/lite/config:language_c" ]
@@ -706,7 +707,10 @@ if (defined(ohos_lite)) {
     include_dirs = [ "./" ]
 
     deps = []
-    defines = [ "_DEFAULT_SOURCE" ]
+    defines = [
+      "_DEFAULT_SOURCE",
+      "TOYBOX_OH_ADAPT",
+    ]
 
     if (build_selinux) {
       sources += [
