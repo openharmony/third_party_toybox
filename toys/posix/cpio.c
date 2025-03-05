@@ -274,7 +274,7 @@ void cpio_main(void)
     }
     free(name);
 
-    if (FLAG_trailer) {
+    if (FLAG(trailer)) {
       memset(toybuf, 0, sizeof(toybuf));
       xwrite(afd, toybuf,
         sprintf(toybuf, "070701%040X%056X%08XTRAILER!!!", 1, 0x0b, 0)+4);
