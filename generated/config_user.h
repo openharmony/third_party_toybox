@@ -17,6 +17,32 @@
 #define USE_TOYBOX_PRLIMIT(...) __VA_ARGS__
 #define CFG_ULIMIT 1
 #define USE_ULIMIT(...) __VA_ARGS__
+#define CFG_EXPR 1
+#define USE_EXPR(...) __VA_ARGS__
+#define CFG_SHA384SUM 1
+#define USE_SHA384SUM(...) __VA_ARGS__
+#define CFG_SHA512SUM 1
+#define USE_SHA512SUM(...) __VA_ARGS__
+#define CFG_W 1
+#define USE_W(...) __VA_ARGS__
+#define CFG_RENICE 1
+#define USE_RENICE(...) __VA_ARGS__
+#define CFG_INOTIFYD 1
+#define USE_INOTIFYD(...) __VA_ARGS__
+#define CFG_USLEEP 1
+#define USE_USLEEP(...) __VA_ARGS__
+#define CFG_SHRED 1
+#define USE_SHRED(...) __VA_ARGS__
+#define CFG_LSPCI 1
+#define USE_LSPCI(...) __VA_ARGS__
+#define CFG_LSUSB 1
+#define USE_LSUSB(...) __VA_ARGS__
+#define CFG_VMSTAT 1
+#define USE_VMSTAT(...) __VA_ARGS__
+#define CFG_GETCONF 1
+#define USE_GETCONF(...) __VA_ARGS__
+#define CFG_TR 1
+#define USE_TR(...) __VA_ARGS__
 #else
 #define CFG_DIFF 0
 #define USE_DIFF(...)
@@ -36,6 +62,32 @@
 #define USE_TOYBOX_PRLIMIT(...)
 #define CFG_ULIMIT 0
 #define USE_ULIMIT(...)
+#define CFG_EXPR 0
+#define USE_EXPR(...)
+#define CFG_SHA384SUM 0
+#define USE_SHA384SUM(...)
+#define CFG_SHA512SUM 0
+#define USE_SHA512SUM(...)
+#define CFG_W 0
+#define USE_W(...)
+#define CFG_RENICE 0
+#define USE_RENICE(...)
+#define CFG_INOTIFYD 0
+#define USE_INOTIFYD(...)
+#define CFG_USLEEP 0
+#define USE_USLEEP(...)
+#define CFG_SHRED 0
+#define USE_SHRED(...)
+#define CFG_LSPCI 0
+#define USE_LSPCI(...)
+#define CFG_LSUSB 0
+#define USE_LSUSB(...)
+#define CFG_VMSTAT 0
+#define USE_VMSTAT(...)
+#define CFG_GETCONF 0
+#define USE_GETCONF(...)
+#define CFG_TR 0
+#define USE_TR(...)
 #endif
 #ifdef TOYBOX_ENABLE_BRCTL
 #define CFG_BRCTL 1
@@ -127,8 +179,6 @@
 #define USE_FILE(...) __VA_ARGS__
 #define CFG_FIND 1
 #define USE_FIND(...) __VA_ARGS__
-#define CFG_GETCONF 0
-#define USE_GETCONF(...)
 #define CFG_GREP 1
 #define USE_GREP(...) __VA_ARGS__
 #define CFG_EGREP 1
@@ -210,8 +260,6 @@
 #define USE_PKILL(...) __VA_ARGS__
 #define CFG_PWD 1
 #define USE_PWD(...) __VA_ARGS__
-#define CFG_RENICE 0
-#define USE_RENICE(...)
 #define CFG_RM 1
 #define USE_RM(...) __VA_ARGS__
 #define CFG_RMDIR 1
@@ -286,8 +334,6 @@
 #define USE_DEBUG_DHCP(...)
 #define CFG_DUMPLEASES 0
 #define USE_DUMPLEASES(...)
-#define CFG_EXPR 0
-#define USE_EXPR(...)
 #define CFG_FDISK 0
 #define USE_FDISK(...)
 #define CFG_FOLD 0
@@ -363,11 +409,16 @@
 #define CFG_DEALLOCVT 0
 #define USE_DEALLOCVT(...)
 #ifdef WITH_SELINUX
-# define CFG_ROUTE 0
-# define USE_ROUTE(...)
+#ifdef TOYBOX_EXTENDED_CMD
+#define CFG_ROUTE 1
+#define USE_ROUTE(...) __VA_ARGS__
 #else
-# define CFG_ROUTE 1
-# define USE_ROUTE(...) __VA_ARGS__
+#define CFG_ROUTE 0
+#define USE_ROUTE(...)
+#endif
+#else
+#define CFG_ROUTE 1
+#define USE_ROUTE(...) __VA_ARGS__
 #endif // WITH_SELINUX
 #define CFG_SH 0
 #define USE_SH(...)
@@ -396,8 +447,6 @@
 #define USE_TFTP(...)
 #define CFG_TFTPD 0
 #define USE_TFTPD(...)
-#define CFG_TR 0
-#define USE_TR(...)
 #define CFG_USERADD 0
 #define USE_USERADD(...)
 #define CFG_USERDEL 0
@@ -481,8 +530,6 @@
 #define USE_I2CGET(...)
 #define CFG_I2CSET 0
 #define USE_I2CSET(...)
-#define CFG_INOTIFYD 0
-#define USE_INOTIFYD(...)
 #define CFG_INSMOD 1
 #define USE_INSMOD(...) __VA_ARGS__
 #define CFG_IONICE 0
@@ -499,12 +546,8 @@
 #define USE_CHATTR(...)
 #define CFG_LSMOD 1
 #define USE_LSMOD(...) __VA_ARGS__
-#define CFG_LSPCI 0
-#define USE_LSPCI(...)
 #define CFG_LSPCI_TEXT 0
 #define USE_LSPCI_TEXT(...)
-#define CFG_LSUSB 0
-#define USE_LSUSB(...)
 #define CFG_MAKEDEVS 0
 #define USE_MAKEDEVS(...)
 #define CFG_MCOOKIE 1
@@ -557,8 +600,6 @@
 #define USE_SETSID(...) __VA_ARGS__
 #define CFG_SHA3SUM 0
 #define USE_SHA3SUM(...)
-#define CFG_SHRED 0
-#define USE_SHRED(...)
 #define CFG_STAT 1
 #define USE_STAT(...) __VA_ARGS__
 #define CFG_SWAPOFF 1
@@ -581,18 +622,12 @@
 #define USE_TRUNCATE(...) __VA_ARGS__
 #define CFG_UPTIME 1
 #define USE_UPTIME(...) __VA_ARGS__
-#define CFG_USLEEP 0
-#define USE_USLEEP(...)
 #define CFG_UUIDGEN 1
 #define USE_UUIDGEN(...) __VA_ARGS__
 #define CFG_VCONFIG 0
 #define USE_VCONFIG(...)
-#define CFG_VMSTAT 0
-#define USE_VMSTAT(...)
 #define CFG_WATCH 1
 #define USE_WATCH(...) __VA_ARGS__
-#define CFG_W 0
-#define USE_W(...)
 #define CFG_WHICH 1
 #define USE_WHICH(...) __VA_ARGS__
 #define CFG_XXD 1
@@ -641,10 +676,6 @@
 #define USE_SHA1SUM(...) __VA_ARGS__
 #define CFG_SHA224SUM 0
 #define USE_SHA224SUM(...)
-#define CFG_SHA384SUM 0
-#define USE_SHA384SUM(...)
-#define CFG_SHA512SUM 0
-#define USE_SHA512SUM(...)
 #define CFG_MKNOD 1
 #define USE_MKNOD(...) __VA_ARGS__
 #ifdef WITH_SELINUX

@@ -982,7 +982,9 @@ if (defined(ohos_lite)) {
           "toys/net/wget.c",
           "toys/pending/awk.c",
           "toys/pending/diff.c",
+          "toys/pending/expr.c",
           "toys/pending/telnet.c",
+          "toys/pending/tr.c",
           "toys/pending/traceroute.c",
         ]
         symlink_target_name += [
@@ -992,6 +994,11 @@ if (defined(ohos_lite)) {
           "wget",
           "awk",
           "diff",
+          "expr",
+          "route",
+          "sha384sum",
+          "sha512sum",
+          "tr",
         ]
       }
 
