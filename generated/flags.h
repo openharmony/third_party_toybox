@@ -2480,7 +2480,7 @@
 #undef FLAG_w
 #endif
 
-// route   ?neA:
+// route ?neA: ?neA:
 #undef OPTSTR_route
 #define OPTSTR_route "?neA:"
 #ifdef CLEANUP_route
@@ -3069,7 +3069,7 @@
 #undef FOR_toybox
 #endif
 
-// tr   ^>2<1Ccsd[+cC]
+// tr ^>2<1Ccsd[+cC] ^>2<1Ccsd[+cC]
 #undef OPTSTR_tr
 #define OPTSTR_tr "^>2<1Ccsd[+cC]"
 #ifdef CLEANUP_tr
@@ -6078,13 +6078,14 @@
 #endif
 
 #ifdef FOR_tr
+#define CLEANUP_tr
 #ifndef TT
 #define TT this.tr
 #endif
-#define FLAG_d (FORCED_FLAG<<0)
-#define FLAG_s (FORCED_FLAG<<1)
-#define FLAG_c (FORCED_FLAG<<2)
-#define FLAG_C (FORCED_FLAG<<3)
+#define FLAG_d (1LL<<0)
+#define FLAG_s (1LL<<1)
+#define FLAG_c (1LL<<2)
+#define FLAG_C (1LL<<3)
 #endif
 
 #ifdef FOR_traceroute
