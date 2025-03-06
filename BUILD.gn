@@ -982,10 +982,10 @@ if (defined(ohos_lite)) {
           "toys/net/wget.c",
           "toys/pending/awk.c",
           "toys/pending/diff.c",
-          "toys/pending/telnet.c",
-          "toys/pending/traceroute.c",
           "toys/pending/expr.c",
+          "toys/pending/telnet.c",
           "toys/pending/tr.c",
+          "toys/pending/traceroute.c",
         ]
         symlink_target_name += [
           "traceroute",
