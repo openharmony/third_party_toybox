@@ -17,6 +17,14 @@
 #define USE_TOYBOX_PRLIMIT(...) __VA_ARGS__
 #define CFG_ULIMIT 1
 #define USE_ULIMIT(...) __VA_ARGS__
+#define CFG_EXPR 1
+#define USE_EXPR(...) __VA_ARGS__
+#define CFG_SHA384SUM 1
+#define USE_SHA384SUM(...) __VA_ARGS__
+#define CFG_SHA512SUM 1
+#define USE_SHA512SUM(...) __VA_ARGS__
+#define CFG_TR 1
+#define USE_TR(...) __VA_ARGS__
 #else
 #define CFG_DIFF 0
 #define USE_DIFF(...)
@@ -36,6 +44,14 @@
 #define USE_TOYBOX_PRLIMIT(...) __VA_ARGS__
 #define CFG_ULIMIT 1
 #define USE_ULIMIT(...) __VA_ARGS__
+#define CFG_EXPR 0
+#define USE_EXPR(...)
+#define CFG_SHA384SUM 0
+#define USE_SHA384SUM(...)
+#define CFG_SHA512SUM 0
+#define USE_SHA512SUM(...)
+#define CFG_TR 0
+#define USE_TR(...)
 #endif
 #ifdef TOYBOX_ENABLE_BRCTL
 #define CFG_BRCTL 1
@@ -286,8 +302,6 @@
 #define USE_DEBUG_DHCP(...)
 #define CFG_DUMPLEASES 0
 #define USE_DUMPLEASES(...)
-#define CFG_EXPR 0
-#define USE_EXPR(...)
 #define CFG_FDISK 0
 #define USE_FDISK(...)
 #define CFG_FOLD 0
@@ -363,11 +377,16 @@
 #define CFG_DEALLOCVT 0
 #define USE_DEALLOCVT(...)
 #ifdef WITH_SELINUX
-# define CFG_ROUTE 0
-# define USE_ROUTE(...)
+#ifdef TOYBOX_EXTENDED_CMD
+#define CFG_ROUTE 1
+#define USE_ROUTE(...) __VA_ARGS__
 #else
-# define CFG_ROUTE 1
-# define USE_ROUTE(...) __VA_ARGS__
+#define CFG_ROUTE 0
+#define USE_ROUTE(...)
+#endif
+#else
+#define CFG_ROUTE 1
+#define USE_ROUTE(...) __VA_ARGS__
 #endif // WITH_SELINUX
 #define CFG_SH 0
 #define USE_SH(...)
@@ -396,8 +415,6 @@
 #define USE_TFTP(...)
 #define CFG_TFTPD 0
 #define USE_TFTPD(...)
-#define CFG_TR 0
-#define USE_TR(...)
 #define CFG_USERADD 0
 #define USE_USERADD(...)
 #define CFG_USERDEL 0
@@ -641,10 +658,6 @@
 #define USE_SHA1SUM(...) __VA_ARGS__
 #define CFG_SHA224SUM 0
 #define USE_SHA224SUM(...)
-#define CFG_SHA384SUM 0
-#define USE_SHA384SUM(...)
-#define CFG_SHA512SUM 0
-#define USE_SHA512SUM(...)
 #define CFG_MKNOD 1
 #define USE_MKNOD(...) __VA_ARGS__
 #ifdef WITH_SELINUX
