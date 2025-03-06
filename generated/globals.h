@@ -945,7 +945,7 @@ struct openvt_data {
 // toys/pending/route.c
 
 struct route_data {
-  char *A;
+  char *family;
 };
 
 // toys/pending/sh.c
