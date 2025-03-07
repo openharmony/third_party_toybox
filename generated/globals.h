@@ -1199,6 +1199,8 @@ struct cksum_data {
 // toys/posix/cmp.c
 
 struct cmp_data {
+  long n;
+
   int fd;
   char *name;
 };
@@ -1237,6 +1239,7 @@ struct cut_data {
   char *d, *O;
   struct arg_list *select[5]; // we treat them the same, so loop through
 
+  unsigned line;
   int pairs;
   regex_t reg;
 };
@@ -1314,8 +1317,8 @@ struct grep_data {
 
   char *purple, *cyan, *red, *green, *grey;
   struct double_list *reg;
-  char indelim, outdelim;
-  int found, tried;
+  int found, tried, delim;
+  struct arg_list *fixed[256];
 };
 
 // toys/posix/head.c
@@ -1362,8 +1365,8 @@ struct logger_data {
 // toys/posix/ls.c
 
 struct ls_data {
-  long l;
-  char *color;
+  long w, l, block_size;
+  char *color, *sort;
 
   struct dirtree *files, *singledir;
   unsigned screen_width;
