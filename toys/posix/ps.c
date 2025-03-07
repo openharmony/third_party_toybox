@@ -1234,6 +1234,17 @@ static int ksort(void *aa, void *bb)
   for (field = TT.kfields; field && !ret; field = field->next) {
     slot = typos[field->which].slot;
 
+#ifdef TOYBOX_OH_ADAPT
+    /* fix "ps -eo pid,cmd,%cpu --sort=-%CPU"sort not correct problem */
+    // process cpu sort here, because numeric sort and string sort can't get it right
+    if (field->which == PS_CPU) {
+      double delta = atof(string_field(ta, field)) - atof(string_field(tb, field));
+      ret = (delta > -EXP) - (delta < EXP);
+      ret *= field->reverse;
+      continue;
+    }
+#endif
+
     // Can we do numeric sort?
     if (!(slot&XX)) {
       if (ta->slot[slot]<tb->slot[slot]) ret = -1;
@@ -1618,7 +1629,20 @@ static void top_common(
             terminal_probesize(&TT.width, &TT.height);
           }
         }
+#ifdef TOYBOX_OH_ADAPT
+        /* fix "iotop -m 10" show 13 lines problem*/
+        if (TT.top.m) {
+          if (toys.which->name[0] == 'i') {
+            // iotop 命令
+            TT.height = TT.top.m + 2;
+          } else {
+            // top 命令
+            TT.height = TT.top.m + 5;
+          }
+        }
+#else
         if (TT.top.m) TT.height = TT.top.m+5;
+#endif
         lines = TT.height;
       }
       if (recalc && !FLAG(q)) {
@@ -1764,8 +1788,15 @@ static void top_common(
         break;
       }
       if (i==-2) break;
+#ifdef TOYBOX_OH_ADAPT
+      /* fix "top -n 5" show 3 times problem*/
+      if (i==-3) {
+        TT.top.n++;
+        continue;
+      }
+#else
       if (i==-3) continue;
-
+#endif
       // Flush unknown escape sequences.
       if (i==27) while (0<scan_key_getsize(scratch, 0, &TT.width, &TT.height));
       else if (i=='\r' || i==' ') {
@@ -1934,7 +1965,13 @@ static void match_pgrep(void *p)
 
 static int pgrep_match_process(long long *slot)
 {
+#ifdef TOYBOX_OH_ADAPT
+/* fix "pgrep -v sh" no show info problem*/
+  int match = shared_match_process(slot);
+  return match < 0 ? match : !FLAG(v) == !!match;
+#else
   return !FLAG(v) == !!shared_match_process(slot);
+#endif
 }
 
 void pgrep_main(void)
