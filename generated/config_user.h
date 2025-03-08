@@ -43,6 +43,10 @@
 #define USE_GETCONF(...) __VA_ARGS__
 #define CFG_TR 1
 #define USE_TR(...) __VA_ARGS__
+#define CFG_SETFATTR 1
+#define USE_SETFATTR(...) __VA_ARGS__
+#define CFG_GETFATTR 1
+#define USE_GETFATTR(...) __VA_ARGS__
 #else
 #define CFG_DIFF 0
 #define USE_DIFF(...)
@@ -88,6 +92,10 @@
 #define USE_GETCONF(...)
 #define CFG_TR 0
 #define USE_TR(...)
+#define CFG_SETFATTR 0
+#define USE_SETFATTR(...)
+#define CFG_GETFATTR 0
+#define USE_GETFATTR(...)
 #endif
 #ifdef TOYBOX_ENABLE_BRCTL
 #define CFG_BRCTL 1
@@ -340,8 +348,6 @@
 #define USE_FOLD(...)
 #define CFG_FSCK 0
 #define USE_FSCK(...)
-#define CFG_GETFATTR 0
-#define USE_GETFATTR(...)
 #define CFG_GETOPT 0
 #define USE_GETOPT(...)
 #ifdef WITH_SELINUX
@@ -594,8 +600,6 @@
 #define USE_REV(...) __VA_ARGS__
 #define CFG_RMMOD 1
 #define USE_RMMOD(...) __VA_ARGS__
-#define CFG_SETFATTR 0
-#define USE_SETFATTR(...)
 #define CFG_SETSID 1
 #define USE_SETSID(...) __VA_ARGS__
 #define CFG_SHA3SUM 0
