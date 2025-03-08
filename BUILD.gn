@@ -983,6 +983,7 @@ if (defined(ohos_lite)) {
           "toys/pending/awk.c",
           "toys/pending/diff.c",
           "toys/pending/expr.c",
+          "toys/pending/getfattr.c",
           "toys/pending/telnet.c",
           "toys/pending/tr.c",
           "toys/pending/traceroute.c",
@@ -999,6 +1000,7 @@ if (defined(ohos_lite)) {
           "sha384sum",
           "sha512sum",
           "tr",
+          "getfattr",
         ]
       }
 

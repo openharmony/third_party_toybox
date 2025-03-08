@@ -1035,7 +1035,7 @@
 #undef FOR_getenforce
 #endif
 
-// getfattr   (only-values)dhn:
+// getfattr (only-values)dhn: (only-values)dhn:
 #undef OPTSTR_getfattr
 #define OPTSTR_getfattr "(only-values)dhn:"
 #ifdef CLEANUP_getfattr
@@ -4377,10 +4377,10 @@
 #ifndef TT
 #define TT this.getfattr
 #endif
-#define FLAG_n (FORCED_FLAG<<0)
-#define FLAG_h (FORCED_FLAG<<1)
-#define FLAG_d (FORCED_FLAG<<2)
-#define FLAG_only_values (FORCED_FLAG<<3)
+#define FLAG_n (1<<0)
+#define FLAG_h (1<<1)
+#define FLAG_d (1<<2)
+#define FLAG_only_values (1<<3)
 #endif
 
 #ifdef FOR_getopt
