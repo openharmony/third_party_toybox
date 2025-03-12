@@ -1237,7 +1237,7 @@ static int ksort(void *aa, void *bb)
 #ifdef TOYBOX_OH_ADAPT
     /* fix "ps -eo pid,cmd,%cpu --sort=-%CPU"sort not correct problem */
     // process cpu sort here, because numeric sort and string sort can't get it right
-    if (field->which == PS_CPU) {
+    if (field->which == PS__CPU) {
       double delta = atof(string_field(ta, field)) - atof(string_field(tb, field));
       ret = (delta > -EXP) - (delta < EXP);
       ret *= field->reverse;
