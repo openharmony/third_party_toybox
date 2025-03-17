@@ -23,6 +23,11 @@ GLOBALS(
 void mkswap_main(void)
 {
   int fd = xopen(*toys.optargs, O_RDWR), pagesize = sysconf(_SC_PAGE_SIZE);
+#ifdef TOYBOX_OH_ADAPT
+  if (fd < 0) {
+    return;
+  }
+#endif
   off_t len = fdlength(fd);
   unsigned int pages = (len/pagesize)-1, *swap = (unsigned int *)toybuf;
   char *label = (char *)(swap+7), *uuid = (char *)(swap+3);
