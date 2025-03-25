@@ -264,11 +264,7 @@ void tty_jump(int x, int y)
 void tty_reset(void)
 {
   set_terminal(0, 0, 0, 0);
-  tty_esc("?25h");
-  tty_esc("0m");
-  tty_jump(0, 999);
-  tty_esc("K");
-  fflush(0);
+  xputsn("\e[?25h\e[0m\e[999H\e[K");
 }
 
 // If you call set_terminal(), use sigatexit(tty_sigreset);
@@ -292,5 +288,5 @@ void start_redraw(unsigned *width, unsigned *height)
     toys.signal = -1;
     terminal_probesize(width, height);
   }
-  xprintf("\033[H\033[J");
+  xputsn("\e[H\e[J");
 }
