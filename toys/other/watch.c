@@ -166,7 +166,15 @@ void watch_main(void)
 
       if (ss-toybuf==len || *ss>27) break;
       cc = *ss++;
+#ifdef TOYBOX_OH_ADAPT
+      // fix exit with abnormal char ''
+      if (cc==27) {
+        xflush(1);
+        break;
+      }
+#else
       if (cc==27) continue; // TODO
+#endif
 
       // Handle BEL BS HT LF VT FF CR
       if (cc>=10 && cc<=12) {

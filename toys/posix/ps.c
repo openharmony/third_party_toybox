@@ -1791,7 +1791,9 @@ static void top_common(
 #ifdef TOYBOX_OH_ADAPT
       /* fix "top -n 5" show 3 times problem*/
       if (i==-3) {
-        TT.top.n++;
+        if (TT.top.n != 0) {  
+          TT.top.n++;
+        }
         continue;
       }
 #else
