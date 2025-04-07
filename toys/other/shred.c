@@ -48,7 +48,11 @@ void shred_main(void)
 
     // do -f chmod if necessary
     if (fd == -1 && FLAG(f)) {
+#ifdef TOYBOX_OH_ADAPT
       chmod(*try, 0660);
+#else
+      chmod(*try, 0600);
+#endif 
       fd = open(*try, O_RDWR);
     }
     if (fd == -1) {
