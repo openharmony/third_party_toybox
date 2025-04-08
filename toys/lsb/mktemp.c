@@ -66,7 +66,7 @@ void mktemp_main(void)
   len = strlen(template);
 #ifdef TOYBOX_OH_ADAPT
   /* fix "mktemp -q mytempdir.XX" print error log problem*/
-  if (len<3 || strcmp(template+len-3, "XXX")) {
+  if (len<6 || strcmp(template+len-6, "XXXXXX")) {
     if (FLAG(q)) {
       toys.exitval = 1;
       return;
