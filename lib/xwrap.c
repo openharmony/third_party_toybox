@@ -159,12 +159,7 @@ void xprintf(char *format, ...)
 // Put string with length (does not append newline)
 void xputsl(char *s, int len)
 {
-#ifdef TOYBOX_OH_ADAPT
-  // fix 'top -k erropt' no error message output.
-  xflush(0);
-#else
   xflush(1);
-#endif
   xwrite(1, s, len);
 }
 

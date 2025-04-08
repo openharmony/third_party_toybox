@@ -2220,11 +2220,11 @@
 #undef FLAG_s
 #endif
 
-// ping <1>1m#t#<0>255=64c#<0=3s#<0>65512=56i%W#<0=3w#<0qf46I:[-46] <1>1m#t#<0>255=64c#<0=3s#<0>65512=56i%W#<0=3w#<0qf46I:[-46]
+// ping <1>1m#t#<0>255=64c#<0=3s#<0>65507=56i%W#<0=3w#<0qf46I:[-46] <1>1m#t#<0>255=64c#<0=3s#<0>65507=56i%W#<0=3w#<0qf46I:[-46]
 #undef OPTSTR_ping
 #ifdef TOYBOX_OH_ADAPT
 /* fix "ping -s 65500" fail problem*/
-#define OPTSTR_ping "<1>1m#t#<0>255=64c#<0=3s#<0>65512=56i%W#<0=3w#<0qf46I:[-46]"
+#define OPTSTR_ping "<1>1m#t#<0>255=64c#<0=3s#<0>65507=56i%W#<0=3w#<0qf46I:[-46]"
 #else
 #define OPTSTR_ping "<1>1m#t#<0>255=64c#<0=3s#<0>4088=56i%W#<0=3w#<0qf46I:[-46]"
 #endif
