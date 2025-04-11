@@ -196,7 +196,7 @@ USE_PGREP(NEWTOY(pgrep, "?cld:u*U*t*s*P*g*G*fnovxL:[-no]", TOYFLAG_USR|TOYFLAG_B
 USE_PIDOF(NEWTOY(pidof, "so:x", TOYFLAG_BIN))
 #ifdef TOYBOX_OH_ADAPT
 /* fix "ping -s 65500" fail problem*/
-USE_PING(NEWTOY(ping, "<1>1m#t#<0>255=64c#<0=3s#<0>65512=56i%W#<0=3w#<0qf46I:[-46]", TOYFLAG_USR|TOYFLAG_BIN))
+USE_PING(NEWTOY(ping, "<1>1m#t#<0>255=64c#<0=3s#<0>65507=56i%W#<0=3w#<0qf46I:[-46]", TOYFLAG_USR|TOYFLAG_BIN))
 #else
 USE_PING(NEWTOY(ping, "<1>1m#t#<0>255=64c#<0=3s#<0>4088=56i%W#<0=3w#<0qf46I:[-46]", TOYFLAG_USR|TOYFLAG_BIN))
 #endif

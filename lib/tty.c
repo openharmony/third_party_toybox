@@ -56,7 +56,11 @@ int terminal_probesize(unsigned *xx, unsigned *yy)
 
   // Send probe: bookmark cursor position, jump to bottom right,
   // query position, return cursor to bookmarked position.
+#ifdef TOYBOX_OH_ADAPT
+  // fix garble for 'top -k aa'
+#else
   xprintf("\033[s\033[999C\033[999B\033[6n\033[u");
+#endif
 
   return 0;
 }
