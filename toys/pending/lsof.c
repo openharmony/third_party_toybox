@@ -73,7 +73,7 @@ static void print_info(void *data)
     if (FLAG(l)) {
       printf("%-9s %5d %10d %4s%c%c %7s %18s %9s %10s %s\n",
             fi->pi.cmd, fi->pi.pid, fi->pi.uid,
-            fi->fd, fi->rw, fi->locks, fi->type, fi->device, fi->size_off
+            fi->fd, fi->rw, fi->locks, fi->type, fi->device, fi->size_off,
             fi->node, fi->name);
       return;
     }
