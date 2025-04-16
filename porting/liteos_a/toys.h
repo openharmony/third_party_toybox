@@ -138,5 +138,4 @@ extern char **environ;
 #define TOYBOX_VENDOR ""
 #endif
 #define TOYBOX_VERSION "0.8.10"TOYBOX_VENDOR
-
 #endif
