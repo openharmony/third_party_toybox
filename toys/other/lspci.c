@@ -13,7 +13,7 @@ config LSPCI
 
     -e	Print all 6 digits in class
     -k	Print kernel driver
-    -m	Machine readable format
+    -m	Machine parseable format
 
 config LSPCI_TEXT
   bool "lspci readable output"
@@ -51,10 +51,11 @@ static int do_lspci(struct dirtree *new)
     return 0;
 
   *driver = 0;
-  if (FLAG(k)) readlinkat0(dirfd, "driver", driver, sizeof(driver));
+  if (toys.optflags & FLAG_k)
+    readlinkat0(dirfd, "driver", driver, sizeof(driver));
 
   for (fields = (char*[]){"class", "vendor", "device", 0}; *fields; fields++) {
-    int fd, size = 6 + 2*(FLAG(e) && p == toybuf);
+    int fd, size = 6 + 2*((toys.optflags & FLAG_e) && p == toybuf);
     *p = 0;
 
     if (-1 == (fd = openat(dirfd, *fields, O_RDONLY))) {
@@ -94,7 +95,8 @@ static int do_lspci(struct dirtree *new)
     }
 
     if (TT.n > 1) {
-      printf(FLAG(m) ? "%s, \"%s\" \"%s [%s]\" \"%s [%s]\""
+      printf((toys.optflags & FLAG_m)
+        ? "%s, \"%s\" \"%s [%s]\" \"%s [%s]\""
         : "%s Class %s: %s [%s] %s [%s]",
         new->name+5, toybuf, vbig ? vbig : "", vendor,
         dbig ? dbig : "", device);
@@ -103,11 +105,13 @@ static int do_lspci(struct dirtree *new)
     }
   }
 
-  printf(FLAG(m) ? "%s \"%s\" \"%s\" \"%s\"" : "%s Class %s: %s:%s",
-    new->name+5, toybuf, vbig ? vbig : vendor, dbig ? dbig : device);
+  printf((toys.optflags & FLAG_m) ? "%s \"%s\" \"%s\" \"%s\""
+    : "%s Class %s: %s:%s", new->name+5, toybuf, 
+    vbig ? vbig : vendor, dbig ? dbig : device);
 
 driver:
-  if (*driver) printf(FLAG(m) ? " \"%s\"" : " %s", basename(driver));
+  if (*driver)
+    printf((toys.optflags & FLAG_m) ? " \"%s\"" : " %s", basename(driver));
   xputc('\n');
 
   return 0;

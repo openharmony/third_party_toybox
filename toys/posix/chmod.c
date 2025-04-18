@@ -17,7 +17,7 @@ config CHMOD
     MODE can be (comma-separated) stanzas: [ugoa][+-=][rwxstXugo]
 
     Stanzas are applied in order: For each category (u = user,
-    g = group, o = other, a = all three, if none specified default is a, but honoring umask),
+    g = group, o = other, a = all three, if none specified default is a),
     set (+), clear (-), or copy (=), r = read, w = write, x = execute.
     s = u+s = suid, g+s = sgid, o+s = sticky. (+t is an alias for o+s).
     suid/sgid: execute as the user/group who owns the file.
