@@ -78,7 +78,6 @@ static int do_deflate(int in_fd, int out_fd, int dd, int level)
   }
   if (!(gz = gzdopen(dd ? in_fd : out_fd, b))) perror_exit("gzdopen");
   if (dd) {
-    if (gzdirect(gz)) error_exit("not gzip");
     while ((len = gzread(gz, toybuf, sizeof(toybuf))) > 0)
       if (len != writeall(out_fd, toybuf, len)) break;
   } else {
