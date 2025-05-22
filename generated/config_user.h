@@ -47,6 +47,8 @@
 #define USE_SETFATTR(...) __VA_ARGS__
 #define CFG_GETFATTR 1
 #define USE_GETFATTR(...) __VA_ARGS__
+#define CFG_INSTALL 1
+#define USE_INSTALL(...) __VA_ARGS__
 #else
 #define CFG_DIFF 0
 #define USE_DIFF(...)
@@ -96,6 +98,8 @@
 #define USE_SETFATTR(...)
 #define CFG_GETFATTR 0
 #define USE_GETFATTR(...)
+#define CFG_INSTALL 0
+#define USE_INSTALL(...)
 #endif
 #ifdef TOYBOX_ENABLE_BRCTL
 #define CFG_BRCTL 1
@@ -161,8 +165,6 @@
 #define USE_CP_PRESERVE(...) __VA_ARGS__
 #define CFG_MV 1
 #define USE_MV(...) __VA_ARGS__
-#define CFG_INSTALL 0
-#define USE_INSTALL(...)
 #define CFG_CPIO 1
 #define USE_CPIO(...) __VA_ARGS__
 #define CFG_CUT 1
