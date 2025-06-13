@@ -681,7 +681,11 @@ static void do_bunzip2(int fd, char *name)
   // Trim off .bz or .bz2 extension
   dotbz = name+len-3;
   if ((len>3 && !strcmp(dotbz, ".bz")) || (len>4 && !strcmp(--dotbz, ".bz2")))
-    dotbz = 0;
+#ifdef TOYBOX_OH_ADAPT
+    *dotbz = 0;
+#else
+    dotba = 0;
+#endif
 
   // For - no replace
   if (toys.optflags&FLAG_t) outfd = xopen("/dev/null", O_WRONLY);
