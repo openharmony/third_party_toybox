@@ -684,7 +684,7 @@ static void do_bunzip2(int fd, char *name)
 #ifdef TOYBOX_OH_ADAPT
     *dotbz = 0;
 #else
-    dotba = 0;
+    dotbz = 0;
 #endif
 
   // For - no replace
