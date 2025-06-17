@@ -682,7 +682,7 @@ static void do_bunzip2(int fd, char *name)
   dotbz = name+len-3;
   if ((len>3 && !strcmp(dotbz, ".bz")) || (len>4 && !strcmp(--dotbz, ".bz2")))
 #ifdef TOYBOX_OH_ADAPT
-    *dotbz = 0;
+    *dotbz = nullptr;
 #else
     dotbz = 0;
 #endif
