@@ -54,6 +54,11 @@ static int dump_proc_data(FILE *fp)
   int login_flag = 0;
   pid_t pid;
   DIR *proc_dir = opendir("/proc");
+#ifdef TOYBOX_OH_ADAPT
+  if (!proc_dir) {
+    perror_exit("/proc");
+  }
+#endif
 
   fputs(TT.timestamp, fp);
   while ((pid_dir = readdir(proc_dir))) {
