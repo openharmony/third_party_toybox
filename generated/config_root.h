@@ -27,6 +27,10 @@
 #define USE_TR(...) __VA_ARGS__
 #define CFG_GETFATTR 1
 #define USE_GETFATTR(...) __VA_ARGS__
+#define CFG_IPCS 1
+#define USE_IPCS(...) __VA_ARGS__
+#define CFG_NETCAT 1
+#define USE_NETCAT(...) __VA_ARGS__
 #else
 #define CFG_DIFF 0
 #define USE_DIFF(...)
@@ -56,6 +60,10 @@
 #define USE_TR(...)
 #define CFG_GETFATTR 0
 #define USE_GETFATTR(...)
+#define CFG_IPCS 0
+#define USE_IPCS(...)
+#define CFG_NETCAT 0
+#define USE_NETCAT(...)
 #endif
 #ifdef TOYBOX_ENABLE_BRCTL
 #define CFG_BRCTL 1
@@ -337,8 +345,6 @@
 #define USE_IP(...)
 #define CFG_IPCRM 0
 #define USE_IPCRM(...)
-#define CFG_IPCS 0
-#define USE_IPCS(...)
 #define CFG_KLOGD 0
 #define USE_KLOGD(...)
 #define CFG_KLOGD_SOURCE_RING_BUFFER 0
@@ -626,8 +632,6 @@
 #define USE_IFCONFIG(...) __VA_ARGS__
 #define CFG_MICROCOM 1
 #define USE_MICROCOM(...) __VA_ARGS__
-#define CFG_NETCAT 0
-#define USE_NETCAT(...)
 #define CFG_NETCAT_LISTEN 0
 #define USE_NETCAT_LISTEN(...)
 #define CFG_NETSTAT 1
