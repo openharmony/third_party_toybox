@@ -4758,16 +4758,16 @@
 #ifndef TT
 #define TT this.ipcs
 #endif
-#define FLAG_i (FORCED_FLAG<<0)
-#define FLAG_m (FORCED_FLAG<<1)
-#define FLAG_q (FORCED_FLAG<<2)
-#define FLAG_s (FORCED_FLAG<<3)
-#define FLAG_l (FORCED_FLAG<<4)
-#define FLAG_u (FORCED_FLAG<<5)
-#define FLAG_t (FORCED_FLAG<<6)
-#define FLAG_p (FORCED_FLAG<<7)
-#define FLAG_c (FORCED_FLAG<<8)
-#define FLAG_a (FORCED_FLAG<<9)
+#define FLAG_i (1LL<<0)
+#define FLAG_m (1LL<<1)
+#define FLAG_q (1LL<<2)
+#define FLAG_s (1LL<<3)
+#define FLAG_l (1LL<<4)
+#define FLAG_u (1LL<<5)
+#define FLAG_t (1LL<<6)
+#define FLAG_p (1LL<<7)
+#define FLAG_c (1LL<<8)
+#define FLAG_a (1LL<<9)
 #endif
 
 #ifdef FOR_kill
@@ -5190,20 +5190,21 @@
 #ifndef TT
 #define TT this.netcat
 #endif
-#define FLAG_U (1<<0)
-#define FLAG_u (1<<1)
-#define FLAG_6 (1<<2)
-#define FLAG_4 (1<<3)
-#define FLAG_f (1<<4)
-#define FLAG_s (1<<5)
-#define FLAG_q (1<<6)
-#define FLAG_p (1<<7)
-#define FLAG_W (1<<8)
-#define FLAG_w (1<<9)
-#define FLAG_L (1<<10)
-#define FLAG_l (1<<11)
-#define FLAG_E (1<<12)
-#define FLAG_t (1<<13)
+#define FLAG_n (1LL<<0)
+#define FLAG_U (1LL<<1)
+#define FLAG_u (1LL<<2)
+#define FLAG_6 (1LL<<3)
+#define FLAG_4 (1LL<<4)
+#define FLAG_f (1LL<<5)
+#define FLAG_s (1LL<<6)
+#define FLAG_q (1LL<<7)
+#define FLAG_p (1LL<<8)
+#define FLAG_W (1LL<<9)
+#define FLAG_w (1LL<<10)
+#define FLAG_L (1LL<<11)
+#define FLAG_l (1LL<<12)
+#define FLAG_E (1LL<<13)
+#define FLAG_t (1LL<<14)
 #endif
 
 #ifdef FOR_netstat
