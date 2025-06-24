@@ -375,11 +375,7 @@ static int lensort(struct arg_list **a, struct arg_list **b)
 static void parse_regex(void)
 {
   struct arg_list *al, *new, *list = NULL, **last;
-#ifndef TOYBOX_OH_ADAPT
   char *s, *ss, *special = "\\.^$[()|*+?{";
-#else
-  char *s, *ss, *special = "\\.^$[()*+?{";
-#endif
   int len, ii, key;
 
   // Add all -f lines to -e list. (Yes, this is leaking allocation context for
