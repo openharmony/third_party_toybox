@@ -264,9 +264,7 @@ static void sem_array(void)
   struct group *gr;
 
   u.array = (unsigned short *)&info_buf;
-
   if ((max_nr = semctl(0, 0, SEM_INFO, u)) < 0) {
-    if (errno == EINVAL) return;
     perror_msg("kernel is not configured for semaphores");
     return;
   }
