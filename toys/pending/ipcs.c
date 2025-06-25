@@ -269,6 +269,7 @@ static void sem_array(void)
     return;
   }
 
+
   if (flag(u)) {
     printf("------ Semaphore Status --------\n");
     printf("used arrays = %d\n"
