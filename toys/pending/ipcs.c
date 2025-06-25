@@ -251,6 +251,9 @@ static void shm_array(void)
   }
 }
 
+#ifdef TOYBOX_OH_ADAPT
+//delete 'ipcs -s' fail problem: kernel is not configured for semaphores
+#else
 static void sem_array(void)
 {
   struct seminfo info_buf;
@@ -262,19 +265,11 @@ static void sem_array(void)
 
   u.array = (unsigned short *)&info_buf;
 
-#ifdef TOYBOX_OH_ADAPT
-//delete 'ipcs -s' fail problem: kernel is not configured for semaphores
   if ((max_nr = semctl(0, 0, SEM_INFO, u)) < 0) {
     if (errno == EINVAL) return;
     perror_msg("kernel is not configured for semaphores");
     return;
   }
-#else
-  if ((max_nr = semctl(0, 0, SEM_INFO, u)) < 0) {
-    perror_msg("kernel is not configured for semaphores");
-    return;
-  }
-#endif
 
   if (flag(u)) {
     printf("------ Semaphore Status --------\n");
@@ -347,6 +342,7 @@ static void sem_array(void)
     }
   }
 }
+#endif
 
 static void msg_array(void)
 {
