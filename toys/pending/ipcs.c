@@ -4,7 +4,12 @@
  *
  * see http://pubs.opengroup.org/onlinepubs/9699919799/utilities/ipcs.html
 
+#ifdef TOYBOX_OH_ADAPT
+//delete 'ipcs -s' fail problem: kernel is not configured for semaphores
+USE_IPCS(NEWTOY(ipcs, "acptulqmi#", TOYFLAG_USR|TOYFLAG_BIN))
+#else
 USE_IPCS(NEWTOY(ipcs, "acptulsqmi#", TOYFLAG_USR|TOYFLAG_BIN))
+#endif
 
 config IPCS
   bool "ipcs"
@@ -256,11 +261,20 @@ static void sem_array(void)
   struct group *gr;
 
   u.array = (unsigned short *)&info_buf;
+
+#ifdef TOYBOX_OH_ADAPT
+//delete 'ipcs -s' fail problem: kernel is not configured for semaphores
+  if ((max_nr = semctl(0, 0, SEM_INFO, u)) < 0) {
+    if (errno == EINVAL) return;
+    perror_msg("kernel is not configured for semaphores");
+    return;
+  }
+#else
   if ((max_nr = semctl(0, 0, SEM_INFO, u)) < 0) {
     perror_msg("kernel is not configured for semaphores");
     return;
   }
-
+#endif
 
   if (flag(u)) {
     printf("------ Semaphore Status --------\n");
@@ -421,6 +435,18 @@ static void msg_array(void)
 
 void ipcs_main(void)
 {
+#ifdef TOYBOX_OH_ADAPT
+//delete 'ipcs -s' fail problem: kernel is not configured for semaphores
+  if (flag(s)) {
+    error_exit("Unknown option 's' (see \"ipcs --help\")");
+  }
+  if (flag(i)) {
+    if (flag(m)) show_shm_id();
+    else if (flag(q)) show_msg_id();
+    else help_exit(0);
+    return;
+  }
+#else
   if (flag(i)) {
     if (flag(m)) show_shm_id();
     else if (flag(s)) show_sem_id();
@@ -428,18 +454,28 @@ void ipcs_main(void)
     else help_exit(0);
     return;
   }
+#endif
 
+#ifdef TOYBOX_OH_ADAPT
+//delete 'ipcs -s' fail problem: kernel is not configured for semaphores
+  if (!(flag(m) || flag(q)) || flag(a)) toys.optflags |= (FLAG_m|FLAG_q);
+#else
   if (!(flag(m) || flag(s) || flag(q)) || flag(a)) toys.optflags |= (FLAG_m|FLAG_s|FLAG_q);
+#endif
 
   xputc('\n');
   if (flag(m)) {
     shm_array();
     xputc('\n');
   }
+#ifdef TOYBOX_OH_ADAPT
+//delete 'ipcs -s' fail problem: kernel is not configured for semaphores
+#else
   if (flag(s)) {
     sem_array();
     xputc('\n');
   }
+#endif
   if (flag(q)) {
     msg_array();
     xputc('\n');
