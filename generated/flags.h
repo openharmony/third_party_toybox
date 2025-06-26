@@ -1483,6 +1483,23 @@
 
 // ipcs   acptulsqmi#
 #undef OPTSTR_ipcs
+#ifdef TOYBOX_OH_ADAPT
+//delete 'ipcs -s' fail problem: kernel is not configured for semaphores
+#define OPTSTR_ipcs "acptulqmi#"
+#ifdef CLEANUP_ipcs
+#undef CLEANUP_ipcs
+#undef FOR_ipcs
+#undef FLAG_i
+#undef FLAG_m
+#undef FLAG_q
+#undef FLAG_l
+#undef FLAG_u
+#undef FLAG_t
+#undef FLAG_p
+#undef FLAG_c
+#undef FLAG_a
+#endif
+#else
 #define OPTSTR_ipcs "acptulsqmi#"
 #ifdef CLEANUP_ipcs
 #undef CLEANUP_ipcs
@@ -1497,6 +1514,7 @@
 #undef FLAG_p
 #undef FLAG_c
 #undef FLAG_a
+#endif
 #endif
 
 // kill ?ls:  ?ls: 
@@ -4761,7 +4779,11 @@
 #define FLAG_i (1LL<<0)
 #define FLAG_m (1LL<<1)
 #define FLAG_q (1LL<<2)
+#ifdef TOYBOX_OH_ADAPT
+//delete 'ipcs -s' fail problem: kernel is not configured for semaphores
+#else
 #define FLAG_s (1LL<<3)
+#endif
 #define FLAG_l (1LL<<4)
 #define FLAG_u (1LL<<5)
 #define FLAG_t (1LL<<6)

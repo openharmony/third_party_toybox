@@ -130,7 +130,12 @@ USE_IOTOP(NEWTOY(iotop, ">0AaKO" "Hk*o*p*u*s#<1=7d%<100=3000m#n#<1bq", TOYFLAG_U
 USE_IP(NEWTOY(ip, NULL, TOYFLAG_SBIN))
 USE_IP(OLDTOY(ipaddr, ip, TOYFLAG_SBIN))
 USE_IPCRM(NEWTOY(ipcrm, "m*M*s*S*q*Q*", TOYFLAG_USR|TOYFLAG_BIN))
+#ifdef TOYBOX_OH_ADAPT
+//delete 'ipcs -s' fail problem: kernel is not configured for semaphores
+USE_IPCS(NEWTOY(ipcs, "acptulqmi#", TOYFLAG_USR|TOYFLAG_BIN))
+#else
 USE_IPCS(NEWTOY(ipcs, "acptulsqmi#", TOYFLAG_USR|TOYFLAG_BIN))
+#endif
 USE_IP(OLDTOY(iplink, ip, TOYFLAG_SBIN))
 USE_IP(OLDTOY(iproute, ip, TOYFLAG_SBIN))
 USE_IP(OLDTOY(iprule, ip, TOYFLAG_SBIN))
