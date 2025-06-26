@@ -396,7 +396,12 @@
 
 #define HELP_klogd "usage: klogd [-n] [-c N]\n\n-c  N   Print to console messages more urgent than prio N (1-8)\"\n-n    Run in foreground"
 
+#ifdef TOYBOX_OH_ADAPT
+//delete 'ipcs -s' fail problem: kernel is not configured for semaphores
+#define HELP_ipcs "usage: ipcs [[-mq] -i shmid] | [[-amq] [-tcplu]]\n\n-i Show specific resource\nResource specification:\n-a All (default)\n-m Shared memory segments\n-q Message queues\nOutput format:\n-c Creator\n-l Limits\n-p Pid\n-t Time\n-u Summary"
+#else
 #define HELP_ipcs "usage: ipcs [[-smq] -i shmid] | [[-asmq] [-tcplu]]\n\n-i Show specific resource\nResource specification:\n-a All (default)\n-m Shared memory segments\n-q Message queues\n-s Semaphore arrays\nOutput format:\n-c Creator\n-l Limits\n-p Pid\n-t Time\n-u Summary"
+#endif
 
 #define HELP_ipcrm "usage: ipcrm [ [-q msqid] [-m shmid] [-s semid]\n          [-Q msgkey] [-M shmkey] [-S semkey] ... ]\n\n-mM Remove memory segment after last detach\n-qQ Remove message queue\n-sS Remove semaphore"
 
