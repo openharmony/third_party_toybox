@@ -80,8 +80,8 @@ void netcat_main(void)
 {
 #ifdef TOYBOX_OH_ADAPT
 /* Remove unsupported -f and -t option */
- if (toys.optflags & FALG_t) error_exit("Unknown option 't'");
- if (toys.optflags & FALG_f) error_exit("Unknown option 'f'");
+ if (toys.optflags & FLAG_t) error_exit("Unknown option 't'");
+ if (toys.optflags & FLAG_f) error_exit("Unknown option 'f'");
 #else
 #endif
 
