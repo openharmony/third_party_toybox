@@ -165,9 +165,7 @@ int pollinate(int in1, int in2, int out1, int out2, int timeout, int shutdown_ti
         if(i) {
           if(!is_udp && !socket_closed)
             shutdown(pollfds[0].fd, SHUT_WR);
-
             pollcount--;
-
             if(shutdown_timeout >= 0)
               deadline = millitime() + shutdown_timeout;
         } else {
