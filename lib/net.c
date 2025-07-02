@@ -100,7 +100,7 @@ int xpoll(struct pollfd *fds, int nfds, int timeout)
 /* fix "netcat -q" fail problem */
 int pollinate(int in1, int in2, int out1, int out2, int timeout, int shutdown_timeout)
 {
-  struct pollfd pollfd[2];
+  struct pollfd pollfds[2];
   int i, pollcount = 2;
   long long deadline = -1;
   int socket_closed = 0;
@@ -122,51 +122,58 @@ int pollinate(int in1, int in2, int out1, int out2, int timeout, int shutdown_ti
   pollfds[0].fd = in1;
   pollfds[1].fd = in2;
 
-  if(deadline >= 0) {
-    current_timeout = deadline - now;
-    if(current_timeout < 0) current_timeout = 0;
-  }
+  for(;;) {
+    int current_timeout = timeout;
+    long long now = millitime();
 
-  if(socket_closed && pollcount == 1) {
-    if(is_server) {
-      close(pollfd[0].fd);
-      return 0;
-    } else {
-      if(current_timeout <= 0) return 2;
-      usleep(current_timeout * 1000);
-      return 2;
+    if(deadline >= 0) {
+      current_timeout = deadline - now;
+      if(current_timeout < 0) current_timeout = 0;
     }
-  }
 
-  int pull_result = xpoll(pollfds, pollcount, current_timeout);
-  if(poll_result == 0) {
-    if(deadline >= 0) return 2;
-    else return 1;
-  }
-
-  for(i = 0; i < pollcount; i++) {
-    if(pollfds[i].revents & POLLIN) {
-      int len = read(pollfds[i].fd, libbuf, sizeof(libbuf));
-      if(len < 1) {
-        pollfds[i].revents = POLLHUP;
+    if(socket_closed && pollcount == 1) {
+      if(is_server) {
+        close(pollfds[0].fd);
+        return 0;
       } else {
-        xwrite(i ? out2 : out1, libbuf, len);
-        continue;
+        if(current_timeout <= 0) return 2;
+        usleep(current_timeout * 1000);
+        return 2;
       }
     }
 
-    if(pollfds[i].revents & POLLHUP) {
-      if(i) {
-        if(!is_udp && !socket_closed)
-          shutdown(pollfds[0].fd, SHUT_WR);
+    int poll_result = xpoll(pollfds, pollcount, current_timeout);
+    if(poll_result == 0) {
+      if(deadline >= 0) return 2;
+      else return 1;
+    }
 
+    for(i = 0; i < pollcount; i++) {
+      if (i == 0 && socket_closed) continue;
+
+      if(pollfds[i].revents & POLLIN) {
+        int len = read(pollfds[i].fd, libbuf, sizeof(libbuf));
+        if(len < 1) {
+          pollfds[i].revents = POLLHUP;
+        } else {
+          xwrite(i ? out2 : out1, libbuf, len);
+          continue;
+        }
+      }
+
+      if(pollfds[i].revents & POLLHUP) {
+        if(i) {
+          if(!is_udp && !socket_closed)
+            shutdown(pollfds[0].fd, SHUT_WR);
+
+            pollcount--;
+
+            if(shutdown_timeout >= 0)
+              deadline = millitime() + shutdown_timeout;
+        } else {
+          socket_closed = 1;
           pollcount--;
-
-          if(shutdown_timeout >= 0)
-            deadline = millitime() + shutdown_timeout;
-      } else {
-        socket_closed = 1;
-        pollcount--;
+        }
       }
     }
   }
