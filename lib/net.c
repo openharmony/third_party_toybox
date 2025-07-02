@@ -96,6 +96,82 @@ int xpoll(struct pollfd *fds, int nfds, int timeout)
 // Loop forwarding data from in1 to out1 and in2 to out2, handling
 // half-connection shutdown. timeouts return if no data for X ms.
 // Returns 0: both closed, 1 shutdown_timeout, 2 timeout
+#ifdef TOYBOX_OH_ADAPT
+/* fix "netcat -q" fail problem */
+int pollinate(int in1, int in2, int out1, int out2, int timeout, int shutdown_timeout)
+{
+  struct pollfd pollfd[2];
+  int i, pollcount = 2;
+  long long deadline = -1;
+  int socket_closed = 0;
+  int is_server = 0;
+  int is_udp = 0;
+
+  is_server = (isatty(in2) && !isatty(in1));
+
+  {
+    int type;
+    socklen_t len = sizeof(type);
+    if(getsockopt(in1, SOL_SOCKET, SO_TYPE, &type, &len) == 0) {
+      is_udp = (type == SOCK_DGRAM);
+    }
+  }
+
+  memset(pollfds, 0, 2*sizeof(struct pollfd));
+  pollfds[0].events = pollfds[1].events = POLLIN;
+  pollfds[0].fd = in1;
+  pollfds[1].fd = in2;
+
+  if(deadline >= 0) {
+    current_timeout = deadline - now;
+    if(current_timeout < 0) current_timeout = 0;
+  }
+
+  if(socket_closed && pollcount == 1) {
+    if(is_server) {
+      close(pollfd[0].fd);
+      return 0;
+    } else {
+      if(current_timeout <= 0) return 2;
+      usleep(current_timeout * 1000);
+      return 2;
+    }
+  }
+
+  int pull_result = xpoll(pollfds, pollcount, current_timeout);
+  if(poll_result == 0) {
+    if(deadline >= 0) return 2;
+    else return 1;
+  }
+
+  for(i = 0; i < pollcount; i++) {
+    if(pollfds[i].revents & POLLIN) {
+      int len = read(pollfds[i].fd, libbuf, sizeof(libbuf));
+      if(len < 1) {
+        pollfds[i].revents = POLLHUP;
+      } else {
+        xwrite(i ? out2 : out1, libbuf, len);
+        continue;
+      }
+    }
+
+    if(pollfds[i].revents & POLLHUP) {
+      if(i) {
+        if(!is_udp && !socket_closed)
+          shutdown(pollfds[0].fd, SHUT_WR);
+
+          pollcount--;
+
+          if(shutdown_timeout >= 0)
+            deadline = millitime() + shutdown_timeout;
+      } else {
+        socket_closed = 1;
+        pollcount--;
+      }
+    }
+  }
+}
+#else
 int pollinate(int in1, int in2, int out1, int out2, int timeout, int shutdown_timeout)
 {
   struct pollfd pollfds[2];
@@ -129,6 +205,7 @@ int pollinate(int in1, int in2, int out1, int out2, int timeout, int shutdown_ti
     }
   }
 }
+#endif
 
 // Return converted ipv4/ipv6 numeric address in libbuf
 char *ntop(struct sockaddr *sa)
