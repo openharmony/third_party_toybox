@@ -82,7 +82,6 @@ void netcat_main(void)
 /* Remove unsupported -f and -t option */
  if (toys.optflags & FLAG_t) error_exit("Unknown option 't'");
  if (toys.optflags & FLAG_f) error_exit("Unknown option 'f'");
-#else
 #endif
 
   int sockfd = -1, in1 = 0, in2 = 0, out1 = 1, out2 = 1, family = AF_UNSPEC,
