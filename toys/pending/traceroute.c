@@ -584,7 +584,6 @@ void traceroute_main(void)
 #ifdef TOYBOX_OH_ADAPT
 /* fix "traceroute -s" bind error problem */
       source.sin_family = AF_INET;
-#eles
 #endif
       if (!inet_aton(TT.src_ip, &(source.sin_addr)))
         error_exit("bad address: %s", TT.src_ip);
@@ -610,7 +609,6 @@ void traceroute_main(void)
 #ifdef TOYBOX_OH_ADAPT
 /* fix "traceroute -s" bind error problem */
       source.sin6_family = AF_INET6;
-#eles
 #endif
       if(inet_pton(AF_INET6, TT.src_ip, &(source.sin6_addr)) <= 0)
         error_exit("bad address: %s", TT.src_ip);
@@ -631,7 +629,6 @@ void traceroute_main(void)
 #ifdef TOYBOX_OH_ADAPT
 /* fix "traceroute -s" bind error problem */
       prb.sin6_family = AF_INET6;
-#eles
 #endif
       xbind(TT.snd_sock, (struct sockaddr*)&prb, sizeof(struct sockaddr_in6));
       xbind(TT.recv_sock, (struct sockaddr*)&prb, sizeof(struct sockaddr_in6));
