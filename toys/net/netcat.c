@@ -78,6 +78,12 @@ static int usock(char *name, int type, int out)
 
 void netcat_main(void)
 {
+#ifdef TOYBOX_OH_ADAPT
+/* Remove unsupported -f and -t option */
+ if (toys.optflags & FLAG_t) error_exit("Unknown option 't'");
+ if (toys.optflags & FLAG_f) error_exit("Unknown option 'f'");
+#endif
+
   int sockfd = -1, in1 = 0, in2 = 0, out1 = 1, out2 = 1, family = AF_UNSPEC,
     type = FLAG(u) ? SOCK_DGRAM : SOCK_STREAM;
   socklen_t len;
