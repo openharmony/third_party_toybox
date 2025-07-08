@@ -105,7 +105,11 @@ static int dehex(char ch)
 
 static void do_xxd_reverse(int fd, char *name)
 {
-  FILE *fp = xfdopen(fd, "r");
+  int dupFd = dup(fd);
+  if (dupFd < 0) {
+    perror_exit("%s: dup failed", name);
+  }
+  FILE *fp = xfdopen(dupFd, "r");
   int tmp;
 
   if (toys.optflags&FLAG_i) {
