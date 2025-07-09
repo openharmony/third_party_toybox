@@ -105,7 +105,15 @@ static int dehex(char ch)
 
 static void do_xxd_reverse(int fd, char *name)
 {
+#ifdef TOYBOX_OH_ADAPT
+  int dupFd = dup(fd);
+  if (dupFd < 0) {
+    perror_exit("%s: dup failed", name);
+  }
+  FILE *fp = xfdopen(dupFd, "r");
+#else
   FILE *fp = xfdopen(fd, "r");
+#endif
   int tmp;
 
   if (toys.optflags&FLAG_i) {
