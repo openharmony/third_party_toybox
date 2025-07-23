@@ -438,7 +438,11 @@ static void listfiles(int dirfd, struct dirtree *indir)
     totpad = totals[1]+!!totals[1]+totals[6]+!!totals[6]+totals[7]+!!totals[7];
     if ((FLAG(h)||FLAG(l)||FLAG(o)||FLAG(n)||FLAG(g)||FLAG(s)) && indir->parent)
     {
+#ifdef TOYBOX_OH_ADAPT
+      print_with_h(tmp, blocks * 1024, 0);
+#else
       print_with_h(tmp, blocks, 1);
+#endif
       xprintf("total %s\n", tmp);
     }
   }
