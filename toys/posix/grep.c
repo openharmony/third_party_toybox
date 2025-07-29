@@ -82,6 +82,14 @@ struct reg {
   regmatch_t m;
 };
 
+#ifdef TOYBOX_OH_ADAPT
+struct line_info {
+  char *line;
+  unsigned start;
+  unsigned size;
+};
+#endif
+
 static void numdash(long num, char dash)
 {
   printf("%s%ld%s%c", TT.green, num, TT.cyan, dash);
@@ -284,9 +292,15 @@ got:
         else {
           while (dlb) {
             struct double_list *dl = dlist_pop(&dlb);
+#ifdef TOYBOX_OH_ADAPT
+            struct line_info *linfo = (struct line_info *)dl->data;
+            outline(linfo->line, '-', name, lcount-before, linfo->start+1, linfo->size);
+            free(linfo->line);
+#else
             unsigned *uu = (void *)(dl->data+(strlen(dl->data)|3)+1);
 
             outline(dl->data, '-', name, lcount-before, uu[0]+1, uu[1]);
+#endif
             free(dl->data);
             free(dl);
             before--;
@@ -325,6 +339,13 @@ got:
         discard = 0;
       }
       if (discard && TT.B) {
+#ifdef TOYBOX_OH_ADAPT
+        struct line_info *linfo = xzalloc(sizeof(struct line_info));
+        linfo->line = line;
+        linfo->start = offset - len;
+        linfo->size = ulen;
+        dlist_add(&dlb, linfo);
+#else
         unsigned *uu, ul = (ulen|3)+1;
 
         line = xrealloc(line, ul+8);
@@ -332,11 +353,17 @@ got:
         uu[0] = offset-len;
         uu[1] = ulen;
         dlist_add(&dlb, line);
+#endif
         line = 0;
         if (++before>TT.B) {
           struct double_list *dl;
 
           dl = dlist_pop(&dlb);
+#ifdef TOYBOX_OH_ADAPT
+          struct line_info *linfo;
+          linfo = dl->data;
+          free(linfo->line);
+#endif
           free(dl->data);
           free(dl);
           before--;
