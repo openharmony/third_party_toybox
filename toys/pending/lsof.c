@@ -120,7 +120,7 @@ static void scan_proc_net_file(char *path, int family, char type,
 
   if (!fp) return;
 
-  if (getline(&line, &line_length, fp) <= 0) return; // Skip header.
+  if (getline(&line, &line_length, fp)) return; // Skip header.
 
   while (getline(&line, &line_length, fp) > 0) {
     fn(line, family, type);
@@ -336,7 +336,7 @@ static void visit_maps(struct proc_info *pi)
   FILE *fp;
   unsigned long long offset;
   long inode;
-  char *line = NULL, device[10]; // xxx:xxxxx\0
+  char *line = NULL, device[10];
   size_t line_length = 0;
   struct file_info *fi;
 
@@ -347,8 +347,10 @@ static void visit_maps(struct proc_info *pi)
   while (getline(&line, &line_length, fp) > 0) {
     int name_pos;
 
-    if (sscanf(line, "%*x-%*x %*s %llx %9s %ld %n",
+    if (sscanf(line, "%*x-%*x %*s %llx %s %ld %n",
                &offset, device, &inode, &name_pos) >= 3) {
+      struct file_info *fi;
+
       // Ignore non-file maps.
       if (inode == 0 || !strcmp(device, "00:00")) continue;
       // TODO: show unique maps even if they have a non-zero offset?
