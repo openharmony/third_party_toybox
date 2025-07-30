@@ -283,7 +283,7 @@ static void sort_lines(char **pline, long len)
   if (!pline) return;
   line = *pline;
   if (!FLAG(z) && len && line[len-1]=='\n') line[--len] = 0;
-  *pline = 0;
+  *pline = NULL;
 
   // handle -c here so we don't allocate more memory than necessary.
   if (FLAG(c)) {
@@ -292,7 +292,7 @@ static void sort_lines(char **pline, long len)
     if (TT.lines && compare_keys((void *)&TT.lines, &line)>j)
       error_exit("%s: Check line %d\n", TT.name, TT.linecount);
     free(TT.lines);
-    TT.lines = (void *)line;
+    TT.lines = (char **)line;
   } else {
     if (!(TT.linecount&63))
       TT.lines = xrealloc(TT.lines, sizeof(char *)*(TT.linecount+64));

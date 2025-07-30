@@ -10,7 +10,7 @@ config TEE
   bool "tee"
   default y
   help
-    usage: tee [-ai] [FILE...]
+    usage: tee [-ai] [file...]
 
     Copy stdin to each listed file, and also to stdout.
     Filename "-" is a synonym for stdout.
@@ -24,7 +24,6 @@ config TEE
 
 GLOBALS(
   void *outputs;
-  int out;
 )
 
 struct fd_list {
