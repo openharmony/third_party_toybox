@@ -10,7 +10,7 @@ config SHRED
   bool "shred"
   default y
   help
-    usage: shred [-fuxz] [-n COUNT] [-o OFFSET] [-s SIZE] FILE...
+    usage: shred [-fuz] [-n COUNT] [-s SIZE] FILE...
 
     Securely delete a file by overwriting its contents with random data.
 
@@ -37,7 +37,7 @@ void shred_main(void)
 {
   char **try;
 
-  if (!FLAG(n)) TT.n++;
+  if (!(toys.optflags & FLAG_n)) TT.n++;
 
   // We don't use loopfiles() here because "-" isn't stdin, and want to
   // respond to files we can't open via chmod.
@@ -47,7 +47,7 @@ void shred_main(void)
     int fd = open(*try, O_RDWR), iter = 0, throw;
 
     // do -f chmod if necessary
-    if (fd == -1 && FLAG(f)) {
+    if (fd == -1 && (toys.optflags & FLAG_f)) {
 #ifdef TOYBOX_OH_ADAPT
       chmod(*try, 0660);
 #else
@@ -98,6 +98,7 @@ void shred_main(void)
       if (throw != writeall(fd, toybuf, throw)) perror_msg_raw(*try);
       pos += throw;
     }
-    if (FLAG(u) && unlink(*try)) perror_msg("unlink '%s'", *try);
+    if (toys.optflags & FLAG_u)
+      if (unlink(*try) && unlink(*try)) perror_msg("unlink '%s'", *try);
   }
 }
