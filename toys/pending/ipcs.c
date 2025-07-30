@@ -432,9 +432,6 @@ void ipcs_main(void)
 {
 #ifdef TOYBOX_OH_ADAPT
 //delete 'ipcs -s' fail problem: kernel is not configured for semaphores
-  if (flag(s)) {
-    error_exit("Unknown option 's' (see \"ipcs --help\")");
-  }
   if (flag(i)) {
     if (flag(m)) show_shm_id();
     else if (flag(q)) show_msg_id();
