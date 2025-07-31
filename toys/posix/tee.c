@@ -24,6 +24,7 @@ config TEE
 
 GLOBALS(
   void *outputs;
+  int out;
 )
 
 struct fd_list {
