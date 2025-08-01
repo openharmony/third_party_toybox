@@ -99,6 +99,6 @@ void shred_main(void)
       pos += throw;
     }
     if (toys.optflags & FLAG_u)
-      if (unlink(*try) && unlink(*try)) perror_msg("unlink '%s'", *try);
+      if (unlink(*try)) perror_msg("unlink '%s'", *try);
   }
 }
