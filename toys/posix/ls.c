@@ -260,6 +260,52 @@ skip:
 }
 
 #ifdef TOYBOX_OH_ADAPT
+// callback for qsort but file first
+static int compare_file_first(void *a, void *b)
+{
+  struct dirtree *dta = *(struct dirtree **)a;
+  struct dirtree *dtb = *(struct dirtree **)b;
+
+  int ret = S_ISDIR(dta->st.st_mode) - S_ISDIR(dtb->st.st_mode);
+  return ret ? ret : compare(a, b);
+}
+
+// move dir to back of list, and return file count
+static int move_dir_back(struct dirtree **sort, unsigned long dtlen)
+{
+  struct dirtree **dir_list = xmalloc(dtlen*sizeof(void *));
+  unsigned long dir_list_len = 0;
+  if (dir_list == NULL) {
+    return dtlen;
+  }
+
+  int file_count = 0;
+  for (int i = 0; i < dtlen; i++) {
+    if (S_ISDIR(sort[i]->st.st_mode)) {
+      // move dir to dir_list
+      dir_list[dir_list_len++] = sort[i];
+      sort[i] = NULL;
+    } else {
+      // move files to front
+      if (file_count < i) {
+        sort[file_count] = sort[i];
+        sort[i] = NULL;
+      }
+      file_count++;
+    }
+  }
+
+  // restore dir at the back
+  for (int i = file_count, j = 0; i < dtlen && j < dir_list_len; i++, j++) {
+    sort[i] = dir_list[j];
+  }
+
+  free(dir_list);
+  return file_count;
+}
+#endif
+
+#ifdef TOYBOX_OH_ADAPT
 #define ENABLE_HIDDEN_STR "1"
 #define ENABLE_HIDDEN_STR_LEN 1
 #define ATTR_VALUE_LEN 8
@@ -377,6 +423,10 @@ static void listfiles(int dirfd, struct dirtree *indir)
   unsigned width, totals[8], len[8], totpad = 0,
     *colsizes = (unsigned *)toybuf, columns = sizeof(toybuf)/4;
   char tmp[64];
+#ifdef TOYBOX_OH_ADAPT
+  unsigned long dtlen_old;
+  int skip_dir = !indir->parent && !FLAG(d);
+#endif
 
   if (-1 == dirfd) {
     perror_msg_raw(indir->name);
@@ -415,6 +465,16 @@ static void listfiles(int dirfd, struct dirtree *indir)
     if (sort || !dtlen) break;
   }
 
+#ifdef TOYBOX_OH_ADAPT
+  dtlen_old = dtlen;
+  if (FLAG(f) || FLAG(U)) {
+    // no sort, so fix it here
+    if (skip_dir) {
+      dtlen = move_dir_back(sort, dtlen_old);
+    }
+  }
+#endif
+
   // Label directory if not top of tree, or if -R
   if (indir->parent && (TT.singledir!=indir || FLAG(R))) {
     char *path = dirtree_path(indir, 0);
@@ -428,7 +488,25 @@ static void listfiles(int dirfd, struct dirtree *indir)
   if (!FLAG(f)) {
     unsigned long long blocks = 0;
 
-    if (!FLAG(U)) qsort(sort, dtlen, sizeof(void *), (void *)compare);
+    if (!FLAG(U)) {
+#ifdef TOYBOX_OH_ADAPT
+      if (skip_dir) {
+        // compare with file first
+        qsort(sort, dtlen, sizeof(void *), (void *)compare_file_first);
+        // modify dtlen to skip all dirs
+        for (ul = 0; ul < dtlen; ul++) {
+          if (S_ISDIR(sort[ul]->st.st_mode)) {
+            dtlen = ul;
+            break;
+          }
+        }
+      } else {
+#endif
+        qsort(sort, dtlen, sizeof(void *), (void *)compare);
+#ifdef TOYBOX_OH_ADAPT
+      }
+#endif
+    }
     for (ul = 0; ul<dtlen; ul++) {
       entrylen(sort[ul], len);
       for (width = 0; width<8; width++)
@@ -489,8 +567,10 @@ static void listfiles(int dirfd, struct dirtree *indir)
     // If we couldn't stat, output ? for most fields
     zap = !st->st_blksize && !st->st_dev && !st->st_ino;
 
+#ifndef TOYBOX_OH_ADAPT
     // Skip directories at the top of the tree when -d isn't set
     if (S_ISDIR(mode) && !indir->parent && !FLAG(d)) continue;
+#endif
     TT.nl_title=1;
 
     // Handle padding and wrapping for display purposes
@@ -600,8 +680,11 @@ static void listfiles(int dirfd, struct dirtree *indir)
   if (width) xputc('\n');
 
   // Free directory entries, recursing first if necessary.
-
+#ifdef TOYBOX_OH_ADAPT
+  for (ul = 0; ul<dtlen_old; free(sort[ul++])) {
+#else
   for (ul = 0; ul<dtlen; free(sort[ul++])) {
+#endif
     if (FLAG(d) || !S_ISDIR(sort[ul]->st.st_mode)) continue;
 
     // Recurse into dirs if at top of the tree or given -R
