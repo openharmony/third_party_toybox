@@ -330,7 +330,7 @@ static int filter(struct dirtree *new)
 
   if (FLAG(u)) new->st.st_mtime = new->st.st_atime;
   if (FLAG(c)) new->st.st_mtime = new->st.st_ctime;
-  new->st.st_blocks >>= 1; // Use 1KiB blocks rather than 512B blocks.
+  new->st.st_blocks = (new->st.st_blocks + 1) >> 1; // Use 1KiB blocks rather than 512B blocks.
 
   if (FLAG(a)||FLAG(f)) return DIRTREE_SAVE;
   if (!FLAG(A) && *new->name=='.') return 0;
