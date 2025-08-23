@@ -92,7 +92,8 @@ void shred_main(void)
       // Determine length, read random data if not zeroing, write.
 
       throw = sizeof(toybuf);
-      if (FLAG(x) && len-pos < throw) throw = len-pos;
+      if (toys.optflags & FLAG_x)
+        if (len-pos < throw) throw = len-pos;
 
       if (iter != TT.n) xgetrandom(toybuf, throw, 0);
       if (throw != writeall(fd, toybuf, throw)) perror_msg_raw(*try);
