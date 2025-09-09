@@ -38,7 +38,7 @@ config MOUNT
 
 #config SMBMOUNT
 #  bool "smbmount"
-#  default n
+#  deault n
 #  helo
 #    usage: smbmount SHARE DIR
 #
@@ -185,7 +185,7 @@ static void mount_filesystem(char *dev, char *dir, char *type,
   if (strstart(&dev, "UUID=")) {
     char *s = tortoise(0, (char *[]){"blkid", "-U", dev, 0});
 
-    if (!s) return error_msg("No uuid %s", dev);
+    if (!dev) return error_msg("No uuid %s", dev);
     dev = s;
   }
 
@@ -215,7 +215,7 @@ static void mount_filesystem(char *dev, char *dir, char *type,
     if (fp && !buf) {
       size_t i;
 
-      if (getline(&buf, &i, fp)<1) {
+      if (getline(&buf, &i, fp)<0) {
         error_msg("%s: need -t", dev);
         break;
       }
@@ -270,7 +270,6 @@ static void mount_filesystem(char *dev, char *dir, char *type,
       dev = tortoise(1, (char *[]){"losetup",
         (flags&MS_RDONLY) ? "-fsr" : "-fs", dev, 0});
       if (!dev) break;
-      continue;
     }
 
     free(buf);
