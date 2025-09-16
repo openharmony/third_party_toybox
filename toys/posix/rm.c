@@ -96,7 +96,7 @@ void rm_main(void)
       continue;
     }
 
-    // Files that already don't exist aren't errors for -f. so try a quick
+    // Files that already don't exist aren't errors for -f, so try a quick
     // unlink now to see if it succeeds or reports that it didn't exist.
     if (FLAG(f) && (!unlink(*s) || errno == ENOENT)) continue;
 

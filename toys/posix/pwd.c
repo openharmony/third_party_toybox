@@ -47,6 +47,7 @@ void pwd_main(void)
 
   // If -L didn't give us a valid path, use cwd.
   if (!s && !(s = pwd)) perror_exit("xgetcwd");
+
   xprintf("%s\n", s);
 
   if (CFG_TOYBOX_FREE) free(pwd);

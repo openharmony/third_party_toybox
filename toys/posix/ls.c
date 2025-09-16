@@ -305,22 +305,6 @@ static int move_dir_back(struct dirtree **sort, unsigned long dtlen)
 }
 #endif
 
-#ifdef TOYBOX_OH_ADAPT
-#define ENABLE_HIDDEN_STR "1"
-#define ENABLE_HIDDEN_STR_LEN 1
-#define ATTR_VALUE_LEN 8
-int is_file_hidden(const char *path) {
-  char value[ATTR_VALUE_LEN];
-  ssize_t ret = xattr_get(path, "user.filemanager.hidden", &value, sizeof(value) - 1);
-  if (ret >= 0 && ret < ATTR_VALUE_LEN) {
-    value[ret] = '\0';
-  } else {
-    value[0] = '\0';
-  }
-  return (ret == ENABLE_HIDDEN_STR_LEN) && !strncmp(ENABLE_HIDDEN_STR, value, sizeof(value));
-}
-#endif
-
 // callback from dirtree_recurse() determining how to handle this entry.
 
 static int filter(struct dirtree *new)
@@ -346,23 +330,10 @@ static int filter(struct dirtree *new)
 
   if (FLAG(u)) new->st.st_mtime = new->st.st_atime;
   if (FLAG(c)) new->st.st_mtime = new->st.st_ctime;
-  new->st.st_blocks >>= 1; // Use 1KiB blocks rather than 512B blocks.
+  new->st.st_blocks = (new->st.st_blocks + 1) >> 1; // Use 1KiB blocks rather than 512B blocks.
 
   if (FLAG(a)||FLAG(f)) return DIRTREE_SAVE;
   if (!FLAG(A) && *new->name=='.') return 0;
-#ifdef TOYBOX_OH_ADAPT
-  if (!FLAG(A)) {
-    char *path = dirtree_path(new, 0);
-    if (path) {
-      int is_hidden = is_file_hidden(path);
-      free(path);
-      path = NULL;
-      if (is_hidden) {
-        return 0;
-      }
-     }
-  }
-#endif
 
   return dirtree_notdotdot(new) & DIRTREE_SAVE;
 }

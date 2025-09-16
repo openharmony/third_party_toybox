@@ -218,7 +218,7 @@ static void do_trace()
 
       fflush(NULL);
       if (!TT.istraceroute6)
-        if (probe && (toys.optflags & FLAG_z)) msleep(TT.pause_time);
+        if (probe && (toys.optflags & FLAG_z)) usleep(TT.pause_time * 1000);
 
       if (!TT.istraceroute6) send_probe4(++seq, ttl);
       else send_probe6(++seq, ttl);
@@ -477,7 +477,7 @@ static void do_trace()
 
 void traceroute_main(void)
 {
-  unsigned opt_len = 0, tyser = 0;
+  unsigned opt_len = 0, pack_size = 0, tyser = 0;
   int lsrr = 0, set = 1;
   
   if(!(toys.optflags & FLAG_4) && 
