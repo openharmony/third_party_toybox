@@ -14,7 +14,6 @@ config REBOOT
 
     Restart, halt or powerdown the system.
 
-    -d	Wait DELAY before proceeding (in seconds or m/h/d suffix: -d 1.5m = 90s)
     -f	Don't signal init
     -n	Don't sync before stopping the system
 */

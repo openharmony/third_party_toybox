@@ -31,7 +31,7 @@ static char *convert(unsigned long d)
   long long ll = d*TT.units;
   char *s = TT.buf;
 
-  if (FLAG(h)) human_readable(s, ll, 0);
+  if (toys.optflags & FLAG_h) human_readable(s, ll, 0);
   else sprintf(s, "%llu",ll>>TT.bits);
   TT.buf += strlen(TT.buf)+1;
 
