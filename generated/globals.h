@@ -116,7 +116,7 @@ struct passwd_data {
 // toys/lsb/pidof.c
 
 struct pidof_data {
-  char *o;
+  char *omit;
 };
 
 // toys/lsb/seq.c
@@ -217,9 +217,8 @@ struct acpi_data {
 
 struct base64_data {
   long w;
+
   unsigned total;
-  unsigned n;  // number of bits used in encoding. 5 for base32, 6 for base64
-  unsigned align;  // number of bits to align to
 };
 
 // toys/other/blkid.c
@@ -249,7 +248,8 @@ struct dos2unix_data {
 // toys/other/fallocate.c
 
 struct fallocate_data {
-  long o, l;
+  long offset;
+  long size;
 };
 
 // toys/other/fmt.c
@@ -288,7 +288,9 @@ struct hwclock_data {
 // toys/other/ionice.c
 
 struct ionice_data {
-  long p, n, c;
+  long pid;
+  long level;
+  long class;
 };
 
 // toys/other/login.c
@@ -372,12 +374,6 @@ struct oneit_data {
 
 struct pwgen_data {
   char *r;
-};
-
-// toys/other/reboot.c
-
-struct reboot_data {
-  char *d;
 };
 
 // toys/other/setfattr.c
@@ -1509,13 +1505,14 @@ struct sort_data {
 
   void *key_list;
   int linecount;
-  char **lines, *name;
+  char **lines;
+  char *name;
 };
 
 // toys/posix/split.c
 
 struct split_data {
-  long n, l, b, a;
+  long l, b, a;
 
   char *outfile;
 };
@@ -1574,7 +1571,6 @@ struct tar_data {
 
 struct tee_data {
   void *outputs;
-  int out;
 };
 
 // toys/posix/touch.c
@@ -1671,7 +1667,6 @@ extern union global_union {
 	struct nsenter_data nsenter;
 	struct oneit_data oneit;
 	struct pwgen_data pwgen;
-	struct reboot_data reboot;
 	struct setfattr_data setfattr;
 	struct sha3sum_data sha3sum;
 	struct shred_data shred;
@@ -1733,7 +1728,7 @@ extern union global_union {
 	struct traceroute_data traceroute;
 	struct useradd_data useradd;
 	struct vi_data vi;
-        struct awk_data awk;
+	struct awk_data awk;
 	struct wget_data wget;
 	struct basename_data basename;
 	struct chgrp_data chgrp;
