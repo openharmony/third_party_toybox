@@ -21,7 +21,11 @@ config CHVT
 
 void chvt_main(void)
 {
+#ifdef TOYBOX_OH_ADAPT
+  int vtnum, fd = -1;
+#else
   int vtnum, fd = fd;
+#endif
   char *consoles[]={"/dev/console", "/dev/vc/0", "/dev/tty", NULL}, **cc;
 
   vtnum=atoi(*toys.optargs);
