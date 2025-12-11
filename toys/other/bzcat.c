@@ -711,11 +711,20 @@ static void do_bunzip2(int fd, char *name)
   // can't test outfd==1 because may have been called with stdin+stdout closed
   if (rename) {
     if (toys.optflags&FLAG_k) {
+#ifdef TOYBOX_OH_ADAPT
+#else
+      // this will cause the decompressed file name to be incorrect when using -k.
       free(tmp);
       tmp = 0;
+#endif
     } else {
       if (dotbz) *dotbz = '.';
+// unlink success return 0, fail return -1
+#ifdef TOYBOX_OH_ADAPT
+      if (unlink(name)) perror_msg_raw(name);
+#else
       if (!unlink(name)) perror_msg_raw(name);
+#endif
     }
     (err ? delete_tempfile : replace_tempfile)(-1, outfd, &tmp);
   }
