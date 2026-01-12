@@ -2,10 +2,11 @@
  *
  * Copyright 2012 Rob Landley <rob@landley.net>
  *
- * See http://pubs.opengroup.org/onlinepubs/9699919799/utilities/
+ * See https://pubs.opengroup.org/onlinepubs/9799919799/utilities/
  * See http://refspecs.linuxfoundation.org/LSB_4.1.0/LSB-Core-generic/LSB-Core-generic/cmdbehav.html
  * See https://www.ietf.org/rfc/rfc3.txt
- * See http://man7.org/linux/man-pages/dir_section_1.html
+ * See https://man7.org/linux/man-pages/man1/intro.1.html
+ * No standard.
 
 USE_HELLO(NEWTOY(hello, 0, TOYFLAG_USR|TOYFLAG_BIN))
 
@@ -33,5 +34,5 @@ void hello_main(void)
   xprintf("Hello world\n");
 
   // Avoid kernel panic if run as init.
-  if (getpid() == 1) wait(&TT.unused);
+  if (getpid() == 1) getchar();
 }
