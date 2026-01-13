@@ -9,7 +9,7 @@
  * together runs of whitespace. No header/footer logic, no end-of-sentence
  * double-space, preserves initial tab/space mix when indenting new lines.
 
-USE_FMT(NEWTOY(fmt, "w#<0=75", TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_LOCALE))
+USE_FMT(NEWTOY(fmt, "w#<0=75", TOYFLAG_USR|TOYFLAG_BIN))
 
 config FMT
   bool "fmt"
@@ -27,7 +27,7 @@ config FMT
 #include "toys.h"
 
 GLOBALS(
-  int width;
+  long width;
 
   int level, pos;
 )

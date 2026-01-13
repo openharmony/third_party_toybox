@@ -55,7 +55,7 @@ struct config {
 // confstr(), or output the macro value directly.
 
 // Probe the live system
-struct config sysconfs[] = {
+static struct config sysconfs[] = {
   /* POSIX */
 #define CONF(n) {"_POSIX_" #n,_SC_ ## n}
   CONF(ADVISORY_INFO), CONF(BARRIERS), CONF(ASYNCHRONOUS_IO),
@@ -99,11 +99,22 @@ struct config sysconfs[] = {
   CONF(BC_STRING_MAX), CONF(CHILD_MAX), CONF(CLK_TCK), CONF(COLL_WEIGHTS_MAX),
   CONF(DELAYTIMER_MAX), CONF(EXPR_NEST_MAX), CONF(HOST_NAME_MAX),
   CONF(IOV_MAX), CONF(LINE_MAX), CONF(LOGIN_NAME_MAX), CONF(NGROUPS_MAX),
-  CONF(MQ_OPEN_MAX), CONF(MQ_PRIO_MAX), CONF(OPEN_MAX), CONF(PAGE_SIZE),
+  CONF(MQ_OPEN_MAX), CONF(MQ_PRIO_MAX), CONF(NPROCESSORS_CONF),
+  CONF(NPROCESSORS_ONLN), CONF(OPEN_MAX), CONF(PAGE_SIZE),
   CONF(PAGESIZE), CONF(RAW_SOCKETS), CONF(RE_DUP_MAX), CONF(RTSIG_MAX),
   CONF(SEM_NSEMS_MAX), CONF(SEM_VALUE_MAX), CONF(SIGQUEUE_MAX),
   CONF(STREAM_MAX), CONF(SYMLOOP_MAX), CONF(TIMER_MAX), CONF(TTY_NAME_MAX),
   CONF(TZNAME_MAX), CONF(UIO_MAXIOV),
+
+  /* bionic and glibc have these; macOS and musl don't. */
+#ifdef _SC_LEVEL1_ICACHE_SIZE
+  CONF(LEVEL1_ICACHE_SIZE), CONF(LEVEL1_ICACHE_ASSOC),
+  CONF(LEVEL1_ICACHE_LINESIZE), CONF(LEVEL1_DCACHE_SIZE),
+  CONF(LEVEL1_DCACHE_ASSOC), CONF(LEVEL1_DCACHE_LINESIZE),
+  CONF(LEVEL2_CACHE_SIZE),CONF(LEVEL2_CACHE_ASSOC),CONF(LEVEL2_CACHE_LINESIZE),
+  CONF(LEVEL3_CACHE_SIZE),CONF(LEVEL3_CACHE_ASSOC),CONF(LEVEL3_CACHE_LINESIZE),
+  CONF(LEVEL4_CACHE_SIZE),CONF(LEVEL4_CACHE_ASSOC),CONF(LEVEL4_CACHE_LINESIZE),
+#endif
 
   /* Names that just don't match the symbol, do it by hand */
   {"_AVPHYS_PAGES", _SC_AVPHYS_PAGES}, {"_PHYS_PAGES", _SC_PHYS_PAGES},
@@ -118,7 +129,7 @@ struct config sysconfs[] = {
 };
 
 // Probe the live system with a path
-struct config pathconfs[] = {
+static struct config pathconfs[] = {
 #undef CONF
 #define CONF(n) {#n,_PC_ ## n}
   CONF(ASYNC_IO), CONF(CHOWN_RESTRICTED), CONF(FILESIZEBITS), CONF(LINK_MAX),
@@ -129,14 +140,14 @@ struct config pathconfs[] = {
 };
 
 // Strings out of a header
-struct config confstrs[] = {
+static struct config confstrs[] = {
 #undef CONF
 #define CONF(n) {#n,_CS_ ## n}
   CONF(PATH), CONF(V7_ENV)
 };
 
 // Integers out of a header
-struct config limits[] = {
+static struct config limits[] = {
 #undef CONF
 #define CONF(n) {#n,n}
   CONF(_POSIX_AIO_LISTIO_MAX), CONF(_POSIX_AIO_MAX), CONF(_POSIX_ARG_MAX),
@@ -167,7 +178,7 @@ struct config limits[] = {
 };
 
 // Names we need to handle ourselves (default to blank but shouldn't error)
-struct config others[] = {
+static struct config others[] = {
   {"LFS_CFLAGS", 0}, {"LFS_LDFLAGS", 0}, {"LFS_LIBS", 0}
 };
 
@@ -190,14 +201,14 @@ static void show_conf(int i, struct config *c, const char *path)
 void getconf_main(void)
 {
   struct config *configs[] = {sysconfs, pathconfs, confstrs, limits, others},
-    *c = NULL;
+    *c = 0;
   int i, j, lens[] = {ARRAY_LEN(sysconfs), ARRAY_LEN(pathconfs),
     ARRAY_LEN(confstrs), ARRAY_LEN(limits), ARRAY_LEN(others)};
   char *name, *path = (toys.optc==2) ? toys.optargs[1] : "/",
     *config_names[] = {"sysconf(3)", "pathconf(3)", "confstr(3)",
     "<limits.h>", "Misc"};
 
-  if (toys.optflags&FLAG_a) {
+  if (FLAG(a)) {
     for (i = 0; i<5; i++) {
       for (j = 0; j<lens[i]; j++) {
         c = &configs[i][j];
@@ -208,7 +219,7 @@ void getconf_main(void)
     return;
   }
 
-  if (toys.optflags&FLAG_l) {
+  if (FLAG(l)) {
     for (i = 0; i<5; i++) {
       printf("%s\n", config_names[i]);
       for (j = 0; j<lens[i]; j++) printf("  %s\n", configs[i][j].name);

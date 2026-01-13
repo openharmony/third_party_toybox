@@ -26,23 +26,24 @@ struct deflate {
 
   // Compressed data buffer (extra space malloced at end)
   unsigned pos, len;
-  int infd, outfd;
-  char data[];
+  int infd, outfd, outbuflen;
+  char *outbuf, data[];
 };
 
 // little endian bit buffer
 struct bitbuf {
   int fd, bitpos, len, max;
-  char buf[];
+  char *buf, data[];
 };
 
 // malloc a struct bitbuf
-struct bitbuf *bitbuf_init(int fd, int size)
+static struct bitbuf *bitbuf_init(int fd, int size)
 {
   struct bitbuf *bb = xzalloc(sizeof(struct bitbuf)+size);
 
   bb->max = size;
   bb->fd = fd;
+  bb->buf = bb->data;
 
   return bb;
 }
@@ -50,14 +51,14 @@ struct bitbuf *bitbuf_init(int fd, int size)
 // Advance bitpos without the overhead of recording bits
 // Loads more data when input buffer empty
 // call with 0 to just load data, returns 0 at EOF
-int bitbuf_skip(struct bitbuf *bb, int bits)
+static int bitbuf_skip(struct bitbuf *bb, int bits)
 {
   int pos = bb->bitpos + bits + (bits<0), len;
 
   while (pos >= (len = bb->len<<3)) {
     pos -= len;
     if (1 > (bb->len = read(bb->fd, bb->buf, bb->max))) {
-      if (!bb->len && !bits) break;
+      if (!bits) break;
       error_exit("inflate EOF");
     }
   }
@@ -80,7 +81,7 @@ static inline int bitbuf_bit(struct bitbuf *bb)
 }
 
 // Fetch the next X bits from the bitbuf, little endian
-unsigned bitbuf_get(struct bitbuf *bb, int bits)
+static unsigned bitbuf_get(struct bitbuf *bb, int bits)
 {
   int result = 0, offset = 0;
 
@@ -106,7 +107,7 @@ unsigned bitbuf_get(struct bitbuf *bb, int bits)
   return result;
 }
 
-void bitbuf_flush(struct bitbuf *bb)
+static void bitbuf_flush(struct bitbuf *bb)
 {
   if (!bb->bitpos) return;
 
@@ -115,7 +116,7 @@ void bitbuf_flush(struct bitbuf *bb)
   bb->bitpos = 0;
 }
 
-void bitbuf_put(struct bitbuf *bb, int data, int len)
+static void bitbuf_put(struct bitbuf *bb, int data, int len)
 {
   while (len) {
     int click = bb->bitpos >> 3, blow, blen;
@@ -135,16 +136,26 @@ void bitbuf_put(struct bitbuf *bb, int data, int len)
   }
 }
 
+// Output inflated data
+static void inflate_out(struct deflate *dd, int len)
+{
+  if (!len) return;
+  if (dd->outfd!=-1) xwrite(dd->outfd, dd->data, len);
+  else if (len>dd->outbuflen) error_exit("inflate too big");
+  else {
+    memcpy(dd->outbuf, dd->data, len);
+    dd->outbuf += len;
+    dd->outbuflen -= len;
+  }
+  if (dd->crcfunc) dd->crcfunc(dd, dd->data, len);
+}
+
 static void output_byte(struct deflate *dd, char sym)
 {
   int pos = dd->pos++ & 32767;
 
   dd->data[pos] = sym;
-
-  if (pos == 32767) {
-    xwrite(dd->outfd, dd->data, 32768);
-    if (dd->crcfunc) dd->crcfunc(dd, dd->data, 32768);
-  }
+  if (pos == 32767) inflate_out(dd, 32768);
 }
 
 // Huffman coding uses bits to traverse a binary tree to a leaf node,
@@ -313,10 +324,7 @@ static void inflate(struct deflate *dd, struct bitbuf *bb)
     if (final) break;
   }
 
-  if (dd->pos & 32767) {
-    xwrite(dd->outfd, dd->data, dd->pos&32767);
-    if (dd->crcfunc) dd->crcfunc(dd, dd->data, dd->pos&32767);
-  }
+  if (dd->pos & 32767) inflate_out(dd, dd->pos&32767);
 }
 
 // Deflate from dd->infd to bitbuf
@@ -331,12 +339,13 @@ static void deflate(struct deflate *dd, struct bitbuf *bb)
   while (!final) {
     // Read next half-window of data if we haven't hit EOF yet.
     len = readall(dd->infd, data+(dd->len&32768), 32768);
-    if (len < 0) perror_exit("read"); // todo: add filename
+    if (len < 0) perror_exit("read"); // TODO: add filename
     if (len != 32768) final++;
     if (dd->crcfunc) dd->crcfunc(dd, data+(dd->len&32768), len);
     // dd->len += len;  crcfunc advances len TODO
 
     // store block as literal
+// TODO: actually compress!
     bitbuf_put(bb, final, 1);
     bitbuf_put(bb, 0, 1);
 
@@ -412,7 +421,7 @@ static int is_gzip(struct bitbuf *bb)
   bitbuf_skip(bb, 6*8);
 
   // Skip extra, name, comment, header CRC fields
-  if (flags & 4) bitbuf_skip(bb, 16);
+  if (flags & 4) bitbuf_skip(bb, bitbuf_get(bb, 16) * 8);
   if (flags & 8) while (bitbuf_get(bb, 8));
   if (flags & 16) while (bitbuf_get(bb, 8));
   if (flags & 2) bitbuf_skip(bb, 16);
@@ -420,7 +429,7 @@ static int is_gzip(struct bitbuf *bb)
   return 1;
 }
 
-void gzip_crc(struct deflate *dd, char *data, unsigned len)
+static void gzip_crc(struct deflate *dd, char *data, unsigned len)
 {
   int i;
   unsigned crc, *crc_table = dd->crctable;
@@ -433,14 +442,17 @@ void gzip_crc(struct deflate *dd, char *data, unsigned len)
 
 /*
 // Start with crc = 1, or pass in last crc to append more data
+// Deferred modulus good for paged size inputs (can't overflow for ~5500 bytes)
 unsigned adler32(char *buf, unsigned len, unsigned crc)
 {
   unsigned aa = crc&((1<<16)-1), bb = crc>>16;
+
   while (len--) {
-    aa = (aa+*buf)%65521;
-    bb = (bb+aa)%65521;
+    aa += *buf++;
+    bb += aa;
   }
-  return (bb<16)+aa;
+
+  return ((bb%65521)<<16)+aa%65521;
 }
 */
 
@@ -454,7 +466,7 @@ long long gzip_fd(int infd, int outfd)
   // 2 ID bytes (1F, 8b), gzip method byte (8=deflate), FLAG byte (none),
   // 4 byte MTIME (zeroed), Extra Flags (2=maximum compression),
   // Operating System (FF=unknown)
- 
+
   dd->infd = infd;
   xwrite(bb->fd, "\x1f\x8b\x08\0\0\0\0\0\x02\xff", 10);
 
@@ -478,28 +490,23 @@ long long gzip_fd(int infd, int outfd)
   return rc;
 }
 
-long long gunzip_fd(int infd, int outfd)
+long long gunzip_common(struct bitbuf *bb, struct deflate *dd)
 {
-  struct bitbuf *bb = bitbuf_init(infd, 4096);
-  struct deflate *dd = init_deflate(0);
   long long rc = 0;
 
   // Little endian crc table
   crc_init(dd->crctable, 1);
   dd->crcfunc = gzip_crc;
-  dd->outfd = outfd;
 
   do {
     if (!is_gzip(bb)) error_exit("not gzip");
 
     inflate(dd, bb);
-
     // tail: crc32, len32
     bitbuf_skip(bb, (8-bb->bitpos)&7);
     if (~dd->crc != bitbuf_get(bb, 32) || dd->len != bitbuf_get(bb, 32))
       error_exit("bad crc");
     rc += dd->len;
-
     bitbuf_skip(bb, (8-bb->bitpos)&7);
     dd->pos = dd->len = 0;
   } while (bitbuf_skip(bb, 0));
@@ -507,4 +514,27 @@ long long gunzip_fd(int infd, int outfd)
   free(dd);
 
   return rc;
+}
+
+long long gunzip_mem(char *inbuf, int inlen, char *outbuf, int outlen)
+{
+  struct bitbuf *bb = bitbuf_init(-1, 0);
+  struct deflate *dd = init_deflate(0);
+
+  bb->buf = inbuf;
+  bb->max = bb->len = inlen;
+  dd->outfd = -1;
+  dd->outbuf = outbuf;
+  dd->outbuflen = outlen;
+
+  return gunzip_common(bb, dd);
+}
+
+long long gunzip_fd(int infd, int outfd)
+{
+  struct bitbuf *bb = bitbuf_init(infd, 4096);
+  struct deflate *dd = init_deflate(0);
+
+  dd->outfd = outfd;
+  return gunzip_common(bb, dd);
 }

@@ -6,13 +6,13 @@
  *
  * Deviations from posix: -c
 
-USE_HEAD(NEWTOY(head, "?n(lines)#<0=10c(bytes)#<0qv[-nc]", TOYFLAG_USR|TOYFLAG_BIN))
+USE_HEAD(NEWTOY(head, "?n(lines)#<0=10c(bytes)#<0qv[-nc]", TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_LINEBUF))
 
 config HEAD
   bool "head"
   default y
   help
-    usage: head [-n NUM] [FILE...]
+    usage: head [-cn NUM] [-qv] [FILE...]
 
     Copy first lines from files to stdout. If no files listed, copy from
     stdin. Filename "-" is a synonym for stdin.
@@ -34,7 +34,7 @@ GLOBALS(
 
 static void do_head(int fd, char *name)
 {
-  long i, len, lines=TT.n, bytes=TT.c;
+  long i = 0, len = 0, lines = TT.n, bytes = TT.c;
 
   if ((toys.optc > 1 && !FLAG(q)) || FLAG(v)) {
     // Print an extra newline for all but the first file
@@ -50,10 +50,13 @@ static void do_head(int fd, char *name)
     if (bytes) {
       i = bytes >= len ? len : bytes;
       bytes -= i;
-    } else for(i=0; i<len;) if (toybuf[i++] == '\n' && !--lines) break;
+    } else for(i = 0; i<len;) if (toybuf[i++] == '\n' && !--lines) break;
 
     xwrite(1, toybuf, i);
   }
+
+  // attempt to unget extra data
+  if (len>i) lseek(fd, i-len, SEEK_CUR);
 
   TT.file_no++;
 }

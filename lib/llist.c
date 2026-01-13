@@ -41,14 +41,13 @@ void llist_traverse(void *list, void (*using)(void *node))
 // as &list)
 void *llist_pop(void *list)
 {
-  // I'd use a void ** for the argument, and even accept the typecast in all
-  // callers as documentation you need the &, except the stupid compiler
-  // would then scream about type-punned pointers.  Screw it.
-  void **llist = (void **)list;
-  void **next = (void **)*llist;
+  void **llist = list, **next;
+
+  if (!list || !*llist) return 0;
+  next = (void **)*llist;
   *llist = *next;
 
-  return (void *)next;
+  return next;
 }
 
 // Remove first item from &list and return it
@@ -82,6 +81,7 @@ void *dlist_lpop(void *list)
   return v;
 }
 
+// Append to list in-order (*list unchanged unless empty, ->prev is new node)
 void dlist_add_nomalloc(struct double_list **list, struct double_list *new)
 {
   if (*list) {
@@ -91,7 +91,6 @@ void dlist_add_nomalloc(struct double_list **list, struct double_list *new)
     (*list)->prev = new;
   } else *list = new->next = new->prev = new;
 }
-
 
 // Add an entry to the end of a doubly linked list
 struct double_list *dlist_add(struct double_list **list, char *data)
@@ -109,40 +108,11 @@ void *dlist_terminate(void *list)
 {
   struct double_list *end = list;
 
-  if (!list) return 0;
+  if (!end || !end->prev) return 0;
 
   end = end->prev;
   end->next->prev = 0;
   end->next = 0;
 
   return end;
-}
-
-// Find num in cache
-struct num_cache *get_num_cache(struct num_cache *cache, long long num)
-{
-  while (cache) {
-    if (num==cache->num) return cache;
-    cache = cache->next;
-  }
-
-  return 0;
-}
-
-// Uniquely add num+data to cache. Updates *cache, returns pointer to existing
-// entry if it was already there.
-struct num_cache *add_num_cache(struct num_cache **cache, long long num,
-  void *data, int len)
-{
-  struct num_cache *old = get_num_cache(*cache, num);
-
-  if (old) return old;
-
-  old = xzalloc(sizeof(struct num_cache)+len);
-  old->next = *cache;
-  old->num = num;
-  memcpy(old->data, data, len);
-  *cache = old;
-
-  return 0;
 }

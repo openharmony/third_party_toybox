@@ -25,21 +25,13 @@
 #define TOYFLAG_NEEDROOT (1<<8) // Refuse to run if real uid != 0
 #define TOYFLAG_ROOTONLY (TOYFLAG_STAYROOT|TOYFLAG_NEEDROOT)
 
-// Call setlocale to listen to environment variables.
-// This invalidates sprintf("%.*s", size, string) as a valid length constraint.
-#define TOYFLAG_LOCALE   (1<<9)
-
 // Suppress default --help processing
-#define TOYFLAG_NOHELP   (1<<10)
+#define TOYFLAG_NOHELP   (1<<9)
+#define TOYFLAG_AUTOCONF (1<<10)
 
 // Line buffered stdout
 #define TOYFLAG_LINEBUF  (1<<11)
+#define TOYFLAG_NOBUF    (1<<12)
 
 // Error code to return if argument parsing fails (default 1)
 #define TOYFLAG_ARGFAIL(x) (x<<24)
-
-#if CFG_TOYBOX_PEDANTIC_ARGS
-#define NO_ARGS ">0"
-#else
-#define NO_ARGS 0
-#endif

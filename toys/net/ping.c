@@ -11,9 +11,9 @@
  * Yes, I wimped out and capped -s at sizeof(toybuf), waiting for a complaint...
 
 // -s > 4064 = sizeof(toybuf)-sizeof(struct icmphdr)-CMSG_SPACE(sizeof(uint8_t)), then kernel adds 20 bytes
-USE_PING(NEWTOY(ping, "<1>1m#t#<0>255=64c#<0=3s#<0>4064=56i%W#<0=3w#<0qf46I:[-46]", TOYFLAG_USR|TOYFLAG_BIN))
-USE_PING(OLDTOY(ping6, ping, TOYFLAG_USR|TOYFLAG_BIN))
- 
+USE_PING(NEWTOY(ping, "<1>1m#t#<0>255=64c#<0=3s#<0>4064=56i%W#<0=3w#<0qf46I:[-46]", TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_LINEBUF))
+USE_PING(OLDTOY(ping6, ping, TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_LINEBUF))
+
 config PING
   bool "ping"
   default y
@@ -30,7 +30,7 @@ config PING
     -4, -6		Force IPv4 or IPv6
     -c CNT		Send CNT many packets (default 3, 0 = infinite)
     -f		Flood (print . and \b to show drops, default -c 15 -i 0.2)
-    -i TIME		Interval between packets (default 1, need root for < 0.2)
+    -i TIME		Interval between packets (default 1, need root for < .2)
     -I IFACE/IP	Source interface or address
     -m MARK		Tag outgoing packets using SO_MARK
     -q		Quiet (stops after one returns true if host is alive)
@@ -40,7 +40,7 @@ config PING
     -w SEC		Exit after this many seconds
 */
 
-#define FOR_ping 
+#define FOR_ping
 #include "toys.h"
 
 #include <ifaddrs.h>
@@ -215,30 +215,6 @@ void ping_main(void)
 
   memset(&msg, 0, sizeof(msg));
   // left enought space to store ttl value
-  
-#ifdef TOYBOX_OH_ADAPT
-  /* fix "ping -s 65500" fail problem*/
-  char *mybuff = malloc(65536);
-  if (mybuff) {
-    len = CMSG_SPACE(sizeof(uint8_t));
-    iov.iov_base = (void *)mybuff;
-    iov.iov_len = 65536 - len;
-    msg.msg_iov = &iov;
-    msg.msg_iovlen = 1;
-    msg.msg_control = &mybuff[iov.iov_len];
-    msg.msg_controllen = len;
-
-    ih = mybuff;
-  } else {
-    len = CMSG_SPACE(sizeof(uint8_t));
-    iov.iov_base = (void *)toybuf;
-    iov.iov_len = sizeof(toybuf) - len;
-    msg.msg_iov = &iov;
-    msg.msg_iovlen = 1;
-    msg.msg_control = &toybuf[iov.iov_len];
-    msg.msg_controllen = len;
-  }
-#else
   len = CMSG_SPACE(sizeof(uint8_t));
   iov.iov_base = (void *)toybuf;
   iov.iov_len = sizeof(toybuf) - len;
@@ -246,7 +222,6 @@ void ping_main(void)
   msg.msg_iovlen = 1;
   msg.msg_control = &toybuf[iov.iov_len];
   msg.msg_controllen = len;
-#endif
 
   sigatexit(summary);
 
@@ -276,20 +251,8 @@ void ping_main(void)
       ih->un.echo.sequence = ++seq;
       if (TT.s >= 4) *(unsigned *)(ih+1) = tnow;
 
-#ifdef TOYBOX_OH_ADAPT
-      /* fix "ping -s 65500" fail problem*/
-      if (mybuff) {
-        ih->checksum = pingchksum((void *)mybuff, TT.s+sizeof(*ih));
-        xsendto(TT.sock, mybuff, TT.s+sizeof(*ih), TT.sa);
-      } else {
-        ih->checksum = pingchksum((void *)toybuf, TT.s+sizeof(*ih));
-        xsendto(TT.sock, toybuf, TT.s+sizeof(*ih), TT.sa);
-      }
-#else
       ih->checksum = pingchksum((void *)toybuf, TT.s+sizeof(*ih));
       xsendto(TT.sock, toybuf, TT.s+sizeof(*ih), TT.sa);
-#endif
-
       TT.sent++;
       if (FLAG(f) && !FLAG(q)) xputc('.');
 
@@ -338,9 +301,7 @@ void ping_main(void)
     toys.exitval = 0;
   }
 
-  sigatexit(0);
-  summary(0);
-
+  // summary(0) gets called for us atexit.
   if (CFG_TOYBOX_FREE) {
     freeaddrinfo(ai2);
     if (ifa2) freeifaddrs(ifa2);

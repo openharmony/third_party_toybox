@@ -7,30 +7,26 @@
  * Posix doesn't even specify -r: too many deviations to document.
  * TODO: -i is only ascii case insensitive, not unicode.
 
-USE_GREP(NEWTOY(grep, "(line-buffered)(color):;(exclude-dir)*S(exclude)*M(include)*ZzEFHIab(byte-offset)h(no-filename)ino(only-matching)rRsvwc(count)L(files-without-match)l(files-with-matches)q(quiet)(silent)e*f*C#B#A#m#x[!wx][!EF]", TOYFLAG_BIN|TOYFLAG_ARGFAIL(2)|TOYFLAG_LINEBUF))
-USE_EGREP(OLDTOY(egrep, grep, TOYFLAG_BIN|TOYFLAG_ARGFAIL(2)|TOYFLAG_LINEBUF))
-USE_FGREP(OLDTOY(fgrep, grep, TOYFLAG_BIN|TOYFLAG_ARGFAIL(2)|TOYFLAG_LINEBUF))
+USE_GREP(NEWTOY(grep, "(line-buffered)(color):;(exclude-dir)*S(exclude)*M(include)*ZzEFHIab(byte-offset)h(no-filename)ino(only-matching)rRsvwc(count)L(files-without-match)l(files-with-matches)q(quiet)(silent)e*f*C#B#A#m#x[!wx][!EF]", TOYFLAG_BIN|TOYFLAG_ARGFAIL(2)|TOYFLAG_LINEBUF|TOYFLAG_AUTOCONF))
+USE_EGREP(OLDTOY(egrep, grep, TOYFLAG_BIN|TOYFLAG_ARGFAIL(2)|TOYFLAG_LINEBUF|TOYFLAG_AUTOCONF))
+USE_FGREP(OLDTOY(fgrep, grep, TOYFLAG_BIN|TOYFLAG_ARGFAIL(2)|TOYFLAG_LINEBUF|TOYFLAG_AUTOCONF))
 
 config GREP
   bool "grep"
   default y
   help
-    usage: grep [-EFrivwcloqsHbhn] [-ABC NUM] [-m MAX] [-e REGEX]... [-MS PATTERN]... [-f REGFILE] [FILE]...
+    usage: grep [-abcEFHhIiLlnoqrsvwxZz] [-ABC NUM] [-m MAX] [-e REGEX]... [-MS PATTERN]... [-f REGFILE]... [FILE]...
 
     Show lines matching regular expressions. If no -e, first argument is
     regular expression to match. With no files (or "-" filename) read stdin.
     Returns 0 if matched, 1 if no match found, 2 for command errors.
 
-    -e  Regex to match. (May be repeated.)
-    -f  File listing regular expressions to match.
+    -e  Regex(es) to match.       -f  File(s) of regexes to match (1 per line).
 
     file search:
-    -r  Recurse into subdirectories (defaults FILE to ".")
-    -R  Recurse into subdirectories and symlinks to directories
-    -M  Match filename pattern (--include)
-    -S  Skip filename pattern (--exclude)
-    --exclude-dir=PATTERN  Skip directory pattern
-    -I  Ignore binary files
+    -r  Recurse into subdirs     -R  Recurse following symlinks
+    -M  Match files (--include)  -S  Skip files (--exclude)
+    -I  Ignore binary files      --exclude-dir=PATTERN  Skip directories
 
     match type:
     -A  Show NUM lines after     -B  Show NUM lines before match
@@ -72,7 +68,7 @@ GLOBALS(
   char *purple, *cyan, *red, *green, *grey;
   struct double_list *reg;
   int found, tried, delim;
-  struct arg_list *fixed[256];
+  struct arg_list **fixed;
 )
 
 struct reg {
@@ -81,14 +77,6 @@ struct reg {
   regex_t r;
   regmatch_t m;
 };
-
-#ifdef TOYBOX_OH_ADAPT
-struct line_info {
-  char *line;
-  unsigned start;
-  unsigned size;
-};
-#endif
 
 static void numdash(long num, char dash)
 {
@@ -110,6 +98,16 @@ static void outline(char *line, char dash, char *name, long lcount, long bcount,
     xputsl(line, trim);
     xputc(TT.delim);
   }
+}
+
+static int matchw(char *line, char *start, long so, long eo)
+{
+  if (FLAG(w)) {
+    if (so+(start-line)) if (isalnum(start[so-1]) || start[so-1]=='_') return 0;
+    if (isalnum(start[eo]) || start[eo]=='_') return 0;
+  }
+
+  return 1;
 }
 
 // Show matches in one file
@@ -144,7 +142,7 @@ static void do_grep(int fd, char *name)
     if (bin && FLAG(I)) return;
   }
 
-  if (!(file = fdopen(fd, "r"))) return perror_msg("%s", name);
+  if (!(file = fdopen(fd, "r"))) return perror_msg_raw(name);
 
   // Loop through lines of input
   for (;;) {
@@ -158,7 +156,7 @@ static void do_grep(int fd, char *name)
     lcount++;
     errno = 0;
     ulen = len = getdelim(&line, &ulen, TT.delim, file);
-    if (len == -1 && errno) perror_msg("%s", name);
+    if (len == -1 && errno) perror_msg_raw(name);
     if (len<1) break;
     if (line[ulen-1] == TT.delim) line[--ulen] = 0;
 
@@ -175,7 +173,7 @@ static void do_grep(int fd, char *name)
       rc = 1;
 
       // Handle "fixed" (literal) matches (if any)
-      if (TT.e && *start) for (ss = start; ss-line<ulen; ss++) {
+      if (TT.e) for (ss = start; ss-line<=ulen; ss++) {
         ii = FLAG(i) ? toupper(*ss) : *ss;
         for (seek = TT.fixed[ii]; seek; seek = seek->next) {
           if (*(pp = seek->arg)=='^' && !FLAG(F)) {
@@ -194,6 +192,7 @@ static void do_grep(int fd, char *name)
           }
           if (pp[ii] && (pp[ii]!='$' || pp[ii+1] || ss[ii])) continue;
           mm->rm_eo = (mm->rm_so = ss-start)+ii;
+          if (!matchw(line, start, mm->rm_so, mm->rm_eo)) continue;
           rc = 0;
 
           goto got;
@@ -201,8 +200,6 @@ static void do_grep(int fd, char *name)
         if (FLAG(x)) break;
       }
 
-      // Empty pattern always matches
-      if (rc && *TT.fixed && !FLAG(o)) rc = 0;
 got:
       // Handle regex matches (if any)
       for (shoe = (void *)TT.reg; shoe; shoe = shoe->next) {
@@ -215,6 +212,7 @@ got:
                                 &shoe->m, start==line ? 0 : REG_NOTBOL);
         }
 
+        if (!matchw(line, start, shoe->m.rm_so, shoe->m.rm_eo)) continue;
         // If we got a match, is it a _better_ match?
         if (!shoe->rc && (rc || shoe->m.rm_so < mm->rm_so ||
             (shoe->m.rm_so == mm->rm_so && shoe->m.rm_eo >= mm->rm_eo)))
@@ -230,23 +228,6 @@ got:
       }
 
       if (!rc && FLAG(x) && (mm->rm_so || ulen-(start-line)!=mm->rm_eo)) rc = 1;
-
-      if (!rc && FLAG(w)) {
-        char c = 0;
-
-        if ((start+mm->rm_so)!=line) {
-          c = start[mm->rm_so-1];
-          if (!isalnum(c) && c != '_') c = 0;
-        }
-        if (!c) {
-          c = start[mm->rm_eo];
-          if (!isalnum(c) && c != '_') c = 0;
-        }
-        if (c) {
-          move = mm->rm_so+1;
-          continue;
-        }
-      }
 
       if (FLAG(v)) {
         if (FLAG(o)) {
@@ -292,15 +273,9 @@ got:
         else {
           while (dlb) {
             struct double_list *dl = dlist_pop(&dlb);
-#ifdef TOYBOX_OH_ADAPT
-            struct line_info *linfo = (struct line_info *)dl->data;
-            outline(linfo->line, '-', name, lcount-before, linfo->start+1, linfo->size);
-            free(linfo->line);
-#else
             unsigned *uu = (void *)(dl->data+(strlen(dl->data)|3)+1);
 
             outline(dl->data, '-', name, lcount-before, uu[0]+1, uu[1]);
-#endif
             free(dl->data);
             free(dl);
             before--;
@@ -339,13 +314,6 @@ got:
         discard = 0;
       }
       if (discard && TT.B) {
-#ifdef TOYBOX_OH_ADAPT
-        struct line_info *linfo = xzalloc(sizeof(struct line_info));
-        linfo->line = line;
-        linfo->start = offset - len;
-        linfo->size = ulen;
-        dlist_add(&dlb, linfo);
-#else
         unsigned *uu, ul = (ulen|3)+1;
 
         line = xrealloc(line, ul+8);
@@ -353,17 +321,11 @@ got:
         uu[0] = offset-len;
         uu[1] = ulen;
         dlist_add(&dlb, line);
-#endif
         line = 0;
         if (++before>TT.B) {
           struct double_list *dl;
 
           dl = dlist_pop(&dlb);
-#ifdef TOYBOX_OH_ADAPT
-          struct line_info *linfo;
-          linfo = dl->data;
-          free(linfo->line);
-#endif
           free(dl->data);
           free(dl);
           before--;
@@ -448,7 +410,7 @@ static void parse_regex(void)
       } else if (*s>127 || strchr(special+4, *s)) break;
     }
 
-    // Add entry to fast path (literal-ish match) or slow path (regexec)
+    // Leave entry in fast path (literal-ish match) or move to slow path (regex)
     if (!*s || FLAG(F)) last = &((*last)->next);
     else {
       struct reg *shoe;
@@ -478,13 +440,17 @@ static void parse_regex(void)
   }
 
   // Sort each fast path pattern set by length so first hit is longest match
-  if (TT.e) for (key = 0; key<256; key++) {
-    if (!TT.fixed[key]) continue;
+  // Zero length matches aren't sorted, instead appended to every list.
+  if (TT.e) for (key = 1; key<256; key++) {
+    if (!TT.fixed[key]) {
+      TT.fixed[key] = *TT.fixed;
+      continue;
+    }
     for (len = 0, al = TT.fixed[key]; al; al = al->next) len++;
     last = xmalloc(len*sizeof(void *));
     for (len = 0, al = TT.fixed[key]; al; al = al->next) last[len++] = al;
     qsort(last, len, sizeof(void *), (void *)lensort);
-    for (ii = 0; ii<len; ii++) last[ii]->next = ii ? last[ii-1] : 0;
+    for (ii = 0; ii<len; ii++) last[ii]->next = ii ? last[ii-1] : *TT.fixed;
     TT.fixed[key] = last[len-1];
     free(last);
   }
@@ -518,7 +484,7 @@ static int do_grep_r(struct dirtree *new)
   if (new->parent && !FLAG(h)) toys.optflags |= FLAG_H;
 
   name = dirtree_path(new, 0);
-  do_grep(openat(dirtree_parentfd(new), new->name, 0), name);
+  do_grep(openat(dirtree_parentfd(new), new->name, O_NONBLOCK|O_NOCTTY), name);
   free(name);
 
   return 0;
@@ -527,6 +493,8 @@ static int do_grep_r(struct dirtree *new)
 void grep_main(void)
 {
   char **ss = toys.optargs;
+
+  TT.fixed = xzalloc(256*sizeof(*TT.fixed));
 
   if (FLAG(color) && (!TT.color || !strcmp(TT.color, "auto")) && !isatty(1))
     toys.optflags &= ~FLAG_color;
