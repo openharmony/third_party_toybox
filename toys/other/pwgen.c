@@ -1,12 +1,12 @@
 /* pwgen.c - A password generator.
  *
- * Copyright 2020 Moritz Röhrich <moritz@ildefons.de>
+ * Copyright 2020 Moritz Rï¿½hrich <moritz@ildefons.de>
 
 USE_PWGEN(NEWTOY(pwgen, ">2r(remove):c(capitalize)n(numerals)y(symbols)s(secure)B(ambiguous)h(help)C1vA(no-capitalize)0(no-numerals)[-cA][-n0][-C1]", TOYFLAG_USR|TOYFLAG_BIN))
 
 config PWGEN
   bool "pwgen"
-  default y
+  default n
   help
     usage: pwgen [-cAn0yrsBC1v] [-r CHARS] [LENGTH] [COUNT]
 
