@@ -8,7 +8,7 @@ USE_TSORT(NEWTOY(tsort, ">1", TOYFLAG_USR|TOYFLAG_BIN))
 
 config TSORT
   bool "tsort"
-  default y
+  default n
   help
     usage: tsort [FILE]
 

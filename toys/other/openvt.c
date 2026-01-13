@@ -11,7 +11,7 @@ USE_DEALLOCVT(NEWTOY(deallocvt, ">1", TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_NEEDROOT))
 
 config OPENVT
   bool "openvt"
-  default y
+  default n
   help
     usage: openvt [-c NUM] [-sw] COMMAND...
 
@@ -23,7 +23,7 @@ config OPENVT
 
 config CHVT
   bool "chvt"
-  default y
+  default n
   help
     usage: chvt NUM
 
@@ -35,7 +35,7 @@ config CHVT
 
 config DEALLOCVT
   bool "deallocvt"
-  default y
+  default n
   help
     usage: deallocvt [NUM]
 

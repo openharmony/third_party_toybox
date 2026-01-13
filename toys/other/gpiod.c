@@ -12,7 +12,7 @@ USE_GPIOSET(NEWTOY(gpioset, "<2l", TOYFLAG_USR|TOYFLAG_BIN))
 
 config GPIODETECT
   bool "gpiodetect"
-  default y
+  default n
   help
     usage: gpiodetect
 
@@ -20,7 +20,7 @@ config GPIODETECT
 
 config GPIOFIND
   bool "gpiofind"
-  default y
+  default n
   help
     usage: gpiofind NAME
 
@@ -28,7 +28,7 @@ config GPIOFIND
 
 config GPIOINFO
   bool "gpioinfo"
-  default y
+  default n
   help
     usage: gpioinfo [CHIP...]
 
@@ -36,7 +36,7 @@ config GPIOINFO
 
 config GPIOGET
   bool "gpioget"
-  default y
+  default n
   help
     usage: gpioget [-l] CHIP LINE...
 
@@ -47,7 +47,7 @@ config GPIOGET
 
 config GPIOSET
   bool "gpioset"
-  default y
+  default n
   help
     usage: gpioset [-l] CHIP LINE=VALUE...
 

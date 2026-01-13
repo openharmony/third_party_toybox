@@ -8,7 +8,7 @@ USE_WATCHDOG(NEWTOY(watchdog, "<1>1Ft#=4<1T#=60<1", TOYFLAG_NEEDROOT|TOYFLAG_SBI
 
 config WATCHDOG
   bool "watchdog"
-  default y
+  default n
   help
     usage: watchdog [-F] [-t UPDATE] [-T DEADLINE] DEV
 

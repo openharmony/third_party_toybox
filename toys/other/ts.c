@@ -8,7 +8,7 @@ USE_TS(NEWTOY(ts, "ims", TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_LINEBUF))
 
 config TS
   bool "ts"
-  default y
+  default n
   help
     usage: ts [-is] [FORMAT]
 

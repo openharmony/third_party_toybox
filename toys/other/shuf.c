@@ -8,7 +8,7 @@ USE_SHUF(NEWTOY(shuf, "zen#<0", TOYFLAG_USR|TOYFLAG_BIN))
 
 config SHUF
   bool "shuf"
-  default y
+  default n
   help
     usage: shuf [-ze] [-n COUNT] [FILE...]
 

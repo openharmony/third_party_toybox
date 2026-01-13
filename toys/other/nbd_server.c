@@ -12,7 +12,7 @@ USE_NBD_SERVER(OLDTOY(nbd-server, nbd_server, TOYFLAG_USR|TOYFLAG_BIN))
 
 config NBD_SERVER
   bool "nbd-server"
-  default y
+  default n
   help
     usage: nbd-server [-r] FILE
 
