@@ -10,7 +10,7 @@ USE_HOST(NEWTOY(host, "<1>2avt:", TOYFLAG_USR|TOYFLAG_BIN))
 
 config HOST
   bool "host"
-  default y
+  default n
   help
     usage: host [-v] [-t TYPE] NAME [SERVER]
 

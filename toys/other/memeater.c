@@ -6,7 +6,7 @@ USE_MEMEATER(NEWTOY(memeater, "<1>1M", TOYFLAG_USR|TOYFLAG_BIN))
 
 config MEMEATER
   bool "memeater"
-  default y
+  default n
   help
     usage: memeater [-M] BYTES
 

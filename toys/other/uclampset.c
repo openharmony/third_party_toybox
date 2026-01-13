@@ -8,7 +8,7 @@ USE_UCLAMPSET(NEWTOY(uclampset, "p#am#<-1>1024M#<-1>1024R", TOYFLAG_USR|TOYFLAG_
 
 config UCLAMPSET
   bool "uclampset"
-  default y
+  default n
   help
     usage: uclampset [-m MIN] [-M MAX] {-p PID | COMMAND...}
 

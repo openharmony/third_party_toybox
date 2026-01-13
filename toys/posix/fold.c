@@ -8,7 +8,7 @@ USE_FOLD(NEWTOY(fold, "bsw#<1=80", TOYFLAG_USR|TOYFLAG_BIN))
 
 config FOLD
   bool "fold"
-  default y
+  default n
   help
     usage: fold [-bs] [-w WIDTH] [FILE...]
 

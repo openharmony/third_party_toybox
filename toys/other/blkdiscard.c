@@ -12,7 +12,7 @@ USE_BLKDISCARD(NEWTOY(blkdiscard, "<1>1f(force)l(length)#<0o(offset)#<0s(secure)
 
 config BLKDISCARD
   bool "blkdiscard"
-  default y
+  default n
   help
     usage: blkdiscard [-szf] [-o OFFSET] [-l LENGTH] DEVICE
 

@@ -8,7 +8,7 @@ USE_LINUX32(NEWTOY(linux32, 0, TOYFLAG_USR|TOYFLAG_BIN))
 
 config LINUX32
   bool "linux32"
-  default y
+  default n
   help
     usage: linux32 [COMMAND...]
 
