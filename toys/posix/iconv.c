@@ -11,15 +11,14 @@ USE_ICONV(NEWTOY(iconv, "cst:f:", TOYFLAG_USR|TOYFLAG_BIN))
 config ICONV
   bool "iconv"
   default y
-  depends on TOYBOX_ICONV
   help
     usage: iconv [-f FROM] [-t TO] [FILE...]
 
     Convert character encoding of files.
 
     -c	Omit invalid chars
-    -f	Convert from (default utf8)
-    -t	Convert to   (default utf8)
+    -f	Convert from (default UTF-8)
+    -t	Convert to   (default UTF-8)
 */
 
 #define FOR_iconv
@@ -52,8 +51,11 @@ static void do_iconv(int fd, char *name)
     iconv(TT.ic, &in, &inlen, &out, &outlen);
     if (in == toybuf) {
       // Skip first byte of illegal sequence to avoid endless loops
-      if (toys.optflags & FLAG_c) in++;
-      else *(out++) = *(in++);
+      if (FLAG(c)) in++;
+      else {
+        *(out++) = *(in++);
+        toys.exitval = 1;
+      }
       inlen--;
     }
     if (out != outstart) xwrite(1, outstart, out-outstart);
@@ -63,8 +65,8 @@ static void do_iconv(int fd, char *name)
 
 void iconv_main(void)
 {
-  if (!TT.t) TT.t = "utf8";
-  if (!TT.f) TT.f = "utf8";
+  if (!TT.t) TT.t = "UTF-8";
+  if (!TT.f) TT.f = "UTF-8";
 
   if ((iconv_t)-1 == (TT.ic = iconv_open(TT.t, TT.f)))
     perror_exit("%s/%s", TT.t, TT.f);

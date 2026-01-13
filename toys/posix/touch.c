@@ -37,7 +37,7 @@ void touch_main(void)
 {
   struct timespec ts[2];
   char **ss;
-  int fd, i;
+  int fd;
 
   // use current time if no -t or -d
   ts[0].tv_nsec = UTIME_NOW;
@@ -61,8 +61,7 @@ void touch_main(void)
   }
 
   // Which time(s) should we actually change?
-  i = toys.optflags & (FLAG_a|FLAG_m);
-  if (i && i!=(FLAG_a|FLAG_m)) ts[i!=FLAG_m].tv_nsec = UTIME_OMIT;
+  if (FLAG(a)^FLAG(m)) ts[!FLAG(m)].tv_nsec = UTIME_OMIT;
 
   // Loop through files on command line
   for (ss = toys.optargs; *ss;) {
@@ -71,7 +70,6 @@ void touch_main(void)
     if (!strcmp(s, "-")) {
       if (!futimens(1, ts)) continue;
     } else {
-      // cheat: FLAG_h is rightmost flag, so its value is 1
       if (!utimensat(AT_FDCWD, s, ts, FLAG(h)*AT_SYMLINK_NOFOLLOW)) continue;
       if (FLAG(c)) continue;
       if (access(s, F_OK) && (-1!=(fd = open(s, O_CREAT, 0666)))) {

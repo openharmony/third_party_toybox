@@ -10,7 +10,7 @@ config MKTEMP
   bool "mktemp"
   default y
   help
-    usage: mktemp [-dqu] [-p DIR] [TEMPLATE]
+    usage: mktemp [-dqtu] [-p DIR] [TEMPLATE]
 
     Safely create a new file "DIR/TEMPLATE" and print its name.
 
@@ -21,7 +21,7 @@ config MKTEMP
     -u	Don't create anything, just print what would be created
 
     Each X in TEMPLATE is replaced with a random printable character. The
-    default TEMPLATE is tmp.XXXXXXXXXX. The number of X needs to be no less than 6.
+    default TEMPLATE is tmp.XXXXXXXXXX.
 */
 
 #define FOR_mktemp
@@ -47,34 +47,14 @@ void mktemp_main(void)
   if (!dir || !*dir) dir = "/tmp";
   if (!template) template = "tmp.XXXXXXXXXX";
   else {
-#ifdef TOYBOX_OH_ADAPT
-    /* fix "mktemp -q mytempdir.XX" print error log problem*/
-    if (*template == '/' && TT.p && *TT.p) {
-      if (FLAG(q)) {
-        toys.exitval = 1;
-        return;
-      } else perror_exit("-p + /template");
-    }
-#else
     if (*template == '/' && TT.p && *TT.p) perror_exit("-p + /template");
-#endif
-    if (!FLAG(p)&&!FLAG(t)) dir = 0;
+    if (!FLAG(p) && !FLAG(t)) dir = 0;
   }
 
   // TODO: coreutils cleans paths, so -p /t/// would result in /t/xxx...
   template = dir ? xmprintf("%s/%s", dir, template) : xstrdup(template);
   len = strlen(template);
-#ifdef TOYBOX_OH_ADAPT
-  /* fix "mktemp -q mytempdir.XX" print error log problem*/
-  if (len<6 || strcmp(template+len-6, "XXXXXX")) {
-    if (FLAG(q)) {
-      toys.exitval = 1;
-      return;
-    } else perror_exit("need XXXXXX");
-  }
-#else
   if (len<3 || strcmp(template+len-3, "XXX")) perror_exit("need XXX");
-#endif
 
   // In theory you just xputs(mktemp(template)) for -u, in practice there's
   // link-time deprecation warnings if you do that. So we fake up our own:
@@ -82,14 +62,8 @@ void mktemp_main(void)
     long long rr;
     char *s = template+len;
 
-    // Fall back to random-ish if xgetrandom fails.
-    if (!xgetrandom(&rr, sizeof(rr), WARN_ONLY)) {
-      struct timespec ts;
-
-      clock_gettime(CLOCK_REALTIME, &ts);
-      rr = ts.tv_nsec*65537+(long)template+getpid()+(long)&template;
-    }
     // Replace X with 64 chars from posix portable character set (all but "_").
+    xgetrandom(&rr, sizeof(rr));
     while (--s>template) {
       if (*s != 'X') break;
       *s = '-'+(rr&63);

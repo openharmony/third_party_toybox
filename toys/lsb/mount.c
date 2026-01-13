@@ -7,9 +7,12 @@
  * Note: -hV is bad spec, haven't implemented -FsLU yet
  * no mtab (/proc/mounts does it) so -n is NOP.
  * TODO mount -o loop,autoclear (linux git 96c5865559ce)
+ * TODO mount jffs2.img dir (block2mtd)
+ * TODO fstab user
+ * TODO mount [^/]*:def = nfs, \\samba
 
-USE_MOUNT(NEWTOY(mount, "?O:afnrvwt:o*[-rw]", TOYFLAG_BIN|TOYFLAG_STAYROOT))
-//USE_NFSMOUNT(NEWTOY(nfsmount, "?<2>2", TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_STAYROOT))
+USE_MOUNT(NEWTOY(mount, "?RO:afnrvwt:o*[-rw]", TOYFLAG_BIN|TOYFLAG_STAYROOT))
+//USE_NFSMOUNT(NEWTOY(nfsmount, "<2>2", TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_STAYROOT))
 
 config MOUNT
   bool "mount"
@@ -34,11 +37,12 @@ config MOUNT
     Autodetects loopback mounts (a file on a directory) and bind mounts (file
     on file, directory on directory), so you don't need to say --bind or --loop.
     You can also "mount -a /path" to mount everything in /etc/fstab under /path,
-    even if it's noauto. DEVICE starting with UUID= is identified by blkid -U.
+    even if it's noauto. DEVICE starting with UUID= is identified by blkid -U,
+    and DEVICE starting with LABEL= is identified by blkid -L.
 
 #config SMBMOUNT
 #  bool "smbmount"
-#  deault n
+#  default n
 #  helo
 #    usage: smbmount SHARE DIR
 #
@@ -57,9 +61,8 @@ config MOUNT
 #include "toys.h"
 
 GLOBALS(
-  struct arg_list *optlist;
-  char *type;
-  char *bigO;
+  struct arg_list *o;
+  char *t, *O;
 
   unsigned long flags;
   char *opts;
@@ -72,7 +75,6 @@ GLOBALS(
 // TODO -p (passfd)
 // TODO -a -t notype,type2
 // TODO --subtree
-// TODO --rbind, -R
 // TODO make "mount --bind,ro old new" work (implicit -o remount)
 // TODO mount -a
 // TODO mount -o remount
@@ -87,15 +89,16 @@ GLOBALS(
 // TODO mount UUID=blah
 
 // Strip flags out of comma separated list of options, return flags,.
+// TODO: flip order and it's tagged array?
 static long flag_opts(char *new, long flags, char **more)
 {
   struct {
     char *name;
     long flags;
   } opts[] = {
-    // NOPs (we autodetect --loop and --bind)
-    {"loop", 0}, {"bind", 0}, {"defaults", 0}, {"quiet", 0},
+    {"loop", 0}, {"defaults", 0}, {"quiet", 0}, // NOPs
     {"user", 0}, {"nouser", 0}, // checked in fstab, ignored in -o
+    {"bind", MS_REC}, {"rbind", ~MS_REC}, // Autodetected but override defaults
     {"ro", MS_RDONLY}, {"rw", ~MS_RDONLY},
     {"nosuid", MS_NOSUID}, {"suid", ~MS_NOSUID},
     {"nodev", MS_NODEV}, {"dev", ~MS_NODEV},
@@ -145,25 +148,6 @@ static long flag_opts(char *new, long flags, char **more)
   return flags;
 }
 
-// Shell out to a program, returning the output string or NULL on error
-static char *tortoise(int loud, char **cmd)
-{
-  int rc, pipe, len;
-  pid_t pid;
-
-  pid = xpopen(cmd, &pipe, 1);
-  len = readall(pipe, toybuf, sizeof(toybuf)-1);
-  rc = xpclose(pid, pipe);
-  if (!rc && len > 1) {
-    if (toybuf[len-1] == '\n') --len;
-    toybuf[len] = 0;
-    return toybuf;
-  }
-  if (loud) error_msg("%s failed %d", *cmd, rc);
-
-  return 0;
-}
-
 static void mount_filesystem(char *dev, char *dir, char *type,
   unsigned long flags, char *opts)
 {
@@ -183,15 +167,22 @@ static void mount_filesystem(char *dev, char *dir, char *type,
   }
 
   if (strstart(&dev, "UUID=")) {
-    char *s = tortoise(0, (char *[]){"blkid", "-U", dev, 0});
+    char *s = chomp(xrunread((char *[]){"blkid", "-U", dev, 0}, 0));
 
-    if (!dev) return error_msg("No uuid %s", dev);
-    dev = s;
+    if (!s || strlen(s)>=sizeof(toybuf)) return error_msg("No uuid %s", dev);
+    strcpy(dev = toybuf, s);
+    free(s);
+  } else if (strstart(&dev, "LABEL=")) {
+    char *s = chomp(xrunread((char *[]){"blkid", "-L", dev, 0}, 0));
+
+    if (!s || strlen(s)>=sizeof(toybuf)) return error_msg("No label %s", dev);
+    strcpy(dev = toybuf, s);
+    free(s);
   }
 
   // Autodetect bind mount or filesystem type
 
-  if (type && !strcmp(type, "auto")) type = 0;
+  if (type && (!strcmp(type, "auto") || !strcmp(type, "none"))) type = 0;
   if (flags & MS_MOVE) {
     if (type) error_exit("--move with -t");
   } else if (!type) {
@@ -202,6 +193,7 @@ static void mount_filesystem(char *dev, char *dir, char *type,
         && ((S_ISREG(stdev.st_mode) && S_ISREG(stdir.st_mode))
             || (S_ISDIR(stdev.st_mode) && S_ISDIR(stdir.st_mode))))
     {
+      flags ^= MS_REC;
       flags |= MS_BIND;
     } else fp = xfopen("/proc/filesystems", "r");
   } else if (!strcmp(type, "ignore")) return;
@@ -215,7 +207,7 @@ static void mount_filesystem(char *dev, char *dir, char *type,
     if (fp && !buf) {
       size_t i;
 
-      if (getline(&buf, &i, fp)<0) {
+      if (getline(&buf, &i, fp)<1) {
         error_msg("%s: need -t", dev);
         break;
       }
@@ -232,8 +224,7 @@ static void mount_filesystem(char *dev, char *dir, char *type,
       i = strlen(type);
       if (i) type[i-1] = 0;
     }
-    if (FLAG(v))
-      printf("try '%s' type '%s' on '%s'\n", dev, type, dir);
+    if (FLAG(v)) printf("try '%s' type '%s' on '%s'\n", dev, type, dir);
     for (;;) {
       rc = mount(dev, dir, type, flags, opts);
       // Did we succeed, fail unrecoverably, or already try read-only?
@@ -267,9 +258,11 @@ static void mount_filesystem(char *dev, char *dir, char *type,
     // device, then do the loopback setup and retry the mount.
 
     if (rc && errno == ENOTBLK) {
-      dev = tortoise(1, (char *[]){"losetup",
-        (flags&MS_RDONLY) ? "-fsr" : "-fs", dev, 0});
-      if (!dev) break;
+      char *losetup[] = {"losetup", (flags&MS_RDONLY)?"-fsr":"-fs", dev, 0};
+
+      if ((dev = chomp(xrunread(losetup, 0)))) continue;
+      error_msg("%s failed", *losetup);
+      break;
     }
 
     free(buf);
@@ -300,9 +293,10 @@ void mount_main(void)
 
   // First pass; just accumulate string, don't parse flags yet. (This is so
   // we can modify fstab entries with -a, or mtab with remount.)
-  for (o = TT.optlist; o; o = o->next) comma_collate(&opts, o->arg);
+  for (o = TT.o; o; o = o->next) comma_collate(&opts, o->arg);
   if (FLAG(r)) comma_collate(&opts, "ro");
   if (FLAG(w)) comma_collate(&opts, "rw");
+  if (FLAG(R)) comma_collate(&opts, "rbind");
 
   // Treat each --option as -o option
   for (ss = toys.optargs; *ss; ss++) {
@@ -349,12 +343,11 @@ void mount_main(void)
            if (strncmp(dev, mm->dir, len)
                || (mm->dir[len] && mm->dir[len] != '/')) continue;
         } else if (noauto) continue; // never present in the remount case
-        if (!mountlist_istype(mm,TT.type) || !comma_scanall(mm->opts,TT.bigO))
+        if (!mountlist_istype(mm, TT.t) || !comma_scanall(mm->opts, TT.O))
           continue;
       } else {
         if (dir && strcmp(dir, mm->dir)) continue;
-        if (dev && strcmp(dev, mm->device) && (dir || strcmp(dev, mm->dir)))
-          continue;
+        if (strcmp(dev, mm->device) && (dir || strcmp(dev, mm->dir))) continue;
       }
 
       // Don't overmount the same dev on the same directory
@@ -363,7 +356,7 @@ void mount_main(void)
         for (mmm = mtl2; mmm; mmm = mmm->next)
           if (!strcmp(mm->dir, mmm->dir) && !strcmp(mm->device, mmm->device))
             break;
- 
+
       // user only counts from fstab, not opts.
       if (!mmm) {
         TT.okuser = comma_scan(mm->opts, "user", 1);
@@ -387,13 +380,28 @@ void mount_main(void)
   // show mounts from /proc/mounts
   } else if (!dev) {
     for (mtl = xgetmountlist(0); mtl && (mm = dlist_pop(&mtl)); free(mm)) {
-      char *s = 0;
+      char *s = mm->device, *ss = "", *temp;
+      struct stat st;
 
-      if (TT.type && strcmp(TT.type, mm->type)) continue;
-      if (*mm->device == '/') s = xabspath(mm->device, 0);
-      xprintf("%s on %s type %s (%s)\n",
-              s ? s : mm->device, mm->dir, mm->type, mm->opts);
-      free(s);
+      if (TT.t && strcmp(TT.t, mm->type)) continue;
+      if (*s == '/') {
+        if (!stat(mm->device, &st) && S_ISBLK(st.st_mode) &&
+            dev_major(st.st_rdev)==7)
+        {
+          temp = xmprintf("/sys/block/loop%d/loop/backing_file",
+            dev_minor(st.st_rdev));
+          s = chomp(readfile(temp, 0, 0));
+          free(temp);
+          if (s) {
+            ss = xmprintf(",file=%s"+!*mm->opts, s);
+            free(s);
+          };
+        }
+        s = xabspath(mm->device, 0);
+      }
+      xprintf("%s on %s type %s (%s%s)\n", s, mm->dir, mm->type, mm->opts, ss);
+      if (s != mm->device) free(s);
+      if (*ss) free(ss);
     }
 
   // two arguments
@@ -401,7 +409,7 @@ void mount_main(void)
     char *more = 0;
 
     flags = flag_opts(opts, flags, &more);
-    mount_filesystem(dev, dir, TT.type, flags, more);
+    mount_filesystem(dev, dir, TT.t, flags, more);
     if (CFG_TOYBOX_FREE) free(more);
   }
 }

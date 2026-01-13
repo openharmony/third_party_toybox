@@ -78,6 +78,7 @@ flush:
     if (count == wlen) xputc('\n');
     count = 0;
   }
+  xclose(fd);
   free(string);
 }
 

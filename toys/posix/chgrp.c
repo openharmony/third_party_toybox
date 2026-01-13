@@ -5,14 +5,14 @@
  * See http://opengroup.org/onlinepubs/9699919799/utilities/chown.html
  * See http://opengroup.org/onlinepubs/9699919799/utilities/chgrp.html
 
-USE_CHGRP(NEWTOY(chgrp, "<2hPLHRfv[-HLP]", TOYFLAG_BIN))
+USE_CHGRP(NEWTOY(chgrp, "<2h(no-dereference)PLHRfv[-HLP]", TOYFLAG_BIN))
 USE_CHOWN(OLDTOY(chown, chgrp, TOYFLAG_BIN))
 
 config CHGRP
   bool "chgrp"
   default y
   help
-    usage: chgrp/chown [-RHLP] [-fvh] group file...
+    usage: chgrp/chown [-RHLP] [-fvh] GROUP FILE...
 
     Change group of one or more files.
 
@@ -44,24 +44,24 @@ GLOBALS(
 
 static int do_chgrp(struct dirtree *node)
 {
-  int fd, ret, flags = toys.optflags;
+  int fd, ret;
 
   // Depth first search
   if (!dirtree_notdotdot(node)) return 0;
-  if ((flags & FLAG_R) && !node->again && S_ISDIR(node->st.st_mode))
-    return DIRTREE_COMEAGAIN|(DIRTREE_SYMFOLLOW*!!(flags&FLAG_L));
+  if (FLAG(R) && !(node->again&DIRTREE_COMEAGAIN) && S_ISDIR(node->st.st_mode))
+    return DIRTREE_COMEAGAIN|DIRTREE_SYMFOLLOW*FLAG(L);
 
   fd = dirtree_parentfd(node);
   ret = fchownat(fd, node->name, TT.owner, TT.group,
-    AT_SYMLINK_NOFOLLOW*(!(flags&(FLAG_L|FLAG_H)) && (flags&(FLAG_h|FLAG_R))));
+    AT_SYMLINK_NOFOLLOW*(!(FLAG(L)|FLAG(H)) && (FLAG(h)|FLAG(R))));
 
-  if (ret || (flags & FLAG_v)) {
+  if (ret || FLAG(v)) {
     char *path = dirtree_path(node, 0);
-    if (flags & FLAG_v)
+    if (FLAG(v))
       xprintf("%s %s%s%s %s\n", toys.which->name, TT.owner_name,
         (toys.which->name[2]=='o' && *TT.group_name) ? ":" : "",
         TT.group_name, path);
-    if (ret == -1 && !(toys.optflags & FLAG_f))
+    if (ret == -1 && !FLAG(f))
       perror_msg("'%s' to '%s:%s'", path, TT.owner_name, TT.group_name);
     free(path);
   }
@@ -94,13 +94,7 @@ void chgrp_main(void)
     TT.group = xgetgid(TT.group_name);
 
   for (s=toys.optargs+1; *s; s++)
-    dirtree_flagread(*s, DIRTREE_SYMFOLLOW*!!(toys.optflags&(FLAG_H|FLAG_L)),
-      do_chgrp);
+    dirtree_flagread(*s, DIRTREE_SYMFOLLOW*(FLAG(H)|FLAG(L)), do_chgrp);
 
   if (CFG_TOYBOX_FREE && ischown) free(own);
-}
-
-void chown_main()
-{
-  chgrp_main();
 }
