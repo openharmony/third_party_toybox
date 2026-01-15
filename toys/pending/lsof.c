@@ -69,6 +69,15 @@ static void print_info(void *data)
       TT.shown_header = 1;
     }
 
+#ifdef TOYBOX_OH_ADAPT
+    if (FLAG(l)) {
+      printf("%-9s %5d %10d %4s%c%c %7s %18s %9s %10s %s\n",
+            fi->pi.cmd, fi->pi.pid, fi->pi.uid,
+            fi->fd, fi->rw, fi->locks, fi->type, fi->device, fi->size_off,
+            fi->node, fi->name);
+      return;
+    }
+#endif
     printf("%-9s %5d %10.10s %4s%c%c %7s %18s %9s %10s %s\n",
            fi->pi.cmd, fi->pi.pid, getusername(fi->pi.uid),
            fi->fd, fi->rw, fi->locks, fi->type, fi->device, fi->size_off,

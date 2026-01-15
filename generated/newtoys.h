@@ -133,7 +133,12 @@ USE_IOTOP(NEWTOY(iotop, ">0AaKO" "Hk*o*p*u*s#<1=7d%<100=3000m#n#<1bq", TOYFLAG_U
 USE_IP(NEWTOY(ip, NULL, TOYFLAG_SBIN))
 USE_IP(OLDTOY(ipaddr, ip, TOYFLAG_SBIN))
 USE_IPCRM(NEWTOY(ipcrm, "m*M*s*S*q*Q*", TOYFLAG_USR|TOYFLAG_BIN))
+#ifdef TOYBOX_OH_ADAPT
+//delete 'ipcs -s' fail problem: kernel is not configured for semaphores
+USE_IPCS(NEWTOY(ipcs, "acptulqmi#", TOYFLAG_USR|TOYFLAG_BIN))
+#else
 USE_IPCS(NEWTOY(ipcs, "acptulsqmi#", TOYFLAG_USR|TOYFLAG_BIN))
+#endif
 USE_IP(OLDTOY(iplink, ip, TOYFLAG_SBIN))
 USE_IP(OLDTOY(iproute, ip, TOYFLAG_SBIN))
 USE_IP(OLDTOY(iprule, ip, TOYFLAG_SBIN))
@@ -197,7 +202,12 @@ USE_PASTE(NEWTOY(paste, "d:s", TOYFLAG_USR|TOYFLAG_BIN))
 USE_PATCH(NEWTOY(patch, ">2(no-backup-if-mismatch)(dry-run)F#g#fulp#v(verbose)@d:i:Rs(quiet)[!sv]", TOYFLAG_USR|TOYFLAG_BIN))
 USE_PGREP(NEWTOY(pgrep, "?cld:u*U*t*s*P*g*G*fnovxL:[-no]", TOYFLAG_USR|TOYFLAG_BIN))
 USE_PIDOF(NEWTOY(pidof, "so:x", TOYFLAG_BIN))
+#ifdef TOYBOX_OH_ADAPT
+/* fix "ping -s 65500" fail problem*/
+USE_PING(NEWTOY(ping, "<1>1m#t#<0>255=64c#<0=3s#<0>65507=56i%W#<0=3w#<0qf46I:[-46]", TOYFLAG_USR|TOYFLAG_BIN))
+#else
 USE_PING(NEWTOY(ping, "<1>1m#t#<0>255=64c#<0=3s#<0>4064=56i%W#<0=3w#<0qf46I:[-46]", TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_LINEBUF))
+#endif
 USE_PING(OLDTOY(ping6, ping, TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_LINEBUF))
 USE_PIVOT_ROOT(NEWTOY(pivot_root, "<2>2", TOYFLAG_SBIN))
 USE_PKILL(NEWTOY(pkill,    "?Vu*U*t*s*P*g*G*fnovxl:[-no]", TOYFLAG_USR|TOYFLAG_BIN))

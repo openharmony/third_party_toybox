@@ -692,7 +692,11 @@ static void do_bunzip2(int fd, char *name)
   // Trim off .bz or .bz2 extension
   dotbz = name+len-3;
   if ((len>3 && !strcmp(dotbz, ".bz")) || (len>4 && !strcmp(--dotbz, ".bz2")))
+#ifdef TOYBOX_OH_ADAPT
+    *dotbz = '\0';
+#else
     dotbz = 0;
+#endif
 
   // For - no replace
   if (FLAG(t)) outfd = xopen("/dev/null", O_WRONLY);
@@ -713,11 +717,20 @@ static void do_bunzip2(int fd, char *name)
   // can't test outfd==1 because may have been called with stdin+stdout closed
   if (rename) {
     if (FLAG(k)) {
+#ifdef TOYBOX_OH_ADAPT
+#else
+      // this will cause the decompressed file name to be incorrect when using -k.
       free(tmp);
       tmp = 0;
-    } else if (!err) {
+#endif
+    } else {
       if (dotbz) *dotbz = '.';
+// unlink success return 0, fail return -1
+#ifdef TOYBOX_OH_ADAPT
+      if (unlink(name)) perror_msg_raw(name);
+#else
       if (!unlink(name)) perror_msg_raw(name);
+#endif
     }
     (err ? delete_tempfile : replace_tempfile)(-1, outfd, &tmp);
   }

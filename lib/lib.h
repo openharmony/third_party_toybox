@@ -121,6 +121,7 @@ void xputsl(char *s, int len);
 void xputsn(char *s);
 void xputs(char *s);
 void xputc(char c);
+void xflush(int flush);
 void xvdaemon(void);
 void xexec(char **argv);
 pid_t xpopen_setup(char **argv, int *pipes, void (*callback)(char **argv));

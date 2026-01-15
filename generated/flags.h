@@ -519,16 +519,18 @@
 #undef FLAG_b
 #endif
 
-// date >1d:D:I(iso-8601):;r:s:u(utc)[!dr] >1d:D:I(iso-8601):;r:s:u(utc)[!dr]
+// date d:r:u[!dr] d:r:u[!dr]
 #undef OPTSTR_date
-#define OPTSTR_date ">1d:D:I(iso-8601):;r:s:u(utc)[!dr]"
+#ifdef TOYBOX_OH_ADAPT
+#define OPTSTR_date "d:r:u[!dr]"
+#else
+#define OPTSTR_date "d:D:r:u[!dr]"
+#endif
 #ifdef CLEANUP_date
 #undef CLEANUP_date
 #undef FOR_date
 #undef FLAG_u
-#undef FLAG_s
 #undef FLAG_r
-#undef FLAG_I
 #undef FLAG_D
 #undef FLAG_d
 #endif
@@ -1695,8 +1697,25 @@
 #undef FLAG_m
 #endif
 
-// ipcs acptulsqmi# acptulsqmi#
+// ipcs   acptulsqmi#
 #undef OPTSTR_ipcs
+#ifdef TOYBOX_OH_ADAPT
+//delete 'ipcs -s' fail problem: kernel is not configured for semaphores
+#define OPTSTR_ipcs "acptulqmi#"
+#ifdef CLEANUP_ipcs
+#undef CLEANUP_ipcs
+#undef FOR_ipcs
+#undef FLAG_i
+#undef FLAG_m
+#undef FLAG_q
+#undef FLAG_l
+#undef FLAG_u
+#undef FLAG_t
+#undef FLAG_p
+#undef FLAG_c
+#undef FLAG_a
+#endif
+#else
 #define OPTSTR_ipcs "acptulsqmi#"
 #ifdef CLEANUP_ipcs
 #undef CLEANUP_ipcs
@@ -1711,6 +1730,7 @@
 #undef FLAG_p
 #undef FLAG_c
 #undef FLAG_a
+#endif
 #endif
 
 // jobs   lnprs
@@ -1895,9 +1915,9 @@
 #undef FLAG_S
 #endif
 
-// ls (sort):(color):;(full-time)(show-control-chars)ÿ(block-size)#=1024<1¡(group-directories-first)þZgoACFHLNRSUXabcdfhikl@mnpqrstuw#=80<0x1[-Cxm1][-Cxml][-Cxmo][-Cxmg][-cu][-ftS][-HL][-Nqb][-kÿ] (sort):(color):;(full-time)(show-control-chars)ÿ(block-size)#=1024<1¡(group-directories-first)þZgoACFHLNRSUXabcdfhikl@mnpqrstuw#=80<0x1[-Cxm1][-Cxml][-Cxmo][-Cxmg][-cu][-ftS][-HL][-Nqb][-kÿ]
+// // ls (sort):(color):;(full-time)(show-control-chars)?(block-size)#=1024<1?(group-directories-first)?ZgoACFHLNRSUXabcdfhikl@mnpqrstuw#=80<0x1[-Cxm1][-Cxml][-Cxmo][-Cxmg][-cu][-ftS][-HL][-Nqb][-k?] (sort):(color):;(full-time)(show-control-chars)?(block-size)#=1024<1?(group-directories-first)?ZgoACFHLNRSUXabcdfhikl@mnpqrstuw#=80<0x1[-Cxm1][-Cxml][-Cxmo][-Cxmg][-cu][-ftS][-HL][-Nqb][-k?]
 #undef OPTSTR_ls
-#define OPTSTR_ls "(sort):(color):;(full-time)(show-control-chars)ÿ(block-size)#=1024<1¡(group-directories-first)þZgoACFHLNRSUXabcdfhikl@mnpqrstuw#=80<0x1[-Cxm1][-Cxml][-Cxmo][-Cxmg][-cu][-ftS][-HL][-Nqb][-kÿ]"
+#define OPTSTR_ls "(sort):(color):;(full-time)(show-control-chars)?(block-size)#=1024<1?(group-directories-first)?ZgoACFHLNRSUXabcdfhikl@mnpqrstuw#=80<0x1[-Cxm1][-Cxml][-Cxmo][-Cxmg][-cu][-ftS][-HL][-Nqb][-k?]"
 #ifdef CLEANUP_ls
 #undef CLEANUP_ls
 #undef FOR_ls
@@ -2250,7 +2270,12 @@
 
 // netcat ^tElLw#<1W#<1p#<1>65535q#<1O:o:s:f:46uUnz[!tlL][!Lw][!Lu][!46U][!oO] ^tElLw#<1W#<1p#<1>65535q#<1O:o:s:f:46uUnz[!tlL][!Lw][!Lu][!46U][!oO]
 #undef OPTSTR_netcat
+#ifdef TOYBOX_OH_ADAPT
+/* fix "netcat -u" fail problem */
+#define OPTSTR_netcat "^tElLw#<1W#<1p#<1>65535q#<1s:f:46uUn[!tlL][!Lw][!Lu][!46U]"
+#else
 #define OPTSTR_netcat "^tElLw#<1W#<1p#<1>65535q#<1O:o:s:f:46uUnz[!tlL][!Lw][!Lu][!46U][!oO]"
+#endif
 #ifdef CLEANUP_netcat
 #undef CLEANUP_netcat
 #undef FOR_netcat
@@ -2483,7 +2508,12 @@
 
 // ping <1>1m#t#<0>255=64c#<0=3s#<0>4064=56i%W#<0=3w#<0qf46I:[-46] <1>1m#t#<0>255=64c#<0=3s#<0>4064=56i%W#<0=3w#<0qf46I:[-46]
 #undef OPTSTR_ping
+#ifdef TOYBOX_OH_ADAPT
+/* fix "ping -s 65500" fail problem*/
+#define OPTSTR_ping "<1>1m#t#<0>255=64c#<0=3s#<0>65507=56i%W#<0=3w#<0qf46I:[-46]"
+#else
 #define OPTSTR_ping "<1>1m#t#<0>255=64c#<0=3s#<0>4064=56i%W#<0=3w#<0qf46I:[-46]"
+#endif
 #ifdef CLEANUP_ping
 #undef CLEANUP_ping
 #undef FOR_ping
@@ -5519,7 +5549,11 @@
 #define FLAG_i (1LL<<0)
 #define FLAG_m (1LL<<1)
 #define FLAG_q (1LL<<2)
+#ifdef TOYBOX_OH_ADAPT
+//delete 'ipcs -s' fail problem: kernel is not configured for semaphores
+#else
 #define FLAG_s (1LL<<3)
+#endif
 #define FLAG_l (1LL<<4)
 #define FLAG_u (1LL<<5)
 #define FLAG_t (1LL<<6)
