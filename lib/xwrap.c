@@ -147,6 +147,13 @@ void xferror(FILE *fp)
   if (ferror(fp)) perror_exit(fp==stdout ? "stdout" : "write");
 }
 
+// if !flush just check for error on stdout without flushing 
+void xflush(int flush)
+{
+  if ((flush && fflush(0)) || ferror(stdout))
+    if (!toys.exitval) perror_msg("write");
+}
+
 void xprintf(char *format, ...)
 {
   va_list va;

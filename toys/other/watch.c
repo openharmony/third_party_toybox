@@ -58,7 +58,7 @@ static void watch_child(int sig)
 static int watch_escape(FILE *out, int cols, int wc)
 {
   if (wc==27 || (wc>=7 && wc<=13)) return -1;
-  if (wc<32) return 0;
+  if (wc < 32) return 0;
 
   return crunch_escape(out, cols, wc);
 }
@@ -106,8 +106,8 @@ void watch_main(void)
         // Get and measure time string, trimming gratuitous \n
         ctimelen = strlen(ss = ctime(&t));
         if (ss[ctimelen-1]=='\n') ss[--ctimelen] = 0;
-
-        // print cmdline, then * or ' ' (showing truncation), then ctime
+ 
+        // print cmdline, then * or ' ' (showing truncation), then ctime 
         pad = width-++ctimelen;
         if (pad>0) draw_trim(cmd, -pad, pad);
         printf("%c", pad<cmdlen ? '*' : ' ');
@@ -166,7 +166,15 @@ void watch_main(void)
 
       if (ss-toybuf==len || *ss>27) break;
       cc = *ss++;
+#ifdef TOYBOX_OH_ADAPT
+      // fix exit with abnormal char ''
+      if (cc==27) {
+        xflush(1);
+        break;
+      }
+#else
       if (cc==27) continue; // TODO
+#endif
 
       // Handle BEL BS HT LF VT FF CR
       if (cc>=10 && cc<=12) {

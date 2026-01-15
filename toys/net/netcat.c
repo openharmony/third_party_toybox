@@ -127,6 +127,12 @@ void ohexwrite(int fd, void *buf, size_t len)
 
 void netcat_main(void)
 {
+#ifdef TOYBOX_OH_ADAPT
+/* Remove unsupported -f and -t option */
+ if (toys.optflags & FLAG_t) error_exit("Unknown option 't'");
+ if (toys.optflags & FLAG_f) error_exit("Unknown option 'f'");
+#endif
+
   int sockfd = -1, in1 = 0, in2 = 0, out1 = 1, out2 = 1, family = AF_UNSPEC,
     type = FLAG(u) ? SOCK_DGRAM : SOCK_STREAM;
   socklen_t len;
@@ -207,7 +213,7 @@ void netcat_main(void)
       }
 
       do {
-        len = sizeof(struct sockaddr_storage);
+       len = sizeof(struct sockaddr_storage);
         if (FLAG(u)) {
           if (-1 == recvfrom(in1 = dup(sockfd), &child, 1, MSG_PEEK,
             (void *)toybuf, &len)) perror_exit("recvfrom");

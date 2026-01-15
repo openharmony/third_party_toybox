@@ -201,7 +201,14 @@ int dirtree_recurse(struct dirtree *node,
   }
 
 done:
-  if (dir) closedir(dir);
+#ifdef TOYBOX_OH_ADAPT
+  if (dir) {
+    // fix the crash of closedir(NULL)
+    closedir(dir);
+  }
+#else
+  closedir(dir);
+#endif
   node->dirfd = -1;
 
   return (new == DIRTREE_ABORTVAL) ? DIRTREE_ABORT : flags;

@@ -329,7 +329,11 @@ static int parse_optflaglist(struct getoptflagstate *gof)
   // (This goes right to left so we need the whole list before we can start.)
   idx = 0;
   for (new = gof->opts; new; new = new->next) {
+#ifdef TOYBOX_OH_ADAPT
+    unsigned long long u = 1ULL<<idx++;
+#else
     unsigned long long u = 1LL<<idx++;
+#endif
 
     if (new->c == 1 || new->c=='~') new->c = 0;
     else new->c &= 127;

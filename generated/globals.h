@@ -109,6 +109,8 @@ struct netstat_data {
   int wpad;
 };
 
+// toys/net/ping.c
+
 struct ping_data {
   char *I;
   long w, W, i, s, c, t, m;
@@ -1079,9 +1081,14 @@ struct cut_data {
   regex_t reg;
 };
 
-struct date_data {
-  char *s, *r, *I, *D, *d;
+// toys/posix/date.c
 
+struct date_data {
+#ifdef TOYBOX_OH_ADAPT
+  char *r, *d;
+#else
+  char *r, *D, *d;
+#endif
   unsigned nano;
 };
 
