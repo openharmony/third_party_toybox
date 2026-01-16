@@ -771,7 +771,7 @@ struct more_data {
 };
 
 struct route_data {
-  char *A;
+  char *family;
 };
 
 struct sh_data {
