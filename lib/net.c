@@ -96,9 +96,7 @@ int xpoll(struct pollfd *fds, int nfds, int timeout)
 // Loop forwarding data from in1 to out1 and in2 to out2, handling
 // half-connection shutdown. timeouts return if no data for X ms.
 // Returns 0: both closed, 1 shutdown_timeout, 2 timeout
-int pollinate(int in1, int in2, int out1, int out2,
-              void (*callback)(int fd, void *buf, size_t len),
-              int timeout, int shutdown_timeout)
+int pollinate(int in1, int in2, int out1, int out2, int timeout, int shutdown_timeout)
 {
   struct pollfd pollfds[2];
   int i, pollcount = 2;
@@ -116,10 +114,7 @@ int pollinate(int in1, int in2, int out1, int out2,
       if (pollfds[i].revents & POLLIN) {
         int len = read(pollfds[i].fd, libbuf, sizeof(libbuf));
         if (len<1) pollfds[i].revents = POLLHUP;
-        else {
-          callback(i ? out2 : out1, libbuf, len);
-          continue;
-        }
+        else xwrite(i ? out2 : out1, libbuf, len);
       }
       if (pollfds[i].revents & POLLHUP) {
         // Close half-connection.  This is needed for things like
