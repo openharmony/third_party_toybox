@@ -69,7 +69,7 @@ static void initialize_console(void)
 static void reset_term(int fd)
 {
   struct termios terminal;
- 
+
   tcgetattr(fd, &terminal);
   terminal.c_cc[VINTR] = 3;    //ctrl-c
   terminal.c_cc[VQUIT] = 28;   /*ctrl-\*/
@@ -124,6 +124,7 @@ static void parse_inittab(void)
 {
   char *line = 0;
   size_t allocated_length = 0;
+  ssize_t line_length = 0;
   int line_number = 0;
   char *act_name = "sysinit\0wait\0once\0respawn\0askfirst\0ctrlaltdel\0"
                     "shutdown\0restart\0";
@@ -136,10 +137,11 @@ static void parse_inittab(void)
     return;
   }
 
-  while (getline(&line, &allocated_length, fp) > 0) {
+  while ((line_length = getline(&line, &allocated_length, fp)) > 0) {
     char *p = line, *x, *tty_name = 0, *command = 0, *extracted_token, *tmp;
     int action = 0, token_count = 0, i;
 
+    if (p[line_length - 1] == '\n') p[line_length - 1] = '\0';
     if ((x = strchr(p, '#'))) *x = '\0';
     line_number++;
     action = 0;
@@ -253,7 +255,7 @@ static pid_t final_run(struct action_list_seed *x)
     sigfillset(&signal_set);
     sigprocmask(SIG_UNBLOCK, &signal_set, NULL);
 
-    return pid;      
+    return pid;
   } else if (pid < 0) {
     perror_msg("fork fail");
     sleep(1);
@@ -326,7 +328,7 @@ static void set_default(void)
 {
   sigset_t signal_set_c;
 
-  sigatexit(SIG_DFL);
+  xsignal_all_killers(SIG_DFL);
   sigfillset(&signal_set_c);
   sigprocmask(SIG_UNBLOCK,&signal_set_c, NULL);
 
@@ -356,7 +358,7 @@ static void halt_poweroff_reboot_handler(int sig_no)
       error_msg("Requesting system poweroff");
       reboot_magic_no=RB_POWER_OFF;
       break;
-    case SIGTERM:  
+    case SIGTERM:
       error_msg("Requesting system reboot");
       reboot_magic_no=RB_AUTOBOOT;
       break;
@@ -459,8 +461,8 @@ void init_main(void)
 {
   struct sigaction sig_act;
 
-  if (getpid() != 1) error_exit("Already running"); 
-  printf("Started init\n"); 
+  if (getpid() != 1) error_exit("Already running");
+  printf("Started init\n");
   initialize_console();
   reset_term(0);
 
@@ -484,8 +486,8 @@ void init_main(void)
   sigaction(SIGTSTP, &sig_act, NULL);
   memset(&sig_act, 0, sizeof(sig_act));
   sig_act.sa_handler = catch_signal;
-  sigaction(SIGINT, &sig_act, NULL);  
-  sigaction(SIGHUP, &sig_act, NULL);  
+  sigaction(SIGINT, &sig_act, NULL);
+  sigaction(SIGHUP, &sig_act, NULL);
   run_action_from_list(SYSINIT);
   check_if_pending_signals();
   run_action_from_list(WAIT);

@@ -10,9 +10,9 @@ USE_SHA3SUM(NEWTOY(sha3sum, "bSa#<128>512=224", TOYFLAG_USR|TOYFLAG_BIN))
 
 config SHA3SUM
   bool "sha3sum"
-  default y
+  default n
   help
-    usage: sha3sum [-S] [-a BITS] [FILE...]
+    usage: sha3sum [-bS] [-a BITS] [FILE...]
 
     Hash function du jour.
 
