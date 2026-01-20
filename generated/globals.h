@@ -330,10 +330,6 @@ struct setfattr_data {
   char *x, *v, *n;
 };
 
-struct setsid_data {
-  long c;
-};
-
 struct sha3sum_data {
   long a;
   unsigned long long rc[24];
@@ -1298,14 +1294,17 @@ struct sed_data {
   char delim, xftype;
 };
 
+// toys/posix/sort.c
+
 struct sort_data {
   char *t;
   struct arg_list *k;
   char *o, *T, S;
 
   void *key_list;
-  unsigned linecount;
-  char **lines, *name;
+  int linecount;
+  char **lines;
+  char *name;
 };
 
 struct split_data {
@@ -1462,7 +1461,6 @@ extern union global_union {
 	struct reboot_data reboot;
 	struct rtcwake_data rtcwake;
 	struct setfattr_data setfattr;
-	struct setsid_data setsid;
 	struct sha3sum_data sha3sum;
 	struct shred_data shred;
 	struct shuf_data shuf;

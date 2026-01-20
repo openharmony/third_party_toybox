@@ -6,22 +6,20 @@
  *
  * Deviations from posix: -f waits for pipe/fifo on stdin (nonblock?).
 
-USE_TAIL(NEWTOY(tail, "?fFs:c(bytes)-n(lines)-[-cn][-fF]", TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_LINEBUF))
+USE_TAIL(NEWTOY(tail, "?fc-n-[-cn]", TOYFLAG_USR|TOYFLAG_BIN))
 
 config TAIL
   bool "tail"
   default y
   help
-    usage: tail [-n|c NUMBER] [-f|F] [-s SECONDS] [FILE...]
+    usage: tail [-n|c NUMBER] [-f] [FILE...]
 
     Copy last lines from files to stdout. If no files listed, copy from
     stdin. Filename "-" is a synonym for stdin.
 
     -n	Output the last NUMBER lines (default 10), +X counts from start
     -c	Output the last NUMBER bytes, +NUMBER counts from start
-    -f	Follow FILE(s) by descriptor, waiting for more data to be appended
-    -F	Follow FILE(s) by filename, waiting for more data, and retrying
-    -s	Used with -F, sleep SECONDS between retries (default 1)
+    -f	Follow FILE(s), waiting for more data to be appended
 */
 
 #define FOR_tail
@@ -29,15 +27,9 @@ config TAIL
 
 GLOBALS(
   long n, c;
-  char *s;
 
-  int file_no, last_fd, ss;
+  int file_no, last_fd;
   struct xnotify *not;
-  struct {
-    char *path;
-    int fd;
-    struct dev_ino di;
-  } *F;
 )
 
 struct line_list {
@@ -46,7 +38,7 @@ struct line_list {
   int len;
 };
 
-static struct line_list *read_chunk(int fd, int len)
+static struct line_list *get_chunk(int fd, int len)
 {
   struct line_list *line = xmalloc(sizeof(struct line_list)+len);
 
@@ -62,7 +54,7 @@ static struct line_list *read_chunk(int fd, int len)
   return line;
 }
 
-static void write_chunk(void *ptr)
+static void dump_chunk(void *ptr)
 {
   struct line_list *list = ptr;
 
@@ -102,7 +94,7 @@ static int try_lseek(int fd, long bytes, long lines)
       perror_msg("seek failed");
       break;
     }
-    if (!(temp = read_chunk(fd, chunk))) break;
+    if (!(temp = get_chunk(fd, chunk))) break;
     temp->next = list;
     list = temp;
 
@@ -124,61 +116,11 @@ static int try_lseek(int fd, long bytes, long lines)
   }
 
   // Output stored data
-  llist_traverse(list, write_chunk);
+  llist_traverse(list, dump_chunk);
 
   // In case of -f
   lseek(fd, bytes, SEEK_SET);
   return 1;
-}
-
-// For -f and -F
-static void tail_continue()
-{
-  long long pos;
-  char *path;
-  struct stat sb;
-  int i = 0, fd, len;
-
-  for (i = 0; ; i++) {
-    if (FLAG(f)) fd = xnotify_wait(TT.not, &path);
-    else {
-      if (i == TT.file_no) {
-        i = 0;
-        msleep(TT.ss);
-      }
-      fd = TT.F[i].fd;
-      path = TT.F[i].path;
-
-      if (stat(TT.F[i].path, &sb)) {
-        if (fd >= 0) {
-          close(fd);
-          TT.F[i].fd = -1;
-          error_msg("file inaccessible: %s\n", TT.F[i].path);
-        }
-        continue;
-      }
-
-      if (fd<0 || !same_dev_ino(&sb, &TT.F[i].di)) {
-        if (fd>=0) close(fd);
-        if (-1 == (TT.F[i].fd = fd = open(path, O_RDONLY))) continue;
-        error_msg("following new file: %s\n", path);
-        TT.F[i].di.dev = sb.st_dev;
-        TT.F[i].di.ino = sb.st_ino;
-      } else if (sb.st_size <= (pos = lseek(fd, 0, SEEK_CUR))) {
-        if (pos == sb.st_size) continue;
-        error_msg("file truncated: %s\n", path);
-        lseek(fd, 0, SEEK_SET);
-      }
-    }
-
-    while ((len = read(fd, toybuf, sizeof(toybuf)))>0) {
-      if (TT.file_no>1 && TT.last_fd != fd) {
-        TT.last_fd = fd;
-        xprintf("\n==> %s <==\n", path);
-      }
-      xwrite(1, toybuf, len);
-    }
-  }
 }
 
 // Called for each file listed on command line, and/or stdin
@@ -187,25 +129,11 @@ static void do_tail(int fd, char *name)
   long bytes = TT.c, lines = TT.n;
   int linepop = 1;
 
-  if (FLAG(F)) {
-    if (!fd) perror_exit("no -F with '-'");
-  } else if (fd == -1) return;
-  if (FLAG(f) || FLAG(F)) {
+  if (FLAG(f)) {
     char *s = name;
-    struct stat sb;
 
     if (!fd) sprintf(s = toybuf, "/proc/self/fd/%d", fd);
-
-    if (FLAG(f)) xnotify_add(TT.not, fd, s);
-    if (FLAG(F)) {
-      if (fd != -1) {
-        if (fstat(fd, &sb)) perror_exit("%s", name);
-        TT.F[TT.file_no].di.dev = sb.st_dev;
-        TT.F[TT.file_no].di.ino = sb.st_ino;
-      }
-      TT.F[TT.file_no].fd = fd;
-      TT.F[TT.file_no].path = s;
-    }
+    if (xnotify_add(TT.not, fd, s)) perror_exit("-f on '%s' failed", s);
   }
 
   if (TT.file_no++) xputc('\n');
@@ -224,7 +152,7 @@ static void do_tail(int fd, char *name)
     // Read data until we run out, keep a trailing buffer
     for (;;) {
       // Read next page of data, appending to linked list in order
-      if (!(new = read_chunk(fd, sizeof(toybuf)))) break;
+      if (!(new = get_chunk(fd, sizeof(toybuf)))) break;
       dlist_add_nomalloc((void *)&list, (void *)new);
 
       // If tracing bytes, add until we have enough, discarding overflow.
@@ -264,7 +192,7 @@ static void do_tail(int fd, char *name)
     }
 
     // Output/free the buffer.
-    llist_traverse(list, write_chunk);
+    llist_traverse(list, dump_chunk);
 
   // Measuring from the beginning of the file.
   } else for (;;) {
@@ -289,21 +217,33 @@ void tail_main(void)
   if (!FLAG(n) && !FLAG(c)) {
     char *arg = *args;
 
-    // handle old "-42" / "+42" style arguments, else default to last 10 lines
-    if (arg && (*arg == '-' || *arg == '+') && arg[1]) {
+    // handle old "-42" style arguments
+    if (arg && *arg == '-' && arg[1]) {
       TT.n = atolx(*(args++));
       toys.optc--;
-    } else TT.n = -10;
+    } else {
+      // if nothing specified, default -n to -10
+      TT.n = -10;
+    }
   }
 
-  if (FLAG(F)) TT.F = xzalloc(toys.optc*sizeof(*TT.F));
-  else if (FLAG(f)) TT.not = xnotify_init(toys.optc);
-  TT.ss = TT.s ? xparsemillitime(TT.s) : 1000;
+  if (FLAG(f)) TT.not = xnotify_init(toys.optc);
+  loopfiles_rw(args, O_RDONLY|WARN_ONLY|(O_CLOEXEC*!FLAG(f)), 0, do_tail);
 
-  loopfiles_rw(args,
-    O_RDONLY|WARN_ONLY|LOOPFILES_ANYWAY|O_CLOEXEC*!(FLAG(f) || FLAG(F)),
-    0, do_tail);
+  if (FLAG(f) && TT.file_no) {
+    for (;;) {
+      char *path;
+      int fd = xnotify_wait(TT.not, &path), len;
 
-  // Wait for more data when following files
-  if (TT.file_no && (FLAG(F) || FLAG(f))) tail_continue();
+      // Read new data.
+      while ((len = read(fd, toybuf, sizeof(toybuf)))>0) {
+        if (TT.last_fd != fd) {
+          TT.last_fd = fd;
+          xprintf("\n==> %s <==\n", path);
+        }
+
+        xwrite(1, toybuf, len);
+      }
+    }
+  }
 }
