@@ -110,5 +110,9 @@ void passwd_main(void)
 
   memset(toybuf, 0, sizeof(toybuf));
   memset(encrypted, 0, strlen(encrypted));
+#ifdef TOYBOX_OH_ADAPT
+  if (CFG_TOYBOX_FREE && (toys.optflags & FLAG_l)) free(encrypted);
+#else
   free(encrypted);
+#endif
 }

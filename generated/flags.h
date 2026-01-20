@@ -2919,15 +2919,13 @@
 #undef FLAG_h
 #endif
 
-// setsid ^<1wc@d[!dc] ^<1wc@d[!dc]
+// setsid ^<1t ^<1t
 #undef OPTSTR_setsid
-#define OPTSTR_setsid "^<1wc@d[!dc]"
+#define OPTSTR_setsid "^<1t"
 #ifdef CLEANUP_setsid
 #undef CLEANUP_setsid
 #undef FOR_setsid
-#undef FLAG_d
-#undef FLAG_c
-#undef FLAG_w
+#undef FLAG_t
 #endif
 
 // sh   0^(noediting)(noprofile)(norc)sc:i
@@ -3046,9 +3044,9 @@
 #undef FLAG_M
 #endif
 
-// sort gS:T:mo:k*t:xVbMCcszdfirun gS:T:mo:k*t:xVbMCcszdfirun
+// sort gS:T:mo:k*t:xVbMcszdfirun gS:T:mo:k*t:xVbMcszdfirun
 #undef OPTSTR_sort
-#define OPTSTR_sort "gS:T:mo:k*t:xVbMCcszdfirun"
+#define OPTSTR_sort "gS:T:mo:k*t:xVbMcszdfirun"
 #ifdef CLEANUP_sort
 #undef CLEANUP_sort
 #undef FOR_sort
@@ -3061,7 +3059,6 @@
 #undef FLAG_z
 #undef FLAG_s
 #undef FLAG_c
-#undef FLAG_C
 #undef FLAG_M
 #undef FLAG_b
 #undef FLAG_V
@@ -6639,13 +6636,10 @@
 #endif
 
 #ifdef FOR_setsid
-#define CLEANUP_setsid
 #ifndef TT
 #define TT this.setsid
 #endif
-#define FLAG_d (1LL<<0)
-#define FLAG_c (1LL<<1)
-#define FLAG_w (1LL<<2)
+#define FLAG_t (1<<0)
 #endif
 
 #ifdef FOR_sh
@@ -6756,31 +6750,29 @@
 #endif
 
 #ifdef FOR_sort
-#define CLEANUP_sort
 #ifndef TT
 #define TT this.sort
 #endif
-#define FLAG_n (1LL<<0)
-#define FLAG_u (1LL<<1)
-#define FLAG_r (1LL<<2)
-#define FLAG_i (1LL<<3)
-#define FLAG_f (1LL<<4)
-#define FLAG_d (1LL<<5)
-#define FLAG_z (1LL<<6)
-#define FLAG_s (1LL<<7)
-#define FLAG_c (1LL<<8)
-#define FLAG_C (1LL<<9)
-#define FLAG_M (1LL<<10)
-#define FLAG_b (1LL<<11)
-#define FLAG_V (1LL<<12)
-#define FLAG_x (1LL<<13)
-#define FLAG_t (1LL<<14)
-#define FLAG_k (1LL<<15)
-#define FLAG_o (1LL<<16)
-#define FLAG_m (1LL<<17)
-#define FLAG_T (1LL<<18)
-#define FLAG_S (1LL<<19)
-#define FLAG_g (1LL<<20)
+#define FLAG_n (1<<0)
+#define FLAG_u (1<<1)
+#define FLAG_r (1<<2)
+#define FLAG_i (1<<3)
+#define FLAG_f (1<<4)
+#define FLAG_d (1<<5)
+#define FLAG_z (1<<6)
+#define FLAG_s (1<<7)
+#define FLAG_c (1<<8)
+#define FLAG_M (1<<9)
+#define FLAG_b (1<<10)
+#define FLAG_V (1<<11)
+#define FLAG_x (1<<12)
+#define FLAG_t (1<<13)
+#define FLAG_k (1<<14)
+#define FLAG_o (1<<15)
+#define FLAG_m (1<<16)
+#define FLAG_T (1<<17)
+#define FLAG_S (1<<18)
+#define FLAG_g (1<<19)
 #endif
 
 #ifdef FOR_source
@@ -6802,14 +6794,13 @@
 #endif
 
 #ifdef FOR_stat
-#define CLEANUP_stat
 #ifndef TT
 #define TT this.stat
 #endif
-#define FLAG_t (1LL<<0)
-#define FLAG_L (1LL<<1)
-#define FLAG_f (1LL<<2)
-#define FLAG_c (1LL<<3)
+#define FLAG_t (1<<0)
+#define FLAG_L (1<<1)
+#define FLAG_f (1<<2)
+#define FLAG_c (1<<3)
 #endif
 
 #ifdef FOR_strace
