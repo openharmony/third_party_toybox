@@ -95,10 +95,13 @@ void show_help(FILE *out, int flags)
       ZHELP_LEN);
   else hd = (void *)help_data;
 
+#ifdef TOYBOX_OH_ADAPT
+#else
   if (flags & HELP_HEADER)
     fprintf(out, "Toybox %s"USE_TOYBOX(" multicall binary")"%s\n\n",
       toybox_version, (CFG_TOYBOX && i) ? " (see toybox --help)"
       : " (see https://landley.net/toybox)");
+#endif
 
   for (;;) {
     s = (void *)help_data;

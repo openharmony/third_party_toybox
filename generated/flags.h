@@ -2268,34 +2268,29 @@
 #undef FLAG_r
 #endif
 
-// netcat ^tElLw#<1W#<1p#<1>65535q#<1O:o:s:f:46uUnz[!tlL][!Lw][!Lu][!46U][!oO] ^tElLw#<1W#<1p#<1>65535q#<1O:o:s:f:46uUnz[!tlL][!Lw][!Lu][!46U][!oO]
+// netcat ^tlLw#<1W#<1p#<1>65535q#<1s:f:46uU[!tlL][!Lw][!46U] ^tlLw#<1W#<1p#<1>65535q#<1s:f:46uU[!tlL][!Lw][!46U]
 #undef OPTSTR_netcat
 #ifdef TOYBOX_OH_ADAPT
 /* fix "netcat -u" fail problem */
 #define OPTSTR_netcat "^tElLw#<1W#<1p#<1>65535q#<1s:f:46uUn[!tlL][!Lw][!Lu][!46U]"
 #else
-#define OPTSTR_netcat "^tElLw#<1W#<1p#<1>65535q#<1O:o:s:f:46uUnz[!tlL][!Lw][!Lu][!46U][!oO]"
+#define OPTSTR_netcat "^tElLw#<1W#<1p#<1>65535q#<1s:f:46uU[!tlL][!Lw][!46U]"
 #endif
 #ifdef CLEANUP_netcat
 #undef CLEANUP_netcat
 #undef FOR_netcat
-#undef FLAG_z
-#undef FLAG_n
 #undef FLAG_U
 #undef FLAG_u
 #undef FLAG_6
 #undef FLAG_4
 #undef FLAG_f
 #undef FLAG_s
-#undef FLAG_o
-#undef FLAG_O
 #undef FLAG_q
 #undef FLAG_p
 #undef FLAG_W
 #undef FLAG_w
 #undef FLAG_L
 #undef FLAG_l
-#undef FLAG_E
 #undef FLAG_t
 #endif
 
@@ -2450,9 +2445,9 @@
 #undef FLAG_d
 #endif
 
-// patch >2(no-backup-if-mismatch)(dry-run)F#g#fulp#v(verbose)@d:i:Rs(quiet)[!sv] >2(no-backup-if-mismatch)(dry-run)F#g#fulp#v(verbose)@d:i:Rs(quiet)[!sv]
+// patch (no-backup-if-mismatch)(dry-run)g#fulp#d:i:Rs(quiet) (no-backup-if-mismatch)(dry-run)xg#fulp#d:i:Rs(quiet)
 #undef OPTSTR_patch
-#define OPTSTR_patch ">2(no-backup-if-mismatch)(dry-run)F#g#fulp#v(verbose)@d:i:Rs(quiet)[!sv]"
+#define OPTSTR_patch "(no-backup-if-mismatch)(dry-run)g#fulp#d:i:Rs(quiet)"
 #ifdef CLEANUP_patch
 #undef CLEANUP_patch
 #undef FOR_patch
@@ -2460,13 +2455,12 @@
 #undef FLAG_R
 #undef FLAG_i
 #undef FLAG_d
-#undef FLAG_v
 #undef FLAG_p
 #undef FLAG_l
 #undef FLAG_u
 #undef FLAG_f
 #undef FLAG_g
-#undef FLAG_F
+#undef FLAG_x
 #undef FLAG_dry_run
 #undef FLAG_no_backup_if_mismatch
 #endif
@@ -6053,28 +6047,24 @@
 #endif
 
 #ifdef FOR_netcat
-#define CLEANUP_netcat
 #ifndef TT
 #define TT this.netcat
 #endif
-#define FLAG_z (1LL<<0)
-#define FLAG_n (1LL<<1)
-#define FLAG_U (1LL<<2)
-#define FLAG_u (1LL<<3)
-#define FLAG_6 (1LL<<4)
-#define FLAG_4 (1LL<<5)
-#define FLAG_f (1LL<<6)
-#define FLAG_s (1LL<<7)
-#define FLAG_o (1LL<<8)
-#define FLAG_O (1LL<<9)
-#define FLAG_q (1LL<<10)
-#define FLAG_p (1LL<<11)
-#define FLAG_W (1LL<<12)
-#define FLAG_w (1LL<<13)
-#define FLAG_L (1LL<<14)
-#define FLAG_l (1LL<<15)
-#define FLAG_E (1LL<<16)
-#define FLAG_t (1LL<<17)
+#define FLAG_n (1LL<<0)
+#define FLAG_U (1LL<<1)
+#define FLAG_u (1LL<<2)
+#define FLAG_6 (1LL<<3)
+#define FLAG_4 (1LL<<4)
+#define FLAG_f (1LL<<5)
+#define FLAG_s (1LL<<6)
+#define FLAG_q (1LL<<7)
+#define FLAG_p (1LL<<8)
+#define FLAG_W (1LL<<9)
+#define FLAG_w (1LL<<10)
+#define FLAG_L (1LL<<11)
+#define FLAG_l (1LL<<12)
+#define FLAG_E (1LL<<13)
+#define FLAG_t (1LL<<14)
 #endif
 
 #ifdef FOR_netstat
@@ -6217,23 +6207,21 @@
 #endif
 
 #ifdef FOR_patch
-#define CLEANUP_patch
 #ifndef TT
 #define TT this.patch
 #endif
-#define FLAG_s (1LL<<0)
-#define FLAG_R (1LL<<1)
-#define FLAG_i (1LL<<2)
-#define FLAG_d (1LL<<3)
-#define FLAG_v (1LL<<4)
-#define FLAG_p (1LL<<5)
-#define FLAG_l (1LL<<6)
-#define FLAG_u (1LL<<7)
-#define FLAG_f (1LL<<8)
-#define FLAG_g (1LL<<9)
-#define FLAG_F (1LL<<10)
-#define FLAG_dry_run (1LL<<11)
-#define FLAG_no_backup_if_mismatch (1LL<<12)
+#define FLAG_s (1<<0)
+#define FLAG_R (1<<1)
+#define FLAG_i (1<<2)
+#define FLAG_d (1<<3)
+#define FLAG_p (1<<4)
+#define FLAG_l (1<<5)
+#define FLAG_u (1<<6)
+#define FLAG_f (1<<7)
+#define FLAG_g (1<<8)
+#define FLAG_x (FORCED_FLAG<<9)
+#define FLAG_dry_run (1<<10)
+#define FLAG_no_backup_if_mismatch (1<<11)
 #endif
 
 #ifdef FOR_pgrep
@@ -6913,18 +6901,17 @@
 #endif
 
 #ifdef FOR_sysctl
-#define CLEANUP_sysctl
 #ifndef TT
 #define TT this.sysctl
 #endif
-#define FLAG_A (1LL<<0)
-#define FLAG_a (1LL<<1)
-#define FLAG_p (1LL<<2)
-#define FLAG_w (1LL<<3)
-#define FLAG_q (1LL<<4)
-#define FLAG_N (1LL<<5)
-#define FLAG_e (1LL<<6)
-#define FLAG_n (1LL<<7)
+#define FLAG_A (1<<0)
+#define FLAG_a (1<<1)
+#define FLAG_p (1<<2)
+#define FLAG_w (1<<3)
+#define FLAG_q (1<<4)
+#define FLAG_N (1<<5)
+#define FLAG_e (1<<6)
+#define FLAG_n (1<<7)
 #endif
 
 #ifdef FOR_syslogd

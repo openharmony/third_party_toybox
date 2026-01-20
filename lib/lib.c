@@ -1565,3 +1565,22 @@ int smemcmp(char *one, char *two, unsigned long len)
   return ii;
 }
 
+// Slow, but small.
+char *get_line(int fd)
+{
+  char c, *buf = NULL;
+  long len = 0;
+
+  for (;;) {
+    if (1>read(fd, &c, 1)) break;
+    if (!(len & 63)) buf=xrealloc(buf, len+65);
+    if ((buf[len++]=c) == '\n') break;
+  }
+  if (buf) {
+    buf[len]=0;
+    if (buf[--len]=='\n') buf[len]=0;
+  }
+
+  return buf;
+}
+

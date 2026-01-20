@@ -129,7 +129,11 @@
 
 #define HELP_rfkill "usage: rfkill COMMAND [DEVICE]\n\nEnable/disable wireless devices.\n\nCommands:\nlist [DEVICE]   List current state\nblock DEVICE    Disable device\nunblock DEVICE  Enable device\n\nDEVICE is an index number, or one of:\nall, wlan(wifi), bluetooth, uwb(ultrawideband), wimax, wwan, gps, fm."
 
+#ifdef TOYBOX_OH_ADAPT
+#define HELP_ping "usage: ping/ping6 [OPTIONS] HOST\n\nCheck network connectivity by sending packets to a host and reporting\nits response.\n\nSend ICMP ECHO_REQUEST packets to ipv4 or ipv6 addresses and prints each\necho it receives back, with round trip time. Returns true if host alive.\n\nOptions:\n-4, -6		Force IPv4 or IPv6\n-c CNT		Send CNT many packets (default 3, 0 = infinite)\n-f		Flood (print . and \\b to show drops, default -c 15 -i 0.2)\n-i TIME		Interval between packets (default 1, need root for < .2)\n-I IFACE/IP	Source interface or address\n-m MARK		Tag outgoing packets using SO_MARK\n-q		Quiet (stops after one returns true if host is alive)\n-s SIZE		Data SIZE in bytes (default 56)\n-t TTL		Set Time To Live (number of hops)\n-W SEC		Seconds to wait for response after last -c packet (default 3)\n-w SEC		Exit after this many seconds"
+#else
 #define HELP_ping "usage: ping [OPTIONS] HOST\n\nCheck network connectivity by sending packets to a host and reporting\nits response.\n\nSend ICMP ECHO_REQUEST packets to ipv4 or ipv6 addresses and prints each\necho it receives back, with round trip time. Returns true if host alive.\n\nOptions:\n-4, -6		Force IPv4 or IPv6\n-c CNT		Send CNT many packets (default 3, 0 = infinite)\n-f		Flood (print . and \\b to show drops, default -c 15 -i 0.2)\n-i TIME		Interval between packets (default 1, need root for < .2)\n-I IFACE/IP	Source interface or address\n-m MARK		Tag outgoing packets using SO_MARK\n-q		Quiet (stops after one returns true if host is alive)\n-s SIZE		Data SIZE in bytes (default 56)\n-t TTL		Set Time To Live (number of hops)\n-W SEC		Seconds to wait for response after last -c packet (default 3)\n-w SEC		Exit after this many seconds"
+#endif
 
 #define HELP_netstat "usage: netstat [-pWrxwutneal]\n\nDisplay networking information. Default is netstat -tuwx\n\n-r	Routing table\n-a	All sockets (not just connected)\n-l	Listening server sockets\n-t	TCP sockets\n-u	UDP sockets\n-w	Raw sockets\n-x	Unix sockets\n-e	Extended info\n-n	Don't resolve names\n-W	Wide display\n-p	Show PID/program name of sockets"
 
@@ -137,7 +141,7 @@
 /* Remove unsupported -f and -t option */
 #define HELP_netcat "usage: netcat [-46ELUl] [-u] [-wpq #] [-s addr] {IPADDR PORTNUM|COMMAND...}\n\nForward stdin/stdout to a file or network connection.\n\n-4	Force IPv4\n-6	Force IPv6\n-E	Forward stderr\n-L	Listen and background each incoming connection (server mode)\n-U	Use a UNIX domain socket\n-W	SECONDS timeout for more data on an idle connection\n-l	Listen for one incoming connection, then exit\n-p	Local port number\n-q	Quit SECONDS after EOF on stdin, even if stdout hasn't closed yet\n-s	Local source address\n-u	Use UDP\n-w	SECONDS timeout to establish connection\n\nWhen listening the COMMAND line is executed as a child process to handle\nan incoming connection. With no COMMAND -l forwards the connection\nto stdin/stdout. If no -p specified, -l prints the port it bound to and\nbackgrounds itself (returning immediately).\n\nFor a quick-and-dirty server, try something like:\nnetcat -s 127.0.0.1 -p 1234 -tL sh -l"
 #else
-#define HELP_netcat "usage: netcat [-46ELlntUu] [-pqWw #] [-s addr] [-o FILE] {IPADDR PORTNUM|-f FILENAME|COMMAND...}\n\nForward stdin/stdout to a file or network connection.\n\n-4	Force IPv4\n-6	Force IPv6\n-E	Forward stderr\n-f	Use FILENAME (ala /dev/ttyS0) instead of network\n-L	Listen and background each incoming connection (server mode)\n-l	Listen for one incoming connection, then exit\n-n	No DNS lookup\n-o	Hex dump to FILE (show packets, -o- writes hex only to stdout)\n-O	Hex dump to FILE (streaming mode)\n-p	Local port number\n-q	Quit SECONDS after EOF on stdin, even if stdout hasn't closed yet\n-s	Local source address\n-t	Allocate tty\n-u	Use UDP\n-U	Use a UNIX domain socket\n-W	SECONDS timeout for more data on an idle connection\n-w	SECONDS timeout to establish connection\n-z	zero-I/O mode [used for scanning]\n\nWhen listening the COMMAND line is executed as a child process to handle\nan incoming connection. With no COMMAND -l forwards the connection\nto stdin/stdout. If no -p specified, -l prints the port it bound to and\nbackgrounds itself (returning immediately).\n\nFor a quick-and-dirty server, try something like:\nnetcat -s 127.0.0.1 -p 1234 -tL sh -l\n\nOr use \"stty 115200 -F /dev/ttyS0 && stty raw -echo -ctlecho\" with\nnetcat -f to connect to a serial port."
+#define HELP_netcat "usage: netcat [-46ELUlt] [-u] [-wpq #] [-s addr] {IPADDR PORTNUM|-f FILENAME|COMMAND...}\n\nForward stdin/stdout to a file or network connection.\n\n-4	Force IPv4\n-6	Force IPv6\n-E	Forward stderr\n-L	Listen and background each incoming connection (server mode)\n-U	Use a UNIX domain socket\n-W	SECONDS timeout for more data on an idle connection\n-f	Use FILENAME (ala /dev/ttyS0) instead of network\n-l	Listen for one incoming connection, then exit\n-p	Local port number\n-q	Quit SECONDS after EOF on stdin, even if stdout hasn't closed yet\n-s	Local source address\n-t	Allocate tty\n-u	Use UDP\n-w	SECONDS timeout to establish connection\n\nUse \"stty 115200 -F /dev/ttyS0 && stty raw -echo -ctlecho\" with\nnetcat -f to connect to a serial port.\n\nWhen listening the COMMAND line is executed as a child process to handle\nan incoming connection. With no COMMAND -l forwards the connection\nto stdin/stdout. If no -p specified, -l prints the port it bound to and\nbackgrounds itself (returning immediately).\n\nFor a quick-and-dirty server, try something like:\nnetcat -s 127.0.0.1 -p 1234 -tL sh -l"
 #endif
 
 #define HELP_microcom "usage: microcom [-s SPEED] [-X] DEVICE\n\nSimple serial console. Hit CTRL-] for menu.\n\n-s	Set baud rate to SPEED\n-X	Ignore ^] menu escape"
@@ -150,7 +154,11 @@
 
 #define HELP_ftpput "An ftpget that defaults to -s instead of -g"
 
+#ifdef TOYBOX_OH_ADAPT
+#define HELP_ftpget "usage: ftpget/ftpput [-cvgslLmMdD] [-P PORT] [-p PASSWORD] [-u USER] HOST [LOCAL] REMOTE\n\nTalk to ftp server. By default get REMOTE file via passive anonymous\ntransfer, optionally saving under a LOCAL name. Can also send, list, etc.\n\n-c	Continue partial transfer\n-p	Use PORT instead of \"21\"\n-P	Use PASSWORD instead of \"ftpget@\"\n-u	Use USER instead of \"anonymous\"\n-v	Verbose\n\nWays to interact with FTP server:\n-d	Delete file\n-D	Remove directory\n-g	Get file (default)\n-l	List directory\n-L	List (filenames only)\n-m	Move file on server from LOCAL to REMOTE\n-M	mkdir\n-s	Send file"
+#else
 #define HELP_ftpget "usage: ftpget [-cvgslLmMdD] [-P PORT] [-p PASSWORD] [-u USER] HOST [LOCAL] REMOTE\n\nTalk to ftp server. By default get REMOTE file via passive anonymous\ntransfer, optionally saving under a LOCAL name. Can also send, list, etc.\n\n-c	Continue partial transfer\n-p	Use PORT instead of \"21\"\n-P	Use PASSWORD instead of \"ftpget@\"\n-u	Use USER instead of \"anonymous\"\n-v	Verbose\n\nWays to interact with FTP server:\n-d	Delete file\n-D	Remove directory\n-g	Get file (default)\n-l	List directory\n-L	List (filenames only)\n-m	Move file on server from LOCAL to REMOTE\n-M	mkdir\n-s	Send file"
+#endif
 
 #define HELP_yes "usage: yes [args...]\n\nRepeatedly output line until killed. If no args, output 'y'."
 
@@ -188,7 +196,7 @@
 
 #define HELP_tac "usage: tac [FILE...]\n\nOutput lines in reverse order."
 
-#define HELP_sysctl "usage: sysctl [-aeNnqw] [-p [FILE] | KEY[=VALUE]...]\n\nRead/write system control data (under /proc/sys).\n\n-a	Show all values\n-e	Don't warn about unknown keys\n-N	Don't print key values\n-n	Don't print key names\n-p	Read values from FILE (default /etc/sysctl.conf)\n-q	Don't show value after write\n-w	Only write values (object to reading)"
+#define HELP_sysctl "usage: sysctl [-aAeNnqw] [-p [FILE] | KEY[=VALUE]...]\n\nRead/write system control data (under /proc/sys).\n\n-a,A	Show all values\n-e	Don't warn about unknown keys\n-N	Don't print key values\n-n	Don't print key names\n-p	Read values from FILE (default /etc/sysctl.conf)\n-q	Don't show value after write\n-w	Only write values (object to reading)"
 
 #define HELP_switch_root "usage: switch_root [-c /dev/console] NEW_ROOT NEW_INIT...\n\nUse from PID 1 under initramfs to free initramfs, chroot to NEW_ROOT,\nand exec NEW_INIT.\n\n-c	Redirect console to device in NEW_ROOT\n-h	Hang instead of exiting on failure (avoids kernel panic)"
 
@@ -386,7 +394,11 @@
 
 #define HELP_useradd "usage: useradd [-SDH] [-h DIR] [-s SHELL] [-G GRP] [-g NAME] [-u UID] USER [GROUP]\n\nCreate new user, or add USER to GROUP\n\n-D       Don't assign a password\n-g NAME  Real name\n-G GRP   Add user to existing group\n-h DIR   Home directory\n-H       Don't create home directory\n-s SHELL Login shell\n-S       Create a system user\n-u UID   User id"
 
+#ifdef TOYBOX_OH_ADAPT
+#define HELP_traceroute "usage: traceroute [-46FUIldnvr] [-f 1ST_TTL] [-m MAXTTL] [-p PORT] [-q PROBES]\n[-s SRC_IP] [-t TOS] [-w WAIT_SEC] [-g GATEWAY] [-i IFACE] [-z PAUSE_MSEC] HOST [BYTES]\n\nusage: traceroute6 [-dnrv] [-m MAXTTL] [-p PORT] [-q PROBES][-s SRC_IP] [-t TOS] [-w WAIT_SEC]\n  [-i IFACE] HOST [BYTES]\n\nTrace the route to HOST\n\n-4,-6 Force IP or IPv6 name resolution\n-F    Set the don't fragment bit (supports IPV4 only)\n-U    Use UDP datagrams instead of ICMP ECHO (supports IPV4 only)\n-I    Use ICMP ECHO instead of UDP datagrams (supports IPV4 only)\n-l    Display the TTL value of the returned packet (supports IPV4 only)\n-d    Set SO_DEBUG options to socket\n-n    Print numeric addresses\n-v    verbose\n-r    Bypass routing tables, send directly to HOST\n-m    Max time-to-live (max number of hops)(RANGE 1 to 255)\n-p    Base UDP port number used in probes(default 33434)(RANGE 1 to 65535)\n-q    Number of probes per TTL (default 3)(RANGE 1 to 255)\n-s    IP address to use as the source address\n-t    Type-of-service in probe packets (default 0)(RANGE 0 to 255)\n-w    Time in seconds to wait for a response (default 3)(RANGE 0 to 86400)\n-g    Loose source route gateway (8 max) (supports IPV4 only)\n-z    Pause Time in ms (default 0)(RANGE 0 to 86400) (supports IPV4 only)\n-f    Start from the 1ST_TTL hop (instead from 1)(RANGE 1 to 255) (supports IPV4 only)\n-i    Specify a network interface to operate with"
+#else
 #define HELP_traceroute "usage: traceroute [-46FUIldnvr] [-f 1ST_TTL] [-m MAXTTL] [-p PORT] [-q PROBES]\n[-s SRC_IP] [-t TOS] [-w WAIT_SEC] [-g GATEWAY] [-i IFACE] [-z PAUSE_MSEC] HOST [BYTES]\n\ntraceroute6 [-dnrv] [-m MAXTTL] [-p PORT] [-q PROBES][-s SRC_IP] [-t TOS] [-w WAIT_SEC]\n  [-i IFACE] HOST [BYTES]\n\nTrace the route to HOST\n\n-4,-6 Force IP or IPv6 name resolution\n-F    Set the don't fragment bit (supports IPV4 only)\n-U    Use UDP datagrams instead of ICMP ECHO (supports IPV4 only)\n-I    Use ICMP ECHO instead of UDP datagrams (supports IPV4 only)\n-l    Display the TTL value of the returned packet (supports IPV4 only)\n-d    Set SO_DEBUG options to socket\n-n    Print numeric addresses\n-v    verbose\n-r    Bypass routing tables, send directly to HOST\n-m    Max time-to-live (max number of hops)(RANGE 1 to 255)\n-p    Base UDP port number used in probes(default 33434)(RANGE 1 to 65535)\n-q    Number of probes per TTL (default 3)(RANGE 1 to 255)\n-s    IP address to use as the source address\n-t    Type-of-service in probe packets (default 0)(RANGE 0 to 255)\n-w    Time in seconds to wait for a response (default 3)(RANGE 0 to 86400)\n-g    Loose source route gateway (8 max) (supports IPV4 only)\n-z    Pause Time in ms (default 0)(RANGE 0 to 86400) (supports IPV4 only)\n-f    Start from the 1ST_TTL hop (instead from 1)(RANGE 1 to 255) (supports IPV4 only)\n-i    Specify a network interface to operate with"
+#endif
 
 #define HELP_tr "usage: tr [-cdst] SET1 [SET2]\n\nTranslate, squeeze, or delete characters from stdin, writing to stdout\n\n-c/-C  Take complement of SET1\n-d     Delete input characters coded SET1\n-s     Squeeze multiple output characters of SET2 into one character\n-t     Truncate SET1 to length of SET2"
 
@@ -551,7 +563,11 @@
 
 #define HELP_arch "usage: arch\n\nPrint machine (hardware) name, same as uname -m."
 
+#ifdef TOYBOX_OH_ADAPT
+#define HELP_ulimit "usage: ulimit/prlimit [-P PID] [-SHRacdefilmnpqrstuv] [LIMIT]\n\nPrint or set resource limits for process number PID. If no LIMIT specified\n(or read-only -ap selected) display current value (sizes in bytes).\nDefault is ulimit -P $PPID -Sf\" (show soft filesize of your shell).\n\n-P  PID to affect (default $PPID)  -a  Show all limits\n-S  Set/show soft limit            -H  Set/show hard (maximum) limit\n\n-c  Core file size (blocks)        -d  Process data segment (KiB)\n-e  Max scheduling priority        -f  File size (KiB)\n-i  Pending signal count           -l  Locked memory (KiB)\n-m  Resident Set Size (KiB)        -n  Number of open files\n-p  Pipe buffer (512 bytes)        -q  POSIX message queues\n-r  Max realtime priority          -R  Realtime latency (us)\n-s  Stack size (KiB)               -t  Total CPU time (s)\n-u  Maximum processes (this UID)   -v  Virtual memory size (KiB)"
+#else
 #define HELP_ulimit "usage: ulimit [-P PID] [-SHRacdefilmnpqrstuv] [LIMIT]\n\nPrint or set resource limits for process number PID. If no LIMIT specified\n(or read-only -ap selected) display current value (sizes in bytes).\nDefault is ulimit -P $PPID -Sf\" (show soft filesize of your shell).\n\n-P  PID to affect (default $PPID)  -a  Show all limits\n-S  Set/show soft limit            -H  Set/show hard (maximum) limit\n\n-c  Core file size (blocks)        -d  Process data segment (KiB)\n-e  Max scheduling priority        -f  File size (KiB)\n-i  Pending signal count           -l  Locked memory (KiB)\n-m  Resident Set Size (KiB)        -n  Number of open files\n-p  Pipe buffer (512 bytes)        -q  POSIX message queues\n-r  Max realtime priority          -R  Realtime latency (us)\n-s  Stack size (KiB)               -t  Total CPU time (s)\n-u  Maximum processes (this UID)   -v  Virtual memory size (KiB)"
+#endif
 
 #define HELP_tty "usage: tty [-s]\n\nShow filename of terminal connected to stdin. If none print \"not a tty\"\nand exit with nonzero status.\n\n-s	Silent, exit code only"
 
@@ -601,7 +617,7 @@
 
 #define HELP_printf "usage: printf FORMAT [ARGUMENT...]\n\nFormat and print ARGUMENT(s) according to FORMAT, using C printf syntax\n(% escapes for cdeEfgGiosuxX, \\ escapes for abefnrtv0 or \\OCTAL or \\xHEX)."
 
-#define HELP_patch "usage: patch [-Rlsuv] [-d DIR] [-i FILE] [-p DEPTH] [-F FUZZ] [--dry-run] [FILE [PATCH]]\n\nApply a unified diff to one or more files.\n\n-d	Modify files in DIR\n-F	Fuzz factor (number of non-matching context lines allowed per hunk)\n-i	Input patch from FILE (default=stdin)\n-l	Loose match (ignore whitespace)\n-p	Number of '/' to strip from start of file paths (default=all)\n-R	Reverse patch\n-s	Silent except for errors\n-v	Verbose (-vv to see decisions)\n--dry-run Don't change files, just confirm patch applies\n\nOnly handles \"unified\" diff format (-u is assumed and ignored). Only\nmodifies files when all hunks to that file apply. Prints failed hunks\nto stderr, and exits with nonzero status if any hunks fail.\n\nFiles compared against /dev/null (or with a date <= the unix epoch) are\ncreated/deleted as appropriate. Default -F value is the number of\nleading/trailing context lines minus one (usually 2)."
+#define HELP_patch "usage: patch [-d DIR] [-i file] [-p depth] [-Rlsu] [--dry-run]\n\nApply a unified diff to one or more files.\n\n-d	Modify files in DIR\n-i	Input file (default=stdin)\n-l	Loose match (ignore whitespace)\n-p	Number of '/' to strip from start of file paths (default=all)\n-R	Reverse patch\n-s	Silent except for errors\n-u	Ignored (only handles \"unified\" diffs)\n--dry-run Don't change files, just confirm patch applies\n\nThis version of patch only handles unified diffs, and only modifies\na file when all hunks to that file apply.  Patch prints failed hunks\nto stderr, and exits with nonzero status if any hunks fail.\n\nA file compared against /dev/null (or with a date <= the epoch) is\ncreated/deleted as appropriate."
 
 #define HELP_paste "usage: paste [-s] [-d DELIMITERS] [FILE...]\n\nMerge corresponding lines from each input file.\n\n-d	List of delimiter characters to separate fields with (default is \\t)\n-s	Sequential mode: turn each input file into one line of output"
 
@@ -635,7 +651,11 @@
 
 #define HELP_whoami "usage: whoami\n\nPrint the current user name."
 
+#ifdef TOYBOX_OH_ADAPT
+#define HELP_logname "usage: logname/whoami\n\nPrint the current user name."
+#else
 #define HELP_logname "usage: logname\n\nPrint the current user name."
+#endif
 
 #define HELP_groups "usage: groups [user]\n\nPrint the groups a user is in."
 

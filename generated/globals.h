@@ -96,12 +96,11 @@ struct microcom_data {
   struct termios old_stdin, old_fd;
 };
 
-struct netcat_data {
-  char *f, *s, *o, *O;
-  long q, p, W, w;
+// toys/net/netcat.c
 
-  unsigned ofd, olast, opos, ocount[2];
-  char obuf[16];
+struct netcat_data {
+  char *f, *s;
+  long q, p, W, w;
 };
 
 struct netstat_data {
@@ -1233,12 +1232,15 @@ struct paste_data {
   int files;
 };
 
+// toys/posix/patch.c
+
 struct patch_data {
   char *i, *d;
-  long v, p, g, F;
+  long p, g;
 
-  void *current_hunk;
-  long oldline, oldlen, newline, newlen, linenum, outnum;
+  struct double_list *current_hunk;
+  long oldline, oldlen, newline, newlen;
+  long linenum;
   int context, state, filein, fileout, filepatch, hunknum;
   char *tempname;
 };
