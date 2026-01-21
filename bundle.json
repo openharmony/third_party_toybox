@@ -19,7 +19,8 @@
         "syscap": [],
         "features": [
             "toybox_extended_cmd",
-            "toybox_enable_brctl"
+            "toybox_enable_brctl",
+            "toybox_feature_support_usr_symlink"
         ],
         "adapted_system_type": [
             "standard",
