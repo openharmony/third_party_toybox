@@ -1041,9 +1041,9 @@
 #undef FLAG_b
 #endif
 
-// free hgmkb[!hgmkb] hgmkb[!hgmkb]
+// free htgmkb[!htgmkb] htgmkb[!htgmkb]
 #undef OPTSTR_free
-#define OPTSTR_free "hgmkb[!hgmkb]"
+#define OPTSTR_free "htgmkb[!htgmkb]"
 #ifdef CLEANUP_free
 #undef CLEANUP_free
 #undef FOR_free
@@ -1051,6 +1051,7 @@
 #undef FLAG_k
 #undef FLAG_m
 #undef FLAG_g
+#undef FLAG_t
 #undef FLAG_h
 #endif
 
@@ -4932,15 +4933,15 @@
 #endif
 
 #ifdef FOR_free
-#define CLEANUP_free
 #ifndef TT
 #define TT this.free
 #endif
-#define FLAG_b (1LL<<0)
-#define FLAG_k (1LL<<1)
-#define FLAG_m (1LL<<2)
-#define FLAG_g (1LL<<3)
-#define FLAG_h (1LL<<4)
+#define FLAG_b (1<<0)
+#define FLAG_k (1<<1)
+#define FLAG_m (1<<2)
+#define FLAG_g (1<<3)
+#define FLAG_t (1<<4)
+#define FLAG_h (1<<5)
 #endif
 
 #ifdef FOR_freeramdisk

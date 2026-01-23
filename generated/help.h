@@ -155,7 +155,7 @@
 #define HELP_ftpput "An ftpget that defaults to -s instead of -g"
 
 #ifdef TOYBOX_OH_ADAPT
-#define HELP_ftpget "usage: ftpget/ftpput [-cvgslLmMdD] [-P PORT] [-p PASSWORD] [-u USER] HOST [LOCAL] REMOTE\n\nTalk to ftp server. By default get REMOTE file via passive anonymous\ntransfer, optionally saving under a LOCAL name. Can also send, list, etc.\n\n-c	Continue partial transfer\n-p	Use PORT instead of \"21\"\n-P	Use PASSWORD instead of \"ftpget@\"\n-u	Use USER instead of \"anonymous\"\n-v	Verbose\n\nWays to interact with FTP server:\n-d	Delete file\n-D	Remove directory\n-g	Get file (default)\n-l	List directory\n-L	List (filenames only)\n-m	Move file on server from LOCAL to REMOTE\n-M	mkdir\n-s	Send file"
+#define HELP_ftpget "usage: ftpget/ftpput [-cvgslLmMdD] [-p PORT] [-P PASSWORD] [-u USER] HOST [LOCAL] REMOTE\n\nTalk to ftp server. By default get REMOTE file via passive anonymous\ntransfer, optionally saving under a LOCAL name. Can also send, list, etc.\n\n-c	Continue partial transfer\n-p	Use PORT instead of \"21\"\n-P	Use PASSWORD instead of \"ftpget@\"\n-u	Use USER instead of \"anonymous\"\n-v	Verbose\n\nWays to interact with FTP server:\n-d	Delete file\n-D	Remove directory\n-g	Get file (default)\n-l	List directory\n-L	List (filenames only)\n-m	Move file on server from LOCAL to REMOTE\n-M	mkdir\n-s	Send file"
 #else
 #define HELP_ftpget "usage: ftpget [-cvgslLmMdD] [-P PORT] [-p PASSWORD] [-u USER] HOST [LOCAL] REMOTE\n\nTalk to ftp server. By default get REMOTE file via passive anonymous\ntransfer, optionally saving under a LOCAL name. Can also send, list, etc.\n\n-c	Continue partial transfer\n-p	Use PORT instead of \"21\"\n-P	Use PASSWORD instead of \"ftpget@\"\n-u	Use USER instead of \"anonymous\"\n-v	Verbose\n\nWays to interact with FTP server:\n-d	Delete file\n-D	Remove directory\n-g	Get file (default)\n-l	List directory\n-L	List (filenames only)\n-m	Move file on server from LOCAL to REMOTE\n-M	mkdir\n-s	Send file"
 #endif
@@ -336,7 +336,7 @@
 
 #define HELP_freeramdisk "usage: freeramdisk [RAM device]\n\nFree all memory allocated to specified ramdisk"
 
-#define HELP_free "usage: free [-bkmgt]\n\nDisplay the total, free and used amount of physical memory and swap space.\n\n-bkmg	Output units (default is bytes)\n-h	Human readable (K=1024)"
+#define HELP_free "usage: free [-bkmgt]\n\nDisplay the total, free and used amount of physical memory and swap space.\n\n-bkmgt	Output units (default is bytes)\n-h	Human readable (K=1024)"
 
 #define HELP_fmt "usage: fmt [-w WIDTH] [FILE...]\n\nReformat input to wordwrap at a given line length, preserving existing\nindentation level, writing to stdout.\n\n-w WIDTH	Maximum characters per line (default 75)"
 
@@ -356,7 +356,7 @@
 
 #define HELP_count "usage: count [-l]\n\n-l	Long output (total bytes, human readable, transfer rate, elapsed time)\n\nCopy stdin to stdout, displaying simple progress indicator to stderr."
 
-#define HELP_clear "Clear the screen."
+#define HELP_clear "usage: clear\n\nClear the screen."
 
 #define HELP_chrt "usage: chrt [-Rmofrbi] {-p PID [PRIORITY] | [PRIORITY COMMAND...]}\n\nGet/set a process' real-time scheduling policy and priority.\n\n-p	Set/query given pid (instead of running COMMAND)\n-R	Set SCHED_RESET_ON_FORK\n-m	Show min/max priorities available\n\nSet policy (default -r):\n\n  -o  SCHED_OTHER    -f  SCHED_FIFO    -r  SCHED_RR\n  -b  SCHED_BATCH    -i  SCHED_IDLE"
 
