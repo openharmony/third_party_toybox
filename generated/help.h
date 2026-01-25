@@ -240,7 +240,7 @@
 
 #define HELP_printenv "usage: printenv [-0] [env_var...]\n\nPrint environment variables.\n\n-0	Use \\0 as delimiter instead of \\n"
 
-#define HELP_pmap "usage: pmap [-pqx] PID...\n\nReport the memory map of a process or processes.\n\n-p	Show full paths\n-q	Do not show header or footer\n-x	Show the extended format"
+#define HELP_pmap "usage: pmap [-xq] [pids...]\n\nReport the memory map of a process or processes.\n\n-x	Show the extended format\n-q	Do not display some header/footer lines"
 
 #define HELP_pivot_root "usage: pivot_root OLD NEW\n\nSwap OLD and NEW filesystems (as if by simultaneous mount --move), and\nmove all processes with chdir or chroot under OLD into NEW (including\nkernel threads) so OLD may be unmounted.\n\nThe directory NEW must exist under OLD. This doesn't work on initramfs,\nwhich can't be moved (about the same way PID 1 can't be killed; see\nswitch_root instead)."
 
@@ -278,15 +278,15 @@
 
 #define HELP_makedevs "usage: makedevs [-d device_table] rootdir\n\nCreate a range of special files as specified in a device table.\n\n-d	File containing device table (default reads from stdin)\n\nEach line of the device table has the fields:\n<name> <type> <mode> <uid> <gid> <major> <minor> <start> <increment> <count>\nWhere name is the file name, and type is one of the following:\n\nb	Block device\nc	Character device\nd	Directory\nf	Regular file\np	Named pipe (fifo)\n\nOther fields specify permissions, user and group id owning the file,\nand additional fields for device special files. Use '-' for blank entries,\nunspecified fields are treated as '-'."
 
-#define HELP_lsusb "usage: lsusb [-i]\n\nList USB hosts/devices.\n\n-i	ID database (default /etc/usb.ids[.gz])"
+#define HELP_lsusb "usage: lsusb\n\nList USB hosts/devices."
 
-#define HELP_lspci "usage: lspci [-ekmn] [-i FILE]\n\nList PCI devices.\n\n-e	Extended (6 digit) class\n-i	ID database (default /etc/pci.ids[.gz])\n-k	Show kernel driver\n-m	Machine readable\n-n	Numeric output (-nn for both)\n-D	Print domain numbers\n-x	Hex dump of config space (64 bytes; -xxx for 256, -xxxx for 4096)"
+#define HELP_lspci "usage: lspci [-ekmn] [-i FILE ] \n\nList PCI devices.\n-e	Print all 6 digits in class\n-i	PCI ID database (default /usr/share/misc/pci.ids)\n-k	Print kernel driver\n-m	Machine parseable format\n-n	Numeric output (repeat for readable and numeric)"
 
 #define HELP_lsmod "usage: lsmod\n\nDisplay the currently loaded modules, their sizes and their dependencies."
 
-#define HELP_chattr "usage: chattr [-R] [-+=AacDdijsStTu] [-p PROJID] [-v VERSION] [FILE...]\n\nChange file attributes on a Linux file system.\n\n-R	Recurse\n-p	Set the file's project number\n-v	Set the file's version/generation number\n\nOperators:\n  '-' Remove attributes\n  '+' Add attributes\n  '=' Set attributes\n\nAttributes:\n  A  No atime                     a  Append only\n  C  No COW                       c  Compression\n  D  Synchronous dir updates      d  No dump\n  E  Encrypted                    e  Extents\n  F  Case-insensitive (casefold)\n  I  Indexed directory            i  Immutable\n  j  Journal data\n  N  Inline data in inode\n  P  Project hierarchy\n  S  Synchronous file updates     s  Secure delete\n  T  Top of dir hierarchy         t  No tail-merging\n  u  Allow undelete\n  V  Verity"
+#define HELP_chattr "usage: chattr [-R] [-+=AacDdijsStTu] [-v version] [File...]\n\nChange file attributes on a Linux second extended file system.\n\n-R	Recurse\n-v	Set the file's version/generation number\n\nOperators:\n  '-' Remove attributes\n  '+' Add attributes\n  '=' Set attributes\n\nAttributes:\n  A  Don't track atime\n  a  Append mode only\n  c  Enable compress\n  D  Write dir contents synchronously\n  d  Don't backup with dump\n  i  Cannot be modified (immutable)\n  j  Write all data to journal first\n  s  Zero disk storage when deleted\n  S  Write file contents synchronously\n  t  Disable tail-merging of partial blocks with other files\n  u  Allow file to be undeleted"
 
-#define HELP_lsattr "usage: lsattr [-Radlpv] [FILE...]\n\nList file attributes on a Linux file system.\nFlag letters are defined in chattr help.\n\n-R	Recursively list attributes of directories and their contents\n-a	List all files in directories, including files that start with '.'\n-d	List directories like other files, rather than listing their contents\n-l	List long flag names\n-p	List the file's project number\n-v	List the file's version/generation number"
+#define HELP_lsattr "usage: lsattr [-Radlv] [Files...]\n\nList file attributes on a Linux second extended file system.\n(AacDdijsStu defined in chattr --help)\n\n-R	Recursively list attributes of directories and their contents\n-a	List all files in directories, including files that start with '.'\n-d	List directories like other files, rather than listing their contents\n-l	List long flag names\n-v	List the file's version/generation number"
 
 #define HELP_losetup "usage: losetup [-cdrs] [-o OFFSET] [-S SIZE] {-d DEVICE...|-j FILE|-af|{DEVICE FILE}}\n\nAssociate a loopback device with a file, or show current file (if any)\nassociated with a loop device.\n\nInstead of a device:\n-a	Iterate through all loopback devices\n-f	Find first unused loop device (may create one)\n-j FILE	Iterate through all loopback devices associated with FILE\n\nexisting:\n-c	Check capacity (file size changed)\n-d DEV	Detach loopback device\n-D	Detach all loopback devices\n\nnew:\n-s	Show device name (alias --show)\n-o OFF	Start association at offset OFF into FILE\n-r	Read only\n-S SIZE	Limit SIZE of loopback association (alias --sizelimit)"
 
@@ -647,7 +647,7 @@
 
 #define HELP_killall5 "usage: killall5 [-l [SIGNAL]] [-SIGNAL|-s SIGNAL] [-o PID]...\n\nSend a signal to all processes outside current session.\n\n-l	List signal name(s) and number(s)\n-o PID	Omit PID\n-s	Send SIGNAL (default SIGTERM)"
 
-#define HELP_kill "usage: kill [-l [SIGNAL] | -s SIGNAL | -SIGNAL] PID...\n\nSend signal to process(es).\n\n-l	List signal name(s) and number(s)\n-s	Send SIGNAL (default SIGTERM)"
+#define HELP_kill "usage: kill [-l [SIGNAL] | -s SIGNAL | -SIGNAL] pid...\n\nSend signal to process(es).\n\n-l	List signal name(s) and number(s)\n-s	Send SIGNAL (default SIGTERM)"
 
 #define HELP_whoami "usage: whoami\n\nPrint the current user name."
 

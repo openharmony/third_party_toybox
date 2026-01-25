@@ -250,15 +250,12 @@
 #undef FLAG_L
 #endif
 
-// chattr ?p#v#R ?p#v#R
+// chattr    
 #undef OPTSTR_chattr
-#define OPTSTR_chattr "?p#v#R"
+#define OPTSTR_chattr 0
 #ifdef CLEANUP_chattr
 #undef CLEANUP_chattr
 #undef FOR_chattr
-#undef FLAG_R
-#undef FLAG_v
-#undef FLAG_p
 #endif
 
 // chcon   <2hvR
@@ -1964,18 +1961,17 @@
 #undef FLAG_sort
 #endif
 
-// lsattr ldapvR ldapvR
+// lsattr vldaR vldaR
 #undef OPTSTR_lsattr
-#define OPTSTR_lsattr "ldapvR"
+#define OPTSTR_lsattr "vldaR"
 #ifdef CLEANUP_lsattr
 #undef CLEANUP_lsattr
 #undef FOR_lsattr
 #undef FLAG_R
-#undef FLAG_v
-#undef FLAG_p
 #undef FLAG_a
 #undef FLAG_d
 #undef FLAG_l
+#undef FLAG_v
 #endif
 
 // lsmod    
@@ -1997,28 +1993,25 @@
 #undef FLAG_l
 #endif
 
-// lspci eDmkn@x@i: eDmkn@x@i:
+// lspci emkn@i: emkn@i:
 #undef OPTSTR_lspci
-#define OPTSTR_lspci "eDmkn@x@i:"
+#define OPTSTR_lspci "emkn@i:"
 #ifdef CLEANUP_lspci
 #undef CLEANUP_lspci
 #undef FOR_lspci
 #undef FLAG_i
-#undef FLAG_x
 #undef FLAG_n
 #undef FLAG_k
 #undef FLAG_m
-#undef FLAG_D
 #undef FLAG_e
 #endif
 
-// lsusb i: i:
+// lsusb    
 #undef OPTSTR_lsusb
-#define OPTSTR_lsusb "i:"
+#define OPTSTR_lsusb 0
 #ifdef CLEANUP_lsusb
 #undef CLEANUP_lsusb
 #undef FOR_lsusb
-#undef FLAG_i
 #endif
 
 // makedevs <1>1d: <1>1d:
@@ -2556,15 +2549,14 @@
 #undef FLAG_V
 #endif
 
-// pmap <1pqx <1pqx
+// pmap <1xq <1xq
 #undef OPTSTR_pmap
-#define OPTSTR_pmap "<1pqx"
+#define OPTSTR_pmap "<1xq"
 #ifdef CLEANUP_pmap
 #undef CLEANUP_pmap
 #undef FOR_pmap
-#undef FLAG_x
 #undef FLAG_q
-#undef FLAG_p
+#undef FLAG_x
 #endif
 
 // printenv (null)0 (null)0
@@ -4203,13 +4195,9 @@
 #endif
 
 #ifdef FOR_chattr
-#define CLEANUP_chattr
 #ifndef TT
 #define TT this.chattr
 #endif
-#define FLAG_R (1LL<<0)
-#define FLAG_v (1LL<<1)
-#define FLAG_p (1LL<<2)
 #endif
 
 #ifdef FOR_chcon
@@ -5567,12 +5555,11 @@
 #endif
 
 #ifdef FOR_kill
-#define CLEANUP_kill
 #ifndef TT
 #define TT this.kill
 #endif
-#define FLAG_s (1LL<<0)
-#define FLAG_l (1LL<<1)
+#define FLAG_s (1<<0)
+#define FLAG_l (1<<1)
 #endif
 
 #ifdef FOR_killall
@@ -5589,13 +5576,12 @@
 #endif
 
 #ifdef FOR_killall5
-#define CLEANUP_killall5
 #ifndef TT
 #define TT this.killall5
 #endif
-#define FLAG_s (1LL<<0)
-#define FLAG_l (1LL<<1)
-#define FLAG_o (1LL<<2)
+#define FLAG_s (1<<0)
+#define FLAG_l (1<<1)
+#define FLAG_o (1<<2)
 #endif
 
 #ifdef FOR_klogd
@@ -5767,16 +5753,14 @@
 #endif
 
 #ifdef FOR_lsattr
-#define CLEANUP_lsattr
 #ifndef TT
 #define TT this.lsattr
 #endif
-#define FLAG_R (1LL<<0)
-#define FLAG_v (1LL<<1)
-#define FLAG_p (1LL<<2)
-#define FLAG_a (1LL<<3)
-#define FLAG_d (1LL<<4)
-#define FLAG_l (1LL<<5)
+#define FLAG_R (1<<0)
+#define FLAG_a (1<<1)
+#define FLAG_d (1<<2)
+#define FLAG_l (1<<3)
+#define FLAG_v (1<<4)
 #endif
 
 #ifdef FOR_lsmod
@@ -5797,25 +5781,20 @@
 #endif
 
 #ifdef FOR_lspci
-#define CLEANUP_lspci
 #ifndef TT
 #define TT this.lspci
 #endif
-#define FLAG_i (1LL<<0)
-#define FLAG_x (1LL<<1)
-#define FLAG_n (1LL<<2)
-#define FLAG_k (1LL<<3)
-#define FLAG_m (1LL<<4)
-#define FLAG_D (1LL<<5)
-#define FLAG_e (1LL<<6)
+#define FLAG_i (1<<0)
+#define FLAG_n (1<<1)
+#define FLAG_k (1<<2)
+#define FLAG_m (1<<3)
+#define FLAG_e (1<<4)
 #endif
 
 #ifdef FOR_lsusb
-#define CLEANUP_lsusb
 #ifndef TT
 #define TT this.lsusb
 #endif
-#define FLAG_i (1LL<<0)
 #endif
 
 #ifdef FOR_makedevs
@@ -6303,13 +6282,11 @@
 #endif
 
 #ifdef FOR_pmap
-#define CLEANUP_pmap
 #ifndef TT
 #define TT this.pmap
 #endif
-#define FLAG_x (1LL<<0)
-#define FLAG_q (1LL<<1)
-#define FLAG_p (1LL<<2)
+#define FLAG_q (1<<0)
+#define FLAG_x (1<<1)
 #endif
 
 #ifdef FOR_printenv
