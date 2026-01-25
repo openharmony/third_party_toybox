@@ -10,17 +10,15 @@
  * Copyright 2014 Kyungwan Han <asura321@gamil.com>
  *
  * No Standard
- *
- * TODO: toysh jobspec support, -n -L
 
-USE_KILL(NEWTOY(kill, "?ls: ", TOYFLAG_BIN|TOYFLAG_MAYFORK))
+USE_KILL(NEWTOY(kill, "?ls: ", TOYFLAG_BIN))
 USE_KILLALL5(NEWTOY(killall5, "?o*ls: [!lo][!ls]", TOYFLAG_SBIN))
 
 config KILL
   bool "kill"
   default y
   help
-    usage: kill [-l [SIGNAL] | -s SIGNAL | -SIGNAL] PID...
+    usage: kill [-l [SIGNAL] | -s SIGNAL | -SIGNAL] pid...
 
     Send signal to process(es).
 
@@ -53,6 +51,7 @@ GLOBALS(
 
 // But kill's flags are a subset of killall5's
 
+#define CLEANUP_kill
 #define FOR_killall5
 #include "generated/flags.h"
 
@@ -66,13 +65,12 @@ void kill_main(void)
   if (FLAG(l)) {
     if (*args) {
       int signum = sig_to_num(*args);
-      char *s = 0;
+      char *s = NULL;
 
       if (signum>=0) s = num_to_sig(signum&127);
       if (isdigit(**args)) puts(s ? s : "UNKNOWN");
       else printf("%d\n", signum);
     } else list_signals();
-
     return;
   }
 
@@ -82,7 +80,6 @@ void kill_main(void)
   if (TT.s) {
     char *arg;
     int i = strtol(TT.s, &arg, 10);
-
     if (!*arg) arg = num_to_sig(i);
     else arg = TT.s;
 
@@ -109,10 +106,7 @@ void kill_main(void)
 
     sid = getsid(pid = getpid());
 
-    if (!(dp = opendir("/proc"))) {
-      free(olist);
-      perror_exit("/proc");
-    }
+    if (!(dp = opendir("/proc"))) perror_exit("/proc");
     while ((entry = readdir(dp))) {
       int count, procpid, procsid;
 
@@ -120,9 +114,7 @@ void kill_main(void)
 
       snprintf(toybuf, sizeof(toybuf), "/proc/%d/stat", procpid);
       if (!readfile(toybuf, toybuf, sizeof(toybuf))) continue;
-      // command name can have embedded space and/or )
-      if (!(tmp = strrchr(toybuf, ')'))
-          || sscanf(tmp, " %*c %*d %*d %d", &procsid) != 1) continue;
+      if (sscanf(toybuf, "%*d %*s %*c %*d %*d %d", &procsid) != 1) continue;
       if (pid == procpid || sid == procsid || procpid == 1) continue;
 
       // Check for kernel threads.
@@ -130,14 +122,16 @@ void kill_main(void)
       if (!readfile(toybuf, toybuf, sizeof(toybuf)) || !*toybuf) continue;
 
       // Check with omit list.
-      for (count = 0; count < ocount; count++)
+      for (count = 0; count < ocount; count++) 
         if (procpid == olist[count]) break;
       if (count != ocount) continue;
 
       kill(procpid, signum);
     }
-    closedir(dp);
-    free(olist);
+    if (CFG_TOYBOX_FREE) {
+      closedir(dp);
+      free(olist);
+    }
 
   // is it kill?
   } else {
@@ -148,9 +142,8 @@ void kill_main(void)
     while (*args) {
       char *arg = *(args++);
 
-      pid = estrtol(arg, &tmp, 10);
-      if (!errno && *tmp) errno = ESRCH;
-      if (errno || kill(pid, signum)<0) perror_msg("bad pid '%s'", arg);
+      pid = strtol(arg, &tmp, 10);
+      if (*tmp || kill(pid, signum) < 0) error_msg("unknown pid '%s'", arg);
     }
   }
 }

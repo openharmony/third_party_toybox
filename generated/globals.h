@@ -243,20 +243,14 @@ struct losetup_data {
   char *dir;
 };
 
-struct lsattr_data {
-  long v, p;
 
-  unsigned add, rm, set;
-  // !add and !rm tell us whether they were used, but `chattr =` is meaningful.
-  int have_set;
-};
+// toys/other/lspci.c
 
-struct lsusb_data {
+struct lspci_data {
   char *i;
-  long x, n;
+  long n;
 
-  void *ids, *class;
-  int count;
+  FILE *db;
 };
 
 struct makedevs_data {
@@ -1165,6 +1159,8 @@ struct id_data {
   int is_groups;
 };
 
+// toys/posix/kill.c
+
 struct kill_data {
   char *s;
   struct arg_list *o;
@@ -1446,8 +1442,7 @@ extern union global_union {
 	struct ionice_data ionice;
 	struct login_data login;
 	struct losetup_data losetup;
-	struct lsattr_data lsattr;
-	struct lsusb_data lsusb;
+	struct lspci_data lspci;
 	struct makedevs_data makedevs;
 	struct mix_data mix;
 	struct mkpasswd_data mkpasswd;
