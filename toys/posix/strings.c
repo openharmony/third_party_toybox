@@ -78,7 +78,9 @@ flush:
     if (count == wlen) xputc('\n');
     count = 0;
   }
+#ifndef TOYBOX_OH_ADAPT
   xclose(fd);
+#endif
   free(string);
 }
 

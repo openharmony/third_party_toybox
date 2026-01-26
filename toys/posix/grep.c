@@ -168,6 +168,13 @@ static void do_grep(int fd, char *name)
     if (len<1) break;
     if (line[ulen-1] == TT.delim) line[--ulen] = 0;
 
+#ifdef TOYBOX_OH_ADAPT
+    // avoid stack leak when dealing with NUL bytes
+    if (!FLAG(z)) {
+      ulen = strlen(line);
+    }
+#endif
+
     // Prepare for next line
     start = line;
     for (shoe = (void *)TT.reg; shoe; shoe = shoe->next) shoe->rc = 0;

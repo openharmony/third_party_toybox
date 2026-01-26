@@ -1538,6 +1538,16 @@ static void bargraph(char *label, unsigned width, unsigned long span[4])
   printf("\e[0m]");
 }
 
+#ifdef TOYBOX_OH_ADAPT
+// add cmp_lt to support compare with tid.
+static int cmp_lt(struct procpid *x, struct procpid *y)
+{
+  // returns 1 if x < y with key = (slot[SLOT_pid], slot[SLOT_tid])
+  return (x->slot[SLOT_pid] < y->slot[SLOT_pid]) ||
+         (x->slot[SLOT_pid] == y->slot[SLOT_pid] && x->slot[SLOT_tid] < y->slot[SLOT_tid]);
+}
+#endif
+
 static void top_common(
   int (*filter)(long long *oslot, long long *nslot, int milis))
 {
@@ -1603,7 +1613,11 @@ static void top_common(
                      *ntb = new.count ? *new.tb : 0;
 
       // If we just have old for this process, it exited. Discard it.
+#ifdef TOYBOX_OH_ADAPT
+      if (old.count && (!new.count || cmp_lt(otb, ntb))) {
+#else
       if (old.count && (!new.count || *otb->slot < *ntb->slot)) {
+#endif
         old.tb++;
         old.count--;
 
@@ -1611,7 +1625,11 @@ static void top_common(
       }
 
       // If we just have new, use it verbatim
+#ifdef TOYBOX_OH_ADAPT
+      if (!old.count || cmp_lt(ntb, otb)) mix.tb[mix.count] = ntb;
+#else
       if (!old.count || *otb->slot > *ntb->slot) mix.tb[mix.count] = ntb;
+#endif
       else {
         // Keep or discard
         if (filter(otb->slot, ntb->slot, new.whence-old.whence)) {
