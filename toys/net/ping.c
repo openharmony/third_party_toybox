@@ -30,7 +30,7 @@ config PING
     -4, -6		Force IPv4 or IPv6
     -c CNT		Send CNT many packets (default 3, 0 = infinite)
     -f		Flood (print . and \b to show drops, default -c 15 -i 0.2)
-    -i TIME		Interval between packets (default 1, need root for < .2)
+    -i TIME		Interval between packets (default 1, need root for < 0.2)
     -I IFACE/IP	Source interface or address
     -m MARK		Tag outgoing packets using SO_MARK
     -q		Quiet (stops after one returns true if host is alive)

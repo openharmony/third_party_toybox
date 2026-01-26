@@ -53,6 +53,11 @@ static int prompt(FILE *cin, const char* fmt, ...)
   vfprintf(stdout, fmt, ap);
   va_end(ap);
 
+#ifdef TOYBOX_OH_ADAPT
+  // Clean up styles after Ctrl+C and other operations.
+  printf("\33[0m");
+#endif
+  
   while (1) {
     fflush(NULL);
     input_key = tolower(getc(cin));
@@ -61,7 +66,11 @@ static int prompt(FILE *cin, const char* fmt, ...)
       fflush(NULL);
       return input_key;
     }
+#ifdef TOYBOX_OH_ADAPT
+    printf("\33[7m(Enter:Next line Space:Next page Q:Quit R:Show the rest)\33[0m");
+#else
     printf("\33[7m(Enter:Next line Space:Next page Q:Quit R:Show the rest)");
+#endif
   }
 }
 

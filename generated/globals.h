@@ -1062,8 +1062,10 @@ struct cp_data {
   int pflags;
 };
 
+// toys/posix/cpio.c
+
 struct cpio_data {
-  char *F, *H, *R;
+  char *F, *p, *H;
 };
 
 struct cut_data {

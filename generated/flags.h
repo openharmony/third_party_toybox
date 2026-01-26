@@ -426,9 +426,9 @@
 #undef FLAG_preserve
 #endif
 
-// cpio (ignore-devno)(renumber-inodes)(quiet)(no-preserve-owner)R(owner):md(make-directories)uLH:p|i|t|F:v(verbose)o|[!pio][!pot][!pF] (ignore-devno)(renumber-inodes)(quiet)(no-preserve-owner)R(owner):md(make-directories)uLH:p|i|t|F:v(verbose)o|[!pio][!pot][!pF]
+// cpio (no-preserve-owner)(trailer)mduH:p:|i|t|F:v(verbose)o|[!pio][!pot][!pF] (no-preserve-owner)(trailer)mduH:p:|i|t|F:v(verbose)o|[!pio][!pot][!pF]
 #undef OPTSTR_cpio
-#define OPTSTR_cpio "(ignore-devno)(renumber-inodes)(quiet)(no-preserve-owner)R(owner):md(make-directories)uLH:p|i|t|F:v(verbose)o|[!pio][!pot][!pF]"
+#define OPTSTR_cpio "(no-preserve-owner)(trailer)mduH:p:|i|t|F:v(verbose)o|[!pio][!pot][!pF]"
 #ifdef CLEANUP_cpio
 #undef CLEANUP_cpio
 #undef FOR_cpio
@@ -439,15 +439,11 @@
 #undef FLAG_i
 #undef FLAG_p
 #undef FLAG_H
-#undef FLAG_L
 #undef FLAG_u
 #undef FLAG_d
 #undef FLAG_m
-#undef FLAG_R
+#undef FLAG_trailer
 #undef FLAG_no_preserve_owner
-#undef FLAG_quiet
-#undef FLAG_renumber_inodes
-#undef FLAG_ignore_devno
 #endif
 
 // crc32    
@@ -4354,26 +4350,21 @@
 #endif
 
 #ifdef FOR_cpio
-#define CLEANUP_cpio
 #ifndef TT
 #define TT this.cpio
 #endif
-#define FLAG_o (1LL<<0)
-#define FLAG_v (1LL<<1)
-#define FLAG_F (1LL<<2)
-#define FLAG_t (1LL<<3)
-#define FLAG_i (1LL<<4)
-#define FLAG_p (1LL<<5)
-#define FLAG_H (1LL<<6)
-#define FLAG_L (1LL<<7)
-#define FLAG_u (1LL<<8)
-#define FLAG_d (1LL<<9)
-#define FLAG_m (1LL<<10)
-#define FLAG_R (1LL<<11)
-#define FLAG_no_preserve_owner (1LL<<12)
-#define FLAG_quiet (1LL<<13)
-#define FLAG_renumber_inodes (1LL<<14)
-#define FLAG_ignore_devno (1LL<<15)
+#define FLAG_o (1<<0)
+#define FLAG_v (1<<1)
+#define FLAG_F (1<<2)
+#define FLAG_t (1<<3)
+#define FLAG_i (1<<4)
+#define FLAG_p (1<<5)
+#define FLAG_H (1<<6)
+#define FLAG_u (1<<7)
+#define FLAG_d (1<<8)
+#define FLAG_m (1<<9)
+#define FLAG_trailer (1<<10)
+#define FLAG_no_preserve_owner (1<<11)
 #endif
 
 #ifdef FOR_crc32
