@@ -3415,13 +3415,12 @@
 #undef FLAG_p
 #endif
 
-// timeout <2^(foreground)(preserve-status)vk:s(signal):i <2^(foreground)(preserve-status)vk:s(signal):i
+// timeout <2^(foreground)(preserve-status)vk:s(signal): <2^(foreground)(preserve-status)vk:s(signal):
 #undef OPTSTR_timeout
-#define OPTSTR_timeout "<2^(foreground)(preserve-status)vk:s(signal):i"
+#define OPTSTR_timeout "<2^(foreground)(preserve-status)vk:s(signal):"
 #ifdef CLEANUP_timeout
 #undef CLEANUP_timeout
 #undef FOR_timeout
-#undef FLAG_i
 #undef FLAG_s
 #undef FLAG_k
 #undef FLAG_v
@@ -3898,9 +3897,9 @@
 #undef FLAG_a
 #endif
 
-// xargs ^E:P#<0(null)=1optr(no-run-if-empty)n#<1(max-args)s#0[!0E] ^E:P#<0(null)=1optr(no-run-if-empty)n#<1(max-args)s#0[!0E]
+// xargs ^E:P#optrn#<1(max-args)s#0[!0E] ^E:P#optrn#<1(max-args)s#0[!0E]
 #undef OPTSTR_xargs
-#define OPTSTR_xargs "^E:P#<0(null)=1optr(no-run-if-empty)n#<1(max-args)s#0[!0E]"
+#define OPTSTR_xargs "^E:P#optrn#<1(max-args)s#0[!0E]"
 #ifdef CLEANUP_xargs
 #undef CLEANUP_xargs
 #undef FOR_xargs
@@ -7076,16 +7075,14 @@
 #endif
 
 #ifdef FOR_timeout
-#define CLEANUP_timeout
 #ifndef TT
 #define TT this.timeout
 #endif
-#define FLAG_i (1LL<<0)
-#define FLAG_s (1LL<<1)
-#define FLAG_k (1LL<<2)
-#define FLAG_v (1LL<<3)
-#define FLAG_preserve_status (1LL<<4)
-#define FLAG_foreground (1LL<<5)
+#define FLAG_s (1<<0)
+#define FLAG_k (1<<1)
+#define FLAG_v (1<<2)
+#define FLAG_preserve_status (1<<3)
+#define FLAG_foreground (1<<4)
 #endif
 
 #ifdef FOR_top
@@ -7519,19 +7516,18 @@
 #endif
 
 #ifdef FOR_xargs
-#define CLEANUP_xargs
 #ifndef TT
 #define TT this.xargs
 #endif
-#define FLAG_0 (1LL<<0)
-#define FLAG_s (1LL<<1)
-#define FLAG_n (1LL<<2)
-#define FLAG_r (1LL<<3)
-#define FLAG_t (1LL<<4)
-#define FLAG_p (1LL<<5)
-#define FLAG_o (1LL<<6)
-#define FLAG_P (1LL<<7)
-#define FLAG_E (1LL<<8)
+#define FLAG_0 (1<<0)
+#define FLAG_s (1<<1)
+#define FLAG_n (1<<2)
+#define FLAG_r (1<<3)
+#define FLAG_t (1<<4)
+#define FLAG_p (1<<5)
+#define FLAG_o (1<<6)
+#define FLAG_P (1<<7)
+#define FLAG_E (1<<8)
 #endif
 
 #ifdef FOR_xxd
