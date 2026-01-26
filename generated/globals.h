@@ -368,12 +368,15 @@ struct tac_data {
   struct double_list *dl;
 };
 
+// toys/other/timeout.c
+
 struct timeout_data {
   char *s, *k;
 
-  struct pollfd pfd;
-  sigjmp_buf sj;
-  int fds[2], pid, rc;
+  int nextsig;
+  pid_t pid;
+  struct timeval ktv;
+  struct itimerval itv;
 };
 
 struct truncate_data {
@@ -1389,14 +1392,17 @@ struct wc_data {
   unsigned long totals[5];
 };
 
+// toys/posix/xargs.c
+
 struct xargs_data {
   long s, n, P;
   char *E;
 
-  long entries, bytes, np;
+  long entries, bytes;
   char delim;
   FILE *tty;
 };
+
 extern union global_union {
 	struct dmesg_data dmesg;
 	struct gzip_data gzip;
