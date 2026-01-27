@@ -10,7 +10,7 @@ config SHRED
   bool "shred"
   default y
   help
-    usage: shred [-fuz] [-n COUNT] [-s SIZE] FILE...
+    usage: shred [-fuxz] [-n COUNT] [-o OFFSET] [-s SIZE] FILE...
 
     Securely delete a file by overwriting its contents with random data.
 
@@ -37,7 +37,7 @@ void shred_main(void)
 {
   char **try;
 
-  if (!(toys.optflags & FLAG_n)) TT.n++;
+  if (!FLAG(n)) TT.n++;
 
   // We don't use loopfiles() here because "-" isn't stdin, and want to
   // respond to files we can't open via chmod.
@@ -47,7 +47,7 @@ void shred_main(void)
     int fd = open(*try, O_RDWR), iter = 0, throw;
 
     // do -f chmod if necessary
-    if (fd == -1 && (toys.optflags & FLAG_f)) {
+    if (fd == -1 && FLAG(f)) {
 #ifdef TOYBOX_OH_ADAPT
       chmod(*try, 0660);
 #else
@@ -92,14 +92,12 @@ void shred_main(void)
       // Determine length, read random data if not zeroing, write.
 
       throw = sizeof(toybuf);
-      if (toys.optflags & FLAG_x)
-        if (len-pos < throw) throw = len-pos;
+      if (FLAG(x) && len-pos < throw) throw = len-pos;
 
-      if (iter != TT.n) xgetrandom(toybuf, throw, 0);
+      if (iter != TT.n) xgetrandom(toybuf, throw);
       if (throw != writeall(fd, toybuf, throw)) perror_msg_raw(*try);
       pos += throw;
     }
-    if (toys.optflags & FLAG_u)
-      if (unlink(*try)) perror_msg("unlink '%s'", *try);
+    if (FLAG(u) && unlink(*try)) perror_msg("unlink '%s'", *try);
   }
 }

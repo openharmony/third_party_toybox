@@ -45,12 +45,12 @@
  * TODO: pgrep -f only searches the amount of cmdline that fits in toybuf.
  * TODO: pgrep qemu-system-i386 never matches because one char too long
 
-USE_PS(NEWTOY(ps, "k(sort)*P(ppid)*aAdeflMno*O*p(pid)*s*t*Tu*U*g*G*wZ[!ol][+Ae][!oO]", TOYFLAG_BIN|TOYFLAG_LOCALE))
+USE_PS(NEWTOY(ps, "k(sort)*P(ppid)*aAdeflMno*O*p(pid)*s*t*Tu*U*g*G*wZ[!ol][+Ae][!oO]", TOYFLAG_BIN))
 // stayroot because iotop needs root to read other process' proc/$$/io
 // TOP and IOTOP have a large common option block used for common processing,
 // the default values are different but the flags are in the same order.
-USE_TOP(NEWTOY(top, ">0O*h" "Hk*o*p*u*s#<1d%<100=3000m#n#<1bq[!oO]", TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_LOCALE))
-USE_IOTOP(NEWTOY(iotop, ">0AaKO" "Hk*o*p*u*s#<1=7d%<100=3000m#n#<1bq", TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_STAYROOT|TOYFLAG_LOCALE))
+USE_TOP(NEWTOY(top, ">0O*h" "Hk*o*p*u*s#<1d%<100=3000m#n#<1bq[!oO]", TOYFLAG_USR|TOYFLAG_BIN))
+USE_IOTOP(NEWTOY(iotop, ">0AaKO" "Hk*o*p*u*s#<1=7d%<100=3000m#n#<1bq", TOYFLAG_USR|TOYFLAG_BIN|TOYFLAG_STAYROOT))
 USE_PGREP(NEWTOY(pgrep, "?cld:u*U*t*s*P*g*G*fnovxL:[-no]", TOYFLAG_USR|TOYFLAG_BIN))
 USE_PKILL(NEWTOY(pkill,    "?Vu*U*t*s*P*g*G*fnovxl:[-no]", TOYFLAG_USR|TOYFLAG_BIN))
 
@@ -287,6 +287,7 @@ struct procpid {
   long long slot[SLOT_count]; // data (see enum above)
   unsigned short offset[6];   // offset of fields in str[] (skip CMD, always 0)
   char state;
+  char pcy[3];                // Android scheduling policy
   char str[];                 // CMD, TTY, WCHAN, LABEL, COMM, ARGS, NAME
 };
 
@@ -632,7 +633,7 @@ static char *string_field(struct procpid *tb, struct ofields *field)
     out = out+strlen(out)-3-abs(field->len);
     if (out<buf) out = buf;
 
-  } else if (which==PS_PCY) sprintf(out, "%.2s", get_sched_policy_name(ll));
+  } else if (which==PS_PCY) sprintf(out, "%.2s", tb->pcy);
   else if (CFG_TOYBOX_DEBUG) error_exit("bad which %d", which);
 
   return out;
@@ -721,6 +722,7 @@ static int get_ps(struct dirtree *new)
   struct procpid *tb = (void *)toybuf;
   long long *slot = tb->slot;
   char *name, *s, *buf = tb->str, *end = 0;
+  FILE *fp;
   struct sysinfo si;
   int i, j, fd;
   off_t len;
@@ -852,8 +854,25 @@ static int get_ps(struct dirtree *new)
   }
 
   // Do we need Android scheduling policy?
-  if (TT.bits&_PS_PCY)
-    get_sched_policy(slot[SLOT_tid], (void *)&slot[SLOT_pcy]);
+  if (TT.bits&_PS_PCY) {
+    // Find the cpuset line in "/proc/$pid/cgroup", extract the final field,
+    // and translate it to one of Android's traditional 2-char names.
+    // TODO: if other Linux systems start using cgroups, conditionalize this.
+    sprintf(buf, "/proc/%lld/cgroup", slot[SLOT_tid]);
+    if ((fp = fopen(buf, "re"))) {
+      char *s, *line;
+      while ((line = xgetline(fp))) {
+        if ((s = strstr(line, ":cpuset:/"))) {
+          s += strlen(":cpuset:/");
+          sprintf(tb->pcy, "%.2s","? fgfg  bgtarswicd"+2*anystr(s, (char *[]){
+            "", "foreground", "system-background", "background", "top-app",
+            "restricted", "foreground_window", "camera-daemon", 0}));
+        }
+        free(line);
+      }
+      fclose(fp);
+    } else strcpy(tb->pcy, "-");
+  }
 
   // Done using buf[] (tb->str) as scratch space, now read string data,
   // saving consective null terminated strings. (Save starting offsets into
@@ -929,10 +948,9 @@ static int get_ps(struct dirtree *new)
 
         // Couldn't find it, try all the tty drivers.
         if (i == 3) {
-          FILE *fp = fopen("/proc/tty/drivers", "r");
           int tty_major = 0, maj = dev_major(rdev), min = dev_minor(rdev);
 
-          if (fp) {
+          if ((fp = fopen("/proc/tty/drivers", "r"))) {
             while (fscanf(fp, "%*s %256s %d %*s %*s", buf, &tty_major) == 2) {
               // TODO: we could parse the minor range too.
               if (tty_major == maj) {
@@ -981,7 +999,7 @@ static int get_ps(struct dirtree *new)
 
       // Store end of argv[0] so ARGS and CMDLINE can differ.
       // We do it for each file string slot but last is cmdline, which sticks.
-      slot[SLOT_argv0len] = temp ? temp : len;  // Position of _first_ NUL
+      slot[SLOT_argv0len] = temp ? : len;  // Position of _first_ NUL
     }
 
     // Each case above calculated/retained len, so we don't need to re-strlen.
@@ -1166,8 +1184,9 @@ static char *parse_rest(void *data, char *str, int len)
     if (pl==&TT.ss && ll[pl->len]==0) ll[pl->len] = getsid(0);
   }
 
+  // PID can't be zero but SID can be 0 before the init task calls setsid().
   if (pl==&TT.pp || pl==&TT.ss) {
-    if (num && ll[pl->len]>0) {
+    if (num && ll[pl->len]>-(pl==&TT.ss)) {
       pl->len++;
 
       return 0;
@@ -1519,6 +1538,7 @@ static void bargraph(char *label, unsigned width, unsigned long span[4])
   printf("\e[0m]");
 }
 
+#ifdef TOYBOX_OH_ADAPT
 // add cmp_lt to support compare with tid.
 static int cmp_lt(struct procpid *x, struct procpid *y)
 {
@@ -1526,6 +1546,7 @@ static int cmp_lt(struct procpid *x, struct procpid *y)
   return (x->slot[SLOT_pid] < y->slot[SLOT_pid]) ||
          (x->slot[SLOT_pid] == y->slot[SLOT_pid] && x->slot[SLOT_tid] < y->slot[SLOT_tid]);
 }
+#endif
 
 static void top_common(
   int (*filter)(long long *oslot, long long *nslot, int milis))
@@ -1540,13 +1561,11 @@ static void top_common(
     "iow", "irq", "sirq", "host"};
   unsigned tock = 0;
   int i, lines, topoff = 0, done = 0;
-  char stdout_buf[8192];
 
   if (!TT.fields) perror_exit("no -o");
 
   // Avoid flicker and hide the cursor in interactive mode.
   if (!FLAG(b)) {
-    setbuffer(stdout, stdout_buf, sizeof(stdout_buf));
     sigatexit(top_cursor_cleanup);
     xputsn("\e[?25l");
   }
@@ -1594,7 +1613,11 @@ static void top_common(
                      *ntb = new.count ? *new.tb : 0;
 
       // If we just have old for this process, it exited. Discard it.
+#ifdef TOYBOX_OH_ADAPT
       if (old.count && (!new.count || cmp_lt(otb, ntb))) {
+#else
+      if (old.count && (!new.count || *otb->slot < *ntb->slot)) {
+#endif
         old.tb++;
         old.count--;
 
@@ -1602,7 +1625,11 @@ static void top_common(
       }
 
       // If we just have new, use it verbatim
+#ifdef TOYBOX_OH_ADAPT
       if (!old.count || cmp_lt(ntb, otb)) mix.tb[mix.count] = ntb;
+#else
+      if (!old.count || *otb->slot > *ntb->slot) mix.tb[mix.count] = ntb;
+#endif
       else {
         // Keep or discard
         if (filter(otb->slot, ntb->slot, new.whence-old.whence)) {
@@ -1633,10 +1660,10 @@ static void top_common(
         /* fix "iotop -m 10" show 13 lines problem*/
         if (TT.top.m) {
           if (toys.which->name[0] == 'i') {
-            // iotop 命令
+            // iotop 鍛戒护
             TT.height = TT.top.m + 2;
           } else {
-            // top 命令
+            // top 鍛戒护
             TT.height = TT.top.m + 5;
           }
         }
@@ -1773,13 +1800,15 @@ static void top_common(
       if (timeout<=now) timeout = new.whence+TT.top.d;
       if (timeout<=now || timeout>now+TT.top.d) timeout = now+TT.top.d;
 
+      fflush(stdout);
+
       // In batch mode, we ignore the keyboard.
       if (FLAG(b)) {
         msleep(timeout-now);
         // Make an obvious gap between datasets.
         xputs("\n\n");
         break;
-      } else fflush(stdout);
+      }
 
       recalc = 1;
       i = scan_key_getsize(scratch, timeout-now, &TT.width, &TT.height);

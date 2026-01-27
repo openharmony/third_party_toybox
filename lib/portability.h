@@ -4,11 +4,9 @@
 // in specific compiler, library, or OS versions, localize all that here
 // and in portability.c
 
-// For musl
-#define _ALL_SOURCE
-#ifndef REG_STARTEND
-#define REG_STARTEND 0
-#endif
+// Always use long file support.
+// This must come before we #include any system header file to take effect!
+#define _FILE_OFFSET_BITS 64
 
 #ifdef __APPLE__
 // macOS 10.13 doesn't have the POSIX 2008 direct access to timespec in
@@ -21,33 +19,44 @@
 #define st_mtim st_mtimespec
 #endif
 
+// For musl
+#define _ALL_SOURCE
+#include <regex.h>
+#ifndef REG_STARTEND
+#define REG_STARTEND 0
+#endif
+
+// for some reason gnu/libc only sets these if you #define ia_ia_stallman_ftaghn
+// despite FreeBSD and MacOS having both with the same value, and bionic's
+// "upstream-openbsd" directory documenting them as "BSD extensions".
+// (The flexible extension would have been an fnmatch() that returns length
+// matched at location so we could check trailing data ourselves, but no.
+// And it's ANSI only case matching instead of UTF8...)
+#include <fnmatch.h>
+#ifndef FNM_LEADING_DIR
+#define FNM_LEADING_DIR   8
+#endif
+#ifndef FNM_CASEFOLD
+#define FNM_CASEFOLD     16
+#endif
+
 // Test for gcc (using compiler builtin #define)
 
 #ifdef __GNUC__
-#ifndef __clang__
 #define QUIET = 0 // shut up false positive "may be used uninitialized" warning
-#else
-#define QUIET
-#endif
 #define printf_format	__attribute__((format(printf, 1, 2)))
 #else
+#define QUIET
 #define printf_format
 #endif
 
-// Always use long file support.
-#define _FILE_OFFSET_BITS 64
-
-// This isn't in the spec, but it's how we determine what libc we're using.
-
-// Types various replacement prototypes need.
-// This also lets us determine what libc we're using. Systems that
-// have <features.h> will transitively include it, and ones that don't --
-// macOS -- won't break.
+// This lets us determine what libc we're using: systems that have <features.h>
+// will transitively include it, and ones that don't (macOS) won't break.
 #include <sys/types.h>
 
 // Various constants old build environments might not have even if kernel does
 
-#ifndef AT_FDCWD
+#ifndef AT_FDCWD             // Kernel commit 5590ff0d5528 2006
 #define AT_FDCWD -100
 #endif
 
@@ -59,11 +68,11 @@
 #define AT_REMOVEDIR 0x200
 #endif
 
-#ifndef RLIMIT_RTTIME
+#ifndef RLIMIT_RTTIME // Commit 78f2c7db6068f 2008
 #define RLIMIT_RTTIME 15
 #endif
 
-// Introduced in Linux 3.1
+// Introduced in Linux 3.1 (Commit 982d816581eee 2011)
 #ifndef SEEK_DATA
 #define SEEK_DATA 3
 #endif
@@ -82,7 +91,7 @@
 // claim it's in the name of Gnu.
 
 #if defined(__GLIBC__)
-// "Function prototypes shall be provided." but aren't.
+// Glibc violates posix: "Function prototypes shall be provided." but aren't.
 // http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/unistd.h.html
 char *crypt(const char *key, const char *salt);
 
@@ -95,19 +104,21 @@ int wcwidth(wchar_t wc);
 #include <time.h>
 char *strptime(const char *buf, const char *format, struct tm *tm);
 
-// They didn't like posix basename so they defined another function with the
+// Gnu didn't like posix basename so they defined another function with the
 // same name and if you include libgen.h it #defines basename to something
 // else (where they implemented the real basename), and that define breaks
 // the table entry for the basename command. They didn't make a new function
 // with a different name for their new behavior because gnu.
 //
-// Solution: don't use their broken header, provide an inline to redirect the
-// correct name to the broken name.
+// Solution: don't use their broken header and provide an inline to redirect
+// the standard name to the renamed function with the standard behavior.
 
 char *dirname(char *path);
 char *__xpg_basename(char *path);
 static inline char *basename(char *path) { return __xpg_basename(path); }
 char *strcasestr(const char *haystack, const char *needle);
+void *memmem(const void *haystack, size_t haystack_length,
+  const void *needle, size_t needle_length);
 #endif // defined(glibc)
 
 #if !defined(__GLIBC__)
@@ -117,45 +128,25 @@ char *strcasestr(const char *haystack, const char *needle);
 
 // Work out how to do endianness
 
+#define IS_LITTLE_ENDIAN (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#define IS_BIG_ENDIAN (!IS_LITTLE_ENDIAN)
+
 #ifdef __APPLE__
 
 #include <libkern/OSByteOrder.h>
-
-#ifdef __BIG_ENDIAN__
-#define IS_BIG_ENDIAN 1
-#else
-#define IS_BIG_ENDIAN 0
-#endif
-
 #define bswap_16(x) OSSwapInt16(x)
 #define bswap_32(x) OSSwapInt32(x)
 #define bswap_64(x) OSSwapInt64(x)
-
-#elif defined(__FreeBSD__)
-
+#elif defined(__FreeBSD__) || defined(__OpenBSD__)
 #include <sys/endian.h>
-
-#if _BYTE_ORDER == _BIG_ENDIAN
-#define IS_BIG_ENDIAN 1
+#define bswap_16(x) bswap16(x)
+#define bswap_32(x) bswap32(x)
+#define bswap_64(x) bswap64(x)
 #else
-#define IS_BIG_ENDIAN 0
-#endif
-
-#else
-
 #include <byteswap.h>
-#include <endian.h>
-
-#if __BYTE_ORDER == __BIG_ENDIAN
-#define IS_BIG_ENDIAN 1
-#else
-#define IS_BIG_ENDIAN 0
-#endif
-
 #endif
 
 #if IS_BIG_ENDIAN
-#define IS_LITTLE_ENDIAN 0
 #define SWAP_BE16(x) (x)
 #define SWAP_BE32(x) (x)
 #define SWAP_BE64(x) (x)
@@ -163,7 +154,6 @@ char *strcasestr(const char *haystack, const char *needle);
 #define SWAP_LE32(x) bswap_32(x)
 #define SWAP_LE64(x) bswap_64(x)
 #else
-#define IS_LITTLE_ENDIAN 1
 #define SWAP_BE16(x) bswap_16(x)
 #define SWAP_BE32(x) bswap_32(x)
 #define SWAP_BE64(x) bswap_64(x)
@@ -182,13 +172,20 @@ char *strcasestr(const char *haystack, const char *needle);
 
 #ifdef __APPLE__
 #include <util.h>
-#elif !defined(__FreeBSD__)
+#elif !defined(__FreeBSD__) && !defined(__OpenBSD__)
 #include <pty.h>
 #else
 #include <termios.h>
 #ifndef IUTF8
 #define IUTF8 0
 #endif
+#endif
+
+#ifdef __linux__
+#include <sys/personality.h>
+#else
+#define PER_LINUX32 0
+int personality(int);
 #endif
 
 #if defined(__APPLE__) || defined(__linux__)
@@ -206,17 +203,30 @@ ssize_t xattr_lset(const char*, const char*, const void*, size_t, int);
 ssize_t xattr_fset(int, const char*, const void*, size_t, int);
 #endif
 
-// macOS doesn't have mknodat, but we can fake it.
-#ifdef __APPLE__
+#if defined(__APPLE__)
+// macOS doesn't have these functions, but we can fake them.
 int mknodat(int, const char*, mode_t, dev_t);
+int posix_fallocate(int, off_t, off_t);
+
+// macOS keeps newlocale(3) in the non-POSIX <xlocale.h> rather than <locale.h>.
+#include <xlocale.h>
 #endif
+
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+static inline long statfs_bsize(struct statfs *sf) { return sf->f_iosize; }
+static inline long statfs_frsize(struct statfs *sf) { return sf->f_bsize; }
+#else
+static inline long statfs_bsize(struct statfs *sf) { return sf->f_bsize; }
+static inline long statfs_frsize(struct statfs *sf) { return sf->f_frsize; }
+#endif
+
 
 // Android is missing some headers and functions
 // "generated/config.h" is included first
-#if CFG_TOYBOX_SHADOW
+#if __has_include(<shadow.h>)
 #include <shadow.h>
 #endif
-#if CFG_TOYBOX_UTMPX
+#if __has_include(<utmpx.h>)
 #include <utmpx.h>
 #else
 struct utmpx {int ut_type;};
@@ -228,6 +238,9 @@ static inline void endutxent(void) {;}
 
 // Some systems don't define O_NOFOLLOW, and it varies by architecture, so...
 #include <fcntl.h>
+#if defined(__APPLE__)
+#define O_PATH 0
+#else
 #ifndef O_NOFOLLOW
 #define O_NOFOLLOW 0
 #endif
@@ -242,6 +255,7 @@ static inline void endutxent(void) {;}
 #endif
 #ifndef SCHED_RESET_ON_FORK
 #define SCHED_RESET_ON_FORK (1<<30)
+#endif
 #endif
 
 // Glibc won't give you linux-kernel constants unless you say "no, a BUD lite"
@@ -265,8 +279,12 @@ typedef float FLOAT;
 pid_t xfork(void);
 #endif
 
-//#define strncpy(...) @@strncpyisbadmmkay@@
-//#define strncat(...) @@strncatisbadmmkay@@
+// gratuitously memsets ALL the extra space with zeroes (not just a terminator)
+// but to make up for it truncating doesn't null terminate the output at all.
+// There are occasions to use it, but it is NOT A GENERAL PURPOSE FUNCTION.
+// #define strncpy(...) @@strncpyisbadmmkay@@
+// strncat writes a null terminator one byte PAST the buffer size it's given.
+#define strncat(...) strncatisbadmmkay(__VA_ARGS__)
 
 // Support building the Android tools on glibc, so hermetic AOSP builds can
 // use toybox before they're ready to switch to host bionic.
@@ -284,25 +302,17 @@ typedef enum android_LogPriority {
   ANDROID_LOG_FATAL,
   ANDROID_LOG_SILENT,
 } android_LogPriority;
-static inline int __android_log_write(int pri, const char *tag, const char *msg)
+#endif
+#if !defined(__BIONIC__) || defined(__ANDROID_NDK__)
+// Android NDKv18 has liblog.so but not liblog.a for static builds.
+static inline int stub_out_log_write(int pri, const char *tag, const char *msg)
 {
   return -1;
 }
-#endif
-
-// libprocessgroup is an Android platform library not included in the NDK.
-#if defined(__BIONIC__) && __has_include(<processgroup/sched_policy.h>)
-#include <processgroup/sched_policy.h>
-#else
-static inline int get_sched_policy(int tid, void *policy) {return 0;}
-static inline char *get_sched_policy_name(int policy) {return "unknown";}
-#endif
-
-// Android NDKv18 has liblog.so but not liblog.c for static builds,
-// stub it out for now.
 #ifdef __ANDROID_NDK__
-#define __android_log_write(a, b, c) (0)
-#define adjtime(x, y) (0)
+#define __android_log_write(a, b, c) stub_out_log_write(a, b, c)
+#endif
+
 #endif
 
 #ifndef SYSLOG_NAMES
@@ -310,10 +320,10 @@ typedef struct {char *c_name; int c_val;} CODE;
 extern CODE prioritynames[], facilitynames[];
 #endif
 
-#if CFG_TOYBOX_GETRANDOM
+#if __has_include (<sys/random.h>)
 #include <sys/random.h>
 #endif
-int xgetrandom(void *buf, unsigned len, unsigned flags);
+void xgetrandom(void *buf, unsigned len);
 
 // Android's bionic libc doesn't have confstr.
 #ifdef __BIONIC__
@@ -334,10 +344,6 @@ struct xnotify *xnotify_init(int max);
 int xnotify_add(struct xnotify *not, int fd, char *path);
 int xnotify_wait(struct xnotify *not, char **path);
 
-#ifdef __APPLE__
-#define f_frsize f_iosize
-#endif
-
 int sig_to_num(char *s);
 char *num_to_sig(int sig);
 
@@ -346,3 +352,33 @@ struct signame {
   char *name;
 };
 void xsignal_all_killers(void *handler);
+
+// Different OSes encode major/minor device numbers differently.
+int dev_minor(int dev);
+int dev_major(int dev);
+int dev_makedev(int major, int minor);
+
+char *fs_type_name(struct statfs *statfs);
+
+int get_block_device_size(int fd, unsigned long long *size);
+int rename_exchange(char *file1, char *file2);
+
+#ifdef __APPLE__
+// Apple doesn't have POSIX timers; this is "just enough" for timeout(1).
+typedef int timer_t;
+struct itimerspec {
+  struct timespec it_value;
+};
+int timer_create(clock_t c, struct sigevent *se, timer_t *t);
+int timer_settime(timer_t t, int flags, struct itimerspec *new, void *old);
+#elif defined(__GLIBC__)
+// Work around a glibc bug that interacts badly with a gcc bug.
+#include <syscall.h>
+#include <signal.h>
+#include <time.h>
+int timer_create_wrap(clockid_t c, struct sigevent *se, timer_t *t);
+#define timer_create(...) timer_create_wrap(__VA_ARGS__)
+int timer_settime_wrap(timer_t t, int flags, struct itimerspec *val,
+  struct itimerspec *old);
+#define timer_settime(...) timer_settime_wrap(__VA_ARGS__)
+#endif
