@@ -4,29 +4,29 @@
  *
  * See http://refspecs.linuxfoundation.org/LSB_4.1.0/LSB-Core-generic/LSB-Core-generic/dmesg.html
  *
- * Don't ask me why the horrible new dmesg API is still in "testing":
+ * Linux 6.0 celebrates the 10th anniversary of this being in "testing":
  * http://kernel.org/doc/Documentation/ABI/testing/dev-kmsg
 
-// We care that FLAG_c is 1, so keep c at the end.
-USE_DMESG(NEWTOY(dmesg, "w(follow)CSTtrs#<1n#c[!Ttr][!Cc][!Sw]", TOYFLAG_BIN))
+USE_DMESG(NEWTOY(dmesg, "w(follow)W(follow-new)CSTtrs#<1n#c[!Ttr][!Cc][!SWw]", TOYFLAG_BIN|TOYFLAG_LINEBUF))
 
 config DMESG
   bool "dmesg"
   default y
   help
-    usage: dmesg [-Cc] [-r|-t|-T] [-n LEVEL] [-s SIZE] [-w]
+    usage: dmesg [-Cc] [-r|-t|-T] [-n LEVEL] [-s SIZE] [-w|-W]
 
     Print or control the kernel ring buffer.
 
     -C	Clear ring buffer without printing
     -c	Clear ring buffer after printing
-    -n	Set kernel logging LEVEL (1-9)
+    -n	Set kernel logging LEVEL (1-8)
     -r	Raw output (with <level markers>)
     -S	Use syslog(2) rather than /dev/kmsg
     -s	Show the last SIZE many bytes
     -T	Human readable timestamps
     -t	Don't print timestamps
     -w	Keep waiting for more output (aka --follow)
+    -W	Wait for output, only printing new messages
 */
 
 #define FOR_dmesg
@@ -42,13 +42,13 @@ GLOBALS(
 
 static void color(int c)
 {
-  if (TT.use_color) printf("\033[%dm", c);
+  if (TT.use_color) printf("\e[%dm", c);
 }
 
 static void format_message(char *msg, int new)
 {
   unsigned long long time_s, time_us;
-  int facpri, subsystem, pos;
+  int facpri, subsystem, pos, ii, jj, in, out;
   char *p, *text;
 
   // The new /dev/kmsg and the old syslog(2) formats differ slightly.
@@ -74,15 +74,21 @@ static void format_message(char *msg, int new)
 #endif
 
   // To get "raw" output for /dev/kmsg we need to add priority to each line
-  if (toys.optflags&FLAG_r) {
+  if (FLAG(r)) {
     color(0);
     printf("<%d>", facpri);
+  } else for (in = out = subsystem;; ) {
+    jj = 0;
+    if (text[in]=='\\'&& 1==sscanf(text+in, "\\x%2x%n", &ii, &jj) && jj==4) {
+      in += 4;
+      text[out++] = ii;
+    } else if (!(text[out++] = text[in++])) break;
   }
 
   // Format the time.
-  if (!(toys.optflags&FLAG_t)) {
+  if (!FLAG(t)) {
     color(32);
-    if (toys.optflags&FLAG_T) {
+    if (FLAG(T)) {
       time_t t = TT.tea+time_s;
       char *ts = ctime(&t);
 
@@ -126,33 +132,33 @@ void dmesg_main(void)
 
   if (TT.use_color) sigatexit(dmesg_cleanup);
   // If we're displaying output, is it klogctl or /dev/kmsg?
-  if (toys.optflags & (FLAG_C|FLAG_n)) goto no_output;
+  if (FLAG(C)||FLAG(n)) goto no_output;
 
-  if (toys.optflags&FLAG_T) {
+  if (FLAG(T)) {
     struct sysinfo info;
 
     sysinfo(&info);
     TT.tea = time(0)-info.uptime;
   }
 
-  if (!(toys.optflags&FLAG_S)) {
+  if (!FLAG(S)) {
     char msg[8193]; // CONSOLE_EXT_LOG_MAX+1
     ssize_t len;
     int fd;
 
     // Each read returns one message. By default, we block when there are no
     // more messages (--follow); O_NONBLOCK is needed for for usual behavior.
-    fd = open("/dev/kmsg", O_RDONLY|(O_NONBLOCK*!(toys.optflags&FLAG_w)));
+    fd = open("/dev/kmsg", O_RDONLY|O_NONBLOCK*!(FLAG(w) || FLAG(W)));
     if (fd == -1) goto klogctl_mode;
 
     // SYSLOG_ACTION_CLEAR(5) doesn't actually remove anything from /dev/kmsg,
     // you need to seek to the last clear point.
-    lseek(fd, 0, SEEK_DATA);
+    lseek(fd, 0, FLAG(W) ? SEEK_END : SEEK_DATA);
 
     for (;;) {
       // why does /dev/kmesg return EPIPE instead of EAGAIN if oldest message
       // expires as we read it?
-      if (-1==(len = read(fd, msg, sizeof(msg))) && errno==EPIPE) continue;
+      if (-1==(len = read(fd, msg, sizeof(msg)-1)) && errno==EPIPE) continue;
       // read() from kmsg always fails on a pre-3.5 kernel.
       if (len==-1 && errno==EINVAL) goto klogctl_mode;
       if (len<1) break;
@@ -169,7 +175,7 @@ klogctl_mode:
     // Figure out how much data we need, and fetch it.
     if (!(size = TT.s)) size = xklogctl(10, 0, 0);
     data = from = xmalloc(size+1);
-    data[size = xklogctl(3+(toys.optflags&FLAG_c), data, size)] = 0;
+    data[size = xklogctl(3+FLAG(c), data, size)] = 0;
 
     // Send each line to format_message.
     to = data + size;
@@ -185,8 +191,8 @@ klogctl_mode:
 
 no_output:
   // Set the log level?
-  if (toys.optflags & FLAG_n) xklogctl(8, 0, TT.n);
+  if (FLAG(n)) xklogctl(8, 0, TT.n);
 
   // Clear the buffer?
-  if (toys.optflags & (FLAG_C|FLAG_c)) xklogctl(5, 0, 0);
+  if (FLAG(C)||FLAG(c)) xklogctl(5, 0, 0);
 }

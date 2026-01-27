@@ -10,11 +10,10 @@
  *   add -Z -ll --color
  *   Posix says the -l date format should vary based on how recent it is
  *   and we do --time-style=long-iso instead
- *   ignore -k because we default to 1024 byte blocks
  * Deviations from gnu: -N switches off -q (no --show-control-chars)
  *   No --quoting-style=shell-escape, mostly because no short or long opt for it
 
-USE_LS(NEWTOY(ls, "(sort):(color):;(full-time)(block-size)#=1024<1(show-control-chars)\241(group-directories-first)\376ZgoACFHLNRSUXabcdfhikl@mnpqrstuw#=80<0x1[-Cxm1][-Cxml][-Cxmo][-Cxmg][-cu][-ftS][-HL][-Nqb]", TOYFLAG_BIN|TOYFLAG_LOCALE))
+USE_LS(NEWTOY(ls, "(sort):(color):;(full-time)(show-control-chars)\377(block-size)#=1024<1\241(group-directories-first)\376ZgoACFHLNRSUXabcdfhikl@mnpqrstuw#=80<0x1[-Cxm1][-Cxml][-Cxmo][-Cxmg][-cu][-ftS][-HL][-Nqb][-k\377]", TOYFLAG_BIN))
 
 config LS
   bool "ls"
@@ -31,22 +30,23 @@ config LS
     -H  follow command line symlinks   -i  inode number
     -L  follow symlinks                -N  no escaping, even on tty
     -p  put '/' after dir names        -q  unprintable chars as '?'
-    -R  recursively list in subdirs    -s  storage used (in --block-size)
+    -R  recursively list in subdirs    -s  storage used (units of --block-size)
     -Z  security context
 
     output formats:
     -1  list one file per line         -C  columns (sorted vertically)
     -g  like -l but no owner           -h  human readable sizes
-    -l  long (show full details)       -ll long with nanoseconds (--full-time)
-    -m  comma separated                -n  long with numeric uid/gid
-    -o  long without group column      -r  reverse order
-    -w  set column width               -x  columns (horizontal sort)
+    -k  reset --block-size to default  -l  long (show full details)
+    -m  comma separated                -ll long with nanoseconds (--full-time)
+    -n  long with numeric uid/gid      -o  long without group column
+    -r  reverse order                  -w  set column width
+    -x  columns (horizontal sort)
 
     sort by:  (also --sort=longname,longname... ends with alphabetical)
     -c  ctime      -r  reverse    -S  size     -t  time    -u  atime    -U  none
     -X  extension  -!  dirfirst   -~  nocase
 
-    --block-size N	block size (default 1024)
+    --block-size N	block size for -s (default 1024, -k resets to 1024)
     --color  =always (default)  =auto (when stdout is tty) =never
         exe=green  suid=red  suidfile=redback  stickydir=greenback
         device=yellow  symlink=turquoise/red  dir=blue  socket=purple
@@ -330,8 +330,11 @@ static int filter(struct dirtree *new)
 
   if (FLAG(u)) new->st.st_mtime = new->st.st_atime;
   if (FLAG(c)) new->st.st_mtime = new->st.st_ctime;
+#ifdef TOYBOX_OH_ADAPT
   new->st.st_blocks = (new->st.st_blocks + 1) >> 1; // Use 1KiB blocks rather than 512B blocks.
-
+#else
+  new->st.st_blocks >>= 1; // Use 1KiB blocks rather than 512B blocks.
+#endif
   if (FLAG(a)||FLAG(f)) return DIRTREE_SAVE;
   if (!FLAG(A) && *new->name=='.') return 0;
 

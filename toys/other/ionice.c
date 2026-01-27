@@ -6,7 +6,7 @@
  * Documentation/block/ioprio.txt in the linux source.
 
 USE_IONICE(NEWTOY(ionice, "^tc#<0>3=2n#<0>7=5p#", TOYFLAG_USR|TOYFLAG_BIN))
-USE_IORENICE(NEWTOY(iorenice, "?<1>3", TOYFLAG_USR|TOYFLAG_BIN))
+USE_IORENICE(NEWTOY(iorenice, "<1>3", TOYFLAG_USR|TOYFLAG_BIN))
 
 config IONICE
   bool "ionice"
@@ -37,37 +37,37 @@ config IORENICE
 
 #define FOR_ionice
 #include "toys.h"
-#include <sys/syscall.h>
 
 GLOBALS(
-  long pid;
-  long level;
-  long class;
+  long p, n, c;
 )
 
-static int ioprio_get(void)
+static int xioprio_get(void)
 {
-  return syscall(__NR_ioprio_get, 1, (int)TT.pid);
+  int p = syscall(__NR_ioprio_get, 1, (int)TT.p);
+
+  if (p==-1) perror_exit("read priority");
+
+  return p;
 }
 
-static int ioprio_set(void)
+static void xioprio_set(void)
 {
-  int prio = ((int)TT.class << 13) | (int)TT.level;
-
-  return syscall(__NR_ioprio_set, 1, (int)TT.pid, prio);
+  if (-1 == syscall(__NR_ioprio_set, 1, (int)TT.p, (int)((TT.c<<13)|TT.n)))
+    if (!FLAG(t)) perror_exit("set priority");
 }
 
 void ionice_main(void)
 {
-  if (!TT.pid && !toys.optc) error_exit("Need -p or COMMAND");
+  if (!TT.p && !toys.optc) error_exit("Need -p or COMMAND");
   if (toys.optflags == FLAG_p) {
-    int p = ioprio_get();
+    int p = xioprio_get();
+
     xprintf("%s: prio %d\n",
-      (char *[]){"unknown", "Realtime", "Best-effort", "Idle"}[(p>>13)&3],
-      p&7);
+      (char *[]){"unknown", "Realtime", "Best-effort", "Idle"}[(p>>13)&3], p&7);
   } else {
-    if (-1 == ioprio_set() && !(toys.optflags&FLAG_t)) perror_exit("set");
-    if (!TT.pid) xexec(toys.optargs);
+    xioprio_set();
+    if (!TT.p) xexec(toys.optargs);
   }
 }
 
@@ -75,23 +75,20 @@ void iorenice_main(void)
 {
   char *classes[] = {"none", "rt", "be", "idle"};
 
-  TT.pid = atolx(*toys.optargs);
+  TT.p = atolx(*toys.optargs);
   if (toys.optc == 1) {
-    int p = ioprio_get();
+    int p = xioprio_get();
 
-    if (p == -1) perror_exit("read priority");
-    TT.class = (p>>13)&3;
-    p &= 7;
-    xprintf("Pid %ld, class %s (%ld), prio %d\n",
-            TT.pid, classes[TT.class], TT.class, p);
+    xprintf("Pid %ld, class %s (%d), prio %d\n", TT.p, classes[(p>>13)&3],
+      (p>>13)&3, p&7);
     return;
   }
 
-  for (TT.class = 0; TT.class<4; TT.class++)
-    if (!strcmp(toys.optargs[toys.optc-1], classes[TT.class])) break;
-  if (toys.optc == 3 || TT.class == 4) TT.level = atolx(toys.optargs[1]);
-  else TT.level = 4;
-  TT.class &= 3;
+  for (TT.c = 0; TT.c<4; TT.c++)
+    if (!strcmp(toys.optargs[toys.optc-1], classes[TT.c])) break;
+  if (toys.optc == 3 || TT.c == 4) TT.n = atolx(toys.optargs[1]);
+  else TT.n = 4;
+  TT.c &= 3;
 
-  if (-1 == ioprio_set()) perror_exit("set");
+  xioprio_set();
 }

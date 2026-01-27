@@ -1,20 +1,32 @@
-/* interestingtimes.c - cursor control
+/* tty.c - cursor control
  *
  * Copyright 2015 Rob Landley <rob@landley.net>
+ *
+ * Common ANSI (See https://man7.org/linux/man-pages/man4/console_codes.4.html)
+ * \e[#m   - color change           \e[y;xH - jump to x/y pos (1;1 is top left)
+ * \e[K    - delete to EOL          \e[25l  - disable cursor (h to enable)
+ * \e[1L   - Insert 1 (blank) line  \e[1M   - Delete 1 line (scrolling rest up)
+ * \e[2J   - clear screen
+ *
+ * colors: 0=black 1=red 2=green 3=brown 4=blue 5=purple 6=cyan 7=grey
+ *         +30 foreground, +40 background.
+ *         \e[1m = bright, \e[2m = dark, \e[0m = reset to defaults
+ *         \e[1;32;2;42mhello\e[0m - dark green text on light green background
  */
 
 #include "toys.h"
 
+// Check stdout, stderr, stdin (in that order) and if none open /dev/tty
 int tty_fd(void)
 {
   int i, j;
 
   for (i = 0; i<3; i++) if (isatty(j = (i+1)%3)) return j;
 
-  return notstdio(open("/dev/tty", O_RDWR));
+  return xnotstdio(open("/dev/tty", O_RDWR));
 }
 
-// Quick and dirty query size of terminal, doesn't do ANSI probe fallback.
+// Query size of terminal (without ANSI probe fallback).
 // set x=80 y=25 before calling to provide defaults. Returns 0 if couldn't
 // determine size.
 
@@ -24,8 +36,8 @@ int terminal_size(unsigned *xx, unsigned *yy)
   unsigned i, x = 0, y = 0;
   char *s;
 
-  // stdin, stdout, stderr
-  for (i=0; i<3; i++) {
+  // Check stdin, stdout, stderr
+  for (i = 0; i<3; i++) {
     memset(&ws, 0, sizeof(ws));
     if (isatty(i) && !ioctl(i, TIOCGWINSZ, &ws)) {
       if (ws.ws_col) x = ws.ws_col;
@@ -59,116 +71,121 @@ int terminal_probesize(unsigned *xx, unsigned *yy)
 #ifdef TOYBOX_OH_ADAPT
   // fix garble for 'top -k aa'
 #else
-  xprintf("\033[s\033[999C\033[999B\033[6n\033[u");
+  xprintf("\e[s\e[999C\e[999B\e[6n\e[u");
 #endif
 
   return 0;
 }
 
-void xsetspeed(struct termios *tio, int speed)
-{
-  int i, speeds[] = {50, 75, 110, 134, 150, 200, 300, 600, 1200, 1800, 2400,
-                    4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800,
-                    500000, 576000, 921600, 1000000, 1152000, 1500000, 2000000,
-                    2500000, 3000000, 3500000, 4000000};
+// This table skips both B0 and BOTHER
+static const int speeds[] = {50, 75, 110, 134, 150, 200, 300, 600, 1200, 1800,
+  2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800, 500000, 576000,
+  921600, 1000000, 1152000, 1500000, 2000000, 2500000, 3000000,3500000,4000000};
 
-  // Find speed in table, adjust to constant
-  for (i = 0; i < ARRAY_LEN(speeds); i++) if (speeds[i] == speed) break;
-  if (i == ARRAY_LEN(speeds)) error_exit("unknown speed: %d", speed);
-  cfsetspeed(tio, i+1+4081*(i>15));
+// Show bits per second for cfspeed value. Assumes we have a valid speed
+unsigned cfspeed2bps(unsigned speed)
+{
+  if (!(speed&15)) return 0;
+  if (speed>15) speed = (speed&15)+15;
+
+  return speeds[--speed];
 }
 
+// Convert bits per second to cfspeed value. Returns 0 for unknown bps
+unsigned bps2cfspeed(unsigned baud)
+{
+  int i = 0;
+
+  while (i<ARRAY_LEN(speeds))
+    if (speeds[i++]==baud) return i+(i>15)*(4096-16+1);
+
+  return 0;
+}
+
+void xsetspeed(struct termios *tio, int bps)
+{
+  int i = bps2cfspeed(bps);
+
+  if (!i) error_exit("unknown speed: %d", bps);
+  cfsetspeed(tio, i);
+}
 
 // Reset terminal to known state, saving copy of old state if old != NULL.
 int set_terminal(int fd, int raw, int speed, struct termios *old)
 {
-  struct termios termio;
-  int i = tcgetattr(fd, &termio);
+  struct termios tio;
+  int i = tcgetattr(fd, &tio);
 
   // Fetch local copy of old terminfo, and copy struct contents to *old if set
   if (i) return i;
-  if (old) *old = termio;
+  if (old) *old = tio;
 
-  // the following are the bits set for an xterm. Linux text mode TTYs by
-  // default add two additional bits that only matter for serial processing
-  // (turn serial line break into an interrupt, and XON/XOFF flow control)
+  cfmakeraw(&tio);
+  if (speed) xsetspeed(&tio, speed);
+  if (!raw) {
+    // Put the "cooked" bits back.
 
-  // Any key unblocks output, swap CR and NL on input
-  termio.c_iflag = IXANY|ICRNL|INLCR;
-  if (toys.which->flags & TOYFLAG_LOCALE) termio.c_iflag |= IUTF8;
+    // Convert CR to NL on input, UTF8 aware backspace, Any key unblocks input.
+    tio.c_iflag |= ICRNL|IUTF8|IXANY;
 
-  // Output appends CR to NL, does magic undocumented postprocessing
-  termio.c_oflag = ONLCR|OPOST;
+    // Output appends CR to NL and does magic undocumented postprocessing.
+    tio.c_oflag |= OPOST|ONLCR;
 
-  // Leave serial port speed alone
-  // termio.c_cflag = C_READ|CS8|EXTB;
+    // 8 bit chars, enable receiver.
+    tio.c_cflag |= CS8|CREAD;
 
-  // Generate signals, input entire line at once, echo output
-  // erase, line kill, escape control characters with ^
-  // erase line char at a time
-  // "extended" behavior: ctrl-V quotes next char, ctrl-R reprints unread chars,
-  // ctrl-W erases word
-  termio.c_lflag = ISIG|ICANON|ECHO|ECHOE|ECHOK|ECHOCTL|ECHOKE|IEXTEN;
-
-  if (raw) cfmakeraw(&termio);
-
-  if (speed) {
-    int i, speeds[] = {50, 75, 110, 134, 150, 200, 300, 600, 1200, 1800, 2400,
-                    4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800,
-                    500000, 576000, 921600, 1000000, 1152000, 1500000, 2000000,
-                    2500000, 3000000, 3500000, 4000000};
-
-    // Find speed in table, adjust to constant
-    for (i = 0; i < ARRAY_LEN(speeds); i++) if (speeds[i] == speed) break;
-    if (i == ARRAY_LEN(speeds)) error_exit("unknown speed: %d", speed);
-    cfsetspeed(&termio, i+1+4081*(i>15));
+    // Generate signals, input entire line at once, echo output erase,
+    // line kill, escape control characters with ^, erase line char at a time
+    // "extended" behavior: ctrl-V quotes next char, ctrl-R reprints unread line
+    // ctrl-W erases word
+    tio.c_lflag |= ISIG|ICANON|ECHO|ECHOE|ECHOK|ECHOCTL|ECHOKE|IEXTEN;
   }
 
-  return tcsetattr(fd, TCSAFLUSH, &termio);
+  return tcsetattr(fd, TCSAFLUSH, &tio);
 }
 
 void xset_terminal(int fd, int raw, int speed, struct termios *old)
 {
-  if (-1 != set_terminal(fd, raw, speed, old)) return;
-
-  sprintf(libbuf, "/proc/self/fd/%d", fd);
-  libbuf[readlink0(libbuf, libbuf, sizeof(libbuf))] = 0;
-  perror_exit("tcsetattr %s", libbuf);
+  if (-1 == set_terminal(fd, raw, speed, old)) perror_exit("tcsetattr");
 }
 
 struct scan_key_list {
   int key;
   char *seq;
 } static const scan_key_list[] = {
-  {KEY_UP, "\033[A"}, {KEY_DOWN, "\033[B"},
-  {KEY_RIGHT, "\033[C"}, {KEY_LEFT, "\033[D"},
+  {KEY_UP, "\e[A"}, {KEY_DOWN, "\e[B"},
+  {KEY_RIGHT, "\e[C"}, {KEY_LEFT, "\e[D"},
 
-  {KEY_UP|KEY_SHIFT, "\033[1;2A"}, {KEY_DOWN|KEY_SHIFT, "\033[1;2B"},
-  {KEY_RIGHT|KEY_SHIFT, "\033[1;2C"}, {KEY_LEFT|KEY_SHIFT, "\033[1;2D"},
+  {KEY_UP|KEY_SHIFT, "\e[1;2A"}, {KEY_DOWN|KEY_SHIFT, "\e[1;2B"},
+  {KEY_RIGHT|KEY_SHIFT, "\e[1;2C"}, {KEY_LEFT|KEY_SHIFT, "\e[1;2D"},
 
-  {KEY_UP|KEY_ALT, "\033[1;3A"}, {KEY_DOWN|KEY_ALT, "\033[1;3B"},
-  {KEY_RIGHT|KEY_ALT, "\033[1;3C"}, {KEY_LEFT|KEY_ALT, "\033[1;3D"},
+  {KEY_UP|KEY_ALT, "\e[1;3A"}, {KEY_DOWN|KEY_ALT, "\e[1;3B"},
+  {KEY_RIGHT|KEY_ALT, "\e[1;3C"}, {KEY_LEFT|KEY_ALT, "\e[1;3D"},
 
-  {KEY_UP|KEY_CTRL, "\033[1;5A"}, {KEY_DOWN|KEY_CTRL, "\033[1;5B"},
-  {KEY_RIGHT|KEY_CTRL, "\033[1;5C"}, {KEY_LEFT|KEY_CTRL, "\033[1;5D"},
+  {KEY_UP|KEY_CTRL, "\e[1;5A"}, {KEY_DOWN|KEY_CTRL, "\e[1;5B"},
+  {KEY_RIGHT|KEY_CTRL, "\e[1;5C"}, {KEY_LEFT|KEY_CTRL, "\e[1;5D"},
 
   // VT102/VT220 escapes.
-  {KEY_HOME, "\033[1~"},
-  {KEY_INSERT, "\033[2~"},
-  {KEY_DELETE, "\033[3~"},
-  {KEY_END, "\033[4~"},
-  {KEY_PGUP, "\033[5~"},
-  {KEY_PGDN, "\033[6~"},
+  {KEY_HOME, "\e[1~"},
+  {KEY_HOME|KEY_CTRL, "\e[1;5~"},
+  {KEY_INSERT, "\e[2~"},
+  {KEY_DELETE, "\e[3~"},
+  {KEY_END, "\e[4~"},
+  {KEY_END|KEY_CTRL, "\e[4;5~"},
+  {KEY_PGUP, "\e[5~"},
+  {KEY_PGDN, "\e[6~"},
   // "Normal" "PC" escapes (xterm).
-  {KEY_HOME, "\033OH"},
-  {KEY_END, "\033OF"},
+  {KEY_HOME, "\eOH"},
+  {KEY_END, "\eOF"},
   // "Application" "PC" escapes (gnome-terminal).
-  {KEY_HOME, "\033[H"},
-  {KEY_END, "\033[F"},
+  {KEY_HOME, "\e[H"},
+  {KEY_END, "\e[F"},
+  {KEY_HOME|KEY_CTRL, "\e[1;5H"},
+  {KEY_END|KEY_CTRL, "\e[1;5F"},
 
-  {KEY_FN+1, "\033OP"}, {KEY_FN+2, "\033OQ"}, {KEY_FN+3, "\033OR"},
-  {KEY_FN+4, "\033OS"}, {KEY_FN+5, "\033[15~"}, {KEY_FN+6, "\033[17~"},
-  {KEY_FN+7, "\033[18~"}, {KEY_FN+8, "\033[19~"}, {KEY_FN+9, "\033[20~"},
+  {KEY_FN+1, "\eOP"}, {KEY_FN+2, "\eOQ"}, {KEY_FN+3, "\eOR"},
+  {KEY_FN+4, "\eOS"}, {KEY_FN+5, "\e[15~"}, {KEY_FN+6, "\e[17~"},
+  {KEY_FN+7, "\e[18~"}, {KEY_FN+8, "\e[19~"}, {KEY_FN+9, "\e[20~"},
 };
 
 // Scan stdin for a keypress, parsing known escape sequences, including
@@ -196,7 +213,7 @@ int scan_key_getsize(char *scratch, int timeout_ms, unsigned *xx, unsigned *yy)
       // Check for return from terminal size probe
       memset(pos, 0, 6*sizeof(int));
       scratch[(1+*scratch)&15] = 0;
-      sscanf(scratch+1, "\033%n[%n%3u%n;%n%3u%nR%n", pos, pos+1, &y,
+      sscanf(scratch+1, "\e%n[%n%3u%n;%n%3u%nR%n", pos, pos+1, &y,
              pos+2, pos+3, &x, pos+4, pos+5);
       if (pos[5]) {
         // Recognized X/Y position, consume and return
@@ -250,19 +267,6 @@ int scan_key_getsize(char *scratch, int timeout_ms, unsigned *xx, unsigned *yy)
 int scan_key(char *scratch, int timeout_ms)
 {
   return scan_key_getsize(scratch, timeout_ms, NULL, NULL);
-}
-
-void tty_esc(char *s)
-{
-  printf("\033[%s", s);
-}
-
-void tty_jump(int x, int y)
-{
-  char s[32];
-
-  sprintf(s, "%d;%dH", y+1, x+1);
-  tty_esc(s);
 }
 
 void tty_reset(void)
