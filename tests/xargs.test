@@ -37,7 +37,7 @@ testing "-0 -n2" "printf 'a\0b\0c\0d\0e\0f' | xargs -0 -n2 echo _" "_ a b\n_ c d
 
 testing "-t" "xargs -t 2>stderr ; cat stderr ; rm stderr" "one two\necho one two \n" "" "one\ntwo\n"
 
-testing "-E END" "xargs -E END" "a b\n" "" "a\nb\nEND\nc\nd\n"
+testing "-E END" "xargs -E END" "a b ENDE\n" "" "a\nb\nENDE\nEND\nc\nd\n"
 
 testing "-r" "xargs -r echo x" "" "" ""
 testing "no -r" "xargs echo x" "x\n" "" ""
@@ -52,6 +52,30 @@ testing "false" "xargs false; echo \$?" "123\n" "" ""
 testing "exit 255" "xargs sh -c 'exit 255' 2>&1; echo \$?" \
   "xargs: sh: exited with status 255; aborting\n124\n" "" ""
 
+# findutils maxes out at 131066 (they do the math wrong), kernel takes 131071.
+toyonly testing "max argument size" \
+  "head -c 131071 /dev/zero | tr '\0' x | xargs | wc -c" "131072\n" "" ""
+X=$(head -c 131066 /dev/zero | tr '\0' x)
+# This goes over the kernel's 10 meg limit
+testing "big input forces split" \
+  'for i in $(seq 1 100);do echo $X;done|{ xargs >/dev/null && echo yes;}' \
+  "yes\n" "" ""
+
+# -P max-proc
+testing "max-proc=1" "xargs -n 1 -P 1" "one\ntwo\nthree\n" "" "one\ntwo\nthree\n"
+testing "max-proc=2" "xargs -n 1 -P 2" "y\ny\ny\n" "" "y\ny\ny\n"
+testing "max-proc=3" "xargs -n 1 -P 3" "y\ny\ny\n" "" "y\ny\ny\n"
+# 3 seconds vs 2 seconds vs 1 second parallel sleep
+testing "parallel sleep" "
+  xargs_sleep() {
+    ( yes | head -3 | tr y 1 | time -p xargs -n 1 \${*} sleep ) 2>&1 |
+      sed -n 's/^real *\([0-9]*\)[.]\(.*\)/\1\2/p'
+  } &&
+  A=\`xargs_sleep\` &&
+  B=\`xargs_sleep -P 2\` &&
+  C=\`xargs_sleep -P 0\` &&
+  [ \${A} -gt \${B} -a \${B} -gt \${C} ] && echo OK || echo FAIL" "OK\n" "" ""
+
 # TODO: what exactly is -x supposed to do? why does coreutils output "one"?
 #testing "-x" "xargs -x -s 9 || echo expected" "one\nexpected\n" "" "one\ntwo\nthree"
 
@@ -60,3 +84,9 @@ testing "exit 255" "xargs sh -c 'exit 255' 2>&1; echo \$?" \
 #testing "-n exact match"
 #testing "-s exact match"
 #testing "-s impossible"
+
+testing "no stdin" "echo -n | xargs cat" "" "" ""
+
+testing "exit 255 aborts" \
+  "xargs -n1 sh -c 'echo \$1; exit \$1' blah 2>/dev/null" '123\n234\n255\n' \
+  '' '123\n234\n255\n42\n99\n'
