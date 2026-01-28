@@ -234,10 +234,10 @@ found_device:
     else
       sprintf(toybuf, "/dev/%s", device_name);
 
-      if ((temp=getenv("ACTION")) && !strcmp(temp, "remove")) {
+    if ((temp=getenv("ACTION")) && !strcmp(temp, "remove")) {
         unlink(toybuf);
         return;
-      }
+    }
 
       if (strchr(device_name, '/')) mkpath(toybuf);
       if (mknod(toybuf, mode | type, dev_makedev(major, minor)) &&

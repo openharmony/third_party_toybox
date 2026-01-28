@@ -1081,9 +1081,9 @@ struct cut_data {
 
 struct date_data {
 #ifdef TOYBOX_OH_ADAPT
-  char *r, *d;
+  char *s, *r, *I, *d;
 #else
-  char *r, *D, *d;
+  char *s, *r, *I, *D, *d;
 #endif
   unsigned nano;
 };
@@ -1400,7 +1400,7 @@ struct xargs_data {
   long s, n, P;
   char *E;
 
-  long entries, bytes;
+  long entries, bytes, np;
   char delim;
   FILE *tty;
 };

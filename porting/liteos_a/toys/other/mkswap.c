@@ -47,7 +47,7 @@ void mkswap_main(void)
 
   if (CFG_TOYBOX_FREE) close(fd);
 
-  if (TT.L) sprintf(toybuf, ", LABEL=%.15s", TT.L);
+  if (TT.L) sprintf(toybuf, ", LABEL=%s", label);
   else *toybuf = 0;
   printf("Swapspace size: %luk%s, UUID=%s\n",
     pages*(unsigned long)(pagesize/1024),
