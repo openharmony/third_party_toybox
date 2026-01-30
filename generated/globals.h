@@ -1080,11 +1080,8 @@ struct cut_data {
 // toys/posix/date.c
 
 struct date_data {
-#ifdef TOYBOX_OH_ADAPT
-  char *s, *r, *I, *d;
-#else
   char *s, *r, *I, *D, *d;
-#endif
+
   unsigned nano;
 };
 
