@@ -512,18 +512,16 @@
 #undef FLAG_b
 #endif
 
-// date d:r:u[!dr] d:r:u[!dr]
+// date >1d:D:I(iso-8601):;r:s:u(utc)[!dr] >1d:D:I(iso-8601):;r:s:u(utc)[!dr]
 #undef OPTSTR_date
-#ifdef TOYBOX_OH_ADAPT
-#define OPTSTR_date "d:r:u[!dr]"
-#else
-#define OPTSTR_date "d:D:r:u[!dr]"
-#endif
+#define OPTSTR_date ">1d:D:I(iso-8601):;r:s:u(utc)[!dr]"
 #ifdef CLEANUP_date
 #undef CLEANUP_date
 #undef FOR_date
 #undef FLAG_u
+#undef FLAG_s
 #undef FLAG_r
+#undef FLAG_I
 #undef FLAG_D
 #undef FLAG_d
 #endif
@@ -3893,9 +3891,9 @@
 #undef FLAG_a
 #endif
 
-// xargs ^E:P#optrn#<1(max-args)s#0[!0E] ^E:P#optrn#<1(max-args)s#0[!0E]
+// xargs ^E:P#<0(null)=1optr(no-run-if-empty)n#<1(max-args)s#0[!0E] ^E:P#<0(null)=1optr(no-run-if-empty)n#<1(max-args)s#0[!0E]
 #undef OPTSTR_xargs
-#define OPTSTR_xargs "^E:P#optrn#<1(max-args)s#0[!0E]"
+#define OPTSTR_xargs "^E:P#<0(null)=1optr(no-run-if-empty)n#<1(max-args)s#0[!0E]"
 #ifdef CLEANUP_xargs
 #undef CLEANUP_xargs
 #undef FOR_xargs
@@ -7507,18 +7505,19 @@
 #endif
 
 #ifdef FOR_xargs
+#define CLEANUP_xargs
 #ifndef TT
 #define TT this.xargs
 #endif
-#define FLAG_0 (1<<0)
-#define FLAG_s (1<<1)
-#define FLAG_n (1<<2)
-#define FLAG_r (1<<3)
-#define FLAG_t (1<<4)
-#define FLAG_p (1<<5)
-#define FLAG_o (1<<6)
-#define FLAG_P (1<<7)
-#define FLAG_E (1<<8)
+#define FLAG_0 (1LL<<0)
+#define FLAG_s (1LL<<1)
+#define FLAG_n (1LL<<2)
+#define FLAG_r (1LL<<3)
+#define FLAG_t (1LL<<4)
+#define FLAG_p (1LL<<5)
+#define FLAG_o (1LL<<6)
+#define FLAG_P (1LL<<7)
+#define FLAG_E (1LL<<8)
 #endif
 
 #ifdef FOR_xxd

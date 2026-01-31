@@ -18,7 +18,7 @@ oldconfig: $(obj)/conf $(KCONFIG_TOP)
 	$< -o $(KCONFIG_TOP)
 
 silentoldconfig: $(obj)/conf $(KCONFIG_TOP)
-	yes | $< -o $(KCONFIG_TOP) > /dev/null
+	yes '' | $< -o $(KCONFIG_TOP) > /dev/null
 
 randconfig: $(obj)/conf $(KCONFIG_TOP)
 	$< -r $(KCONFIG_TOP) > /dev/null
@@ -29,8 +29,9 @@ allyesconfig: $(obj)/conf $(KCONFIG_TOP)
 allnoconfig: $(obj)/conf $(KCONFIG_TOP)
 	$< -n $(KCONFIG_TOP) > /dev/null
 
+KCONFIG_ALLCONFIG ?= /dev/null
 defconfig: $(obj)/conf $(KCONFIG_TOP)
-	$< -D /dev/null $(KCONFIG_TOP) > /dev/null
+	$< -D $(KCONFIG_ALLCONFIG) $(KCONFIG_TOP) > /dev/null
 
 macos_defconfig: $(obj)/conf $(KCONFIG_TOP)
 	KCONFIG_ALLCONFIG=$(obj)/macos_miniconfig $< -n $(KCONFIG_TOP) > /dev/null
@@ -38,6 +39,8 @@ macos_defconfig: $(obj)/conf $(KCONFIG_TOP)
 bsd_defconfig: $(obj)/conf $(KCONFIG_TOP)
 	KCONFIG_ALLCONFIG=$(obj)/freebsd_miniconfig $< -n $(KCONFIG_TOP) > /dev/null
 
+android_defconfig: $(obj)/conf $(KCONFIG_TOP)
+	KCONFIG_ALLCONFIG=$(obj)/android_miniconfig $< -n $(KCONFIG_TOP) > /dev/null
 # Help text used by make help
 help::
 	@echo  '  config	  - Update current config utilising a line-oriented program'
@@ -54,6 +57,7 @@ help::
 	@echo  '                    (NOP binary, starting point for further configuration)'
 	@echo  '  macos_defconfig - Select commands known to build on macosx'
 	@echo  '  bsd_defconfig   - Select commands known to build on freebsd'
+	@echo  '  android_defconfig - Select commands available on android'
 
 # Cheesy build
 
