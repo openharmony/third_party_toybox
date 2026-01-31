@@ -284,8 +284,10 @@ struct nbd_client_data {
   int nbd;
 };
 
+// toys/other/nsenter.c
+
 struct nsenter_data {
-  char *UupnmiC[7];
+  char *Uupnmi[6];
   long t;
 };
 
