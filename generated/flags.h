@@ -2342,9 +2342,9 @@
 #undef FLAG_all
 #endif
 
-// nsenter <1a(all)F(no-fork)t#<1(target)C(cgroup):; i(ipc):; m(mount):; n(net):; p(pid):; u(uts):; U(user):;  <1a(all)F(no-fork)t#<1(target)C(cgroup):; i(ipc):; m(mount):; n(net):; p(pid):; u(uts):; U(user):; 
+// nsenter <1F(no-fork)t#<1(target)i:(ipc);m:(mount);n:(net);p:(pid);u:(uts);U:(user); <1F(no-fork)t#<1(target)i:(ipc);m:(mount);n:(net);p:(pid);u:(uts);U:(user);
 #undef OPTSTR_nsenter
-#define OPTSTR_nsenter "<1a(all)F(no-fork)t#<1(target)C(cgroup):; i(ipc):; m(mount):; n(net):; p(pid):; u(uts):; U(user):; "
+#define OPTSTR_nsenter "<1F(no-fork)t#<1(target)i:(ipc);m:(mount);n:(net);p:(pid);u:(uts);U:(user);"
 #ifdef CLEANUP_nsenter
 #undef CLEANUP_nsenter
 #undef FOR_nsenter
@@ -2354,10 +2354,8 @@
 #undef FLAG_n
 #undef FLAG_m
 #undef FLAG_i
-#undef FLAG_C
 #undef FLAG_t
 #undef FLAG_F
-#undef FLAG_a
 #endif
 
 // od j#vw#<1=16N#xsodcbA:t* j#vw#<1=16N#xsodcbA:t*
@@ -3692,9 +3690,9 @@
 #undef FLAG_f
 #endif
 
-// unshare <1^a(all)f(fork)r(map-root-user)C(cgroup):; i(ipc):; m(mount):; n(net):; p(pid):; u(uts):; U(user):;  <1^a(all)f(fork)r(map-root-user)C(cgroup):; i(ipc):; m(mount):; n(net):; p(pid):; u(uts):; U(user):; 
+// unshare <1^f(fork);r(map-root-user);i:(ipc);m:(mount);n:(net);p:(pid);u:(uts);U:(user); <1^f(fork);r(map-root-user);i:(ipc);m:(mount);n:(net);p:(pid);u:(uts);U:(user);
 #undef OPTSTR_unshare
-#define OPTSTR_unshare "<1^a(all)f(fork)r(map-root-user)C(cgroup):; i(ipc):; m(mount):; n(net):; p(pid):; u(uts):; U(user):; "
+#define OPTSTR_unshare "<1^f(fork);r(map-root-user);i:(ipc);m:(mount);n:(net);p:(pid);u:(uts);U:(user);"
 #ifdef CLEANUP_unshare
 #undef CLEANUP_unshare
 #undef FOR_unshare
@@ -3704,10 +3702,8 @@
 #undef FLAG_n
 #undef FLAG_m
 #undef FLAG_i
-#undef FLAG_C
 #undef FLAG_r
 #undef FLAG_f
-#undef FLAG_a
 #endif
 
 // uptime >0ps >0ps
@@ -6088,20 +6084,17 @@
 #endif
 
 #ifdef FOR_nsenter
-#define CLEANUP_nsenter
 #ifndef TT
 #define TT this.nsenter
 #endif
-#define FLAG_U (1LL<<0)
-#define FLAG_u (1LL<<1)
-#define FLAG_p (1LL<<2)
-#define FLAG_n (1LL<<3)
-#define FLAG_m (1LL<<4)
-#define FLAG_i (1LL<<5)
-#define FLAG_C (1LL<<6)
-#define FLAG_t (1LL<<7)
-#define FLAG_F (1LL<<8)
-#define FLAG_a (1LL<<9)
+#define FLAG_U (1<<0)
+#define FLAG_u (1<<1)
+#define FLAG_p (1<<2)
+#define FLAG_n (1<<3)
+#define FLAG_m (1<<4)
+#define FLAG_i (1<<5)
+#define FLAG_t (1<<6)
+#define FLAG_F (1<<7)
 #endif
 
 #ifdef FOR_od
@@ -7325,20 +7318,17 @@
 #endif
 
 #ifdef FOR_unshare
-#define CLEANUP_unshare
 #ifndef TT
 #define TT this.unshare
 #endif
-#define FLAG_U (1LL<<0)
-#define FLAG_u (1LL<<1)
-#define FLAG_p (1LL<<2)
-#define FLAG_n (1LL<<3)
-#define FLAG_m (1LL<<4)
-#define FLAG_i (1LL<<5)
-#define FLAG_C (1LL<<6)
-#define FLAG_r (1LL<<7)
-#define FLAG_f (1LL<<8)
-#define FLAG_a (1LL<<9)
+#define FLAG_U (1<<0)
+#define FLAG_u (1<<1)
+#define FLAG_p (1<<2)
+#define FLAG_n (1<<3)
+#define FLAG_m (1<<4)
+#define FLAG_i (1<<5)
+#define FLAG_r (1<<6)
+#define FLAG_f (1<<7)
 #endif
 
 #ifdef FOR_uptime
