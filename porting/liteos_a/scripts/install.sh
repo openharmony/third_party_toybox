@@ -2,9 +2,9 @@
 
 # Grab default values for $CFLAGS and such.
 
-source scripts/portability.sh
+source ./configure
 
-[ -z "$PREFIX" ] && PREFIX="$PWD/install"
+[ -z "$PREFIX" ] && PREFIX="/usr/toybox"
 
 # Parse command line arguments.
 
@@ -31,8 +31,9 @@ done
 
 echo "Compile instlist..."
 
-$DEBUG $HOSTCC -I . scripts/install.c -o "$UNSTRIPPED"/instlist || exit 1
-COMMANDS="$("$UNSTRIPPED"/instlist $LONG_PATH)"
+NOBUILD=1 scripts/make.sh
+$DEBUG $HOSTCC -I . scripts/install.c -o generated/instlist || exit 1
+COMMANDS="$(generated/instlist $LONG_PATH)"
 
 echo "${UNINSTALL:-Install} commands..."
 
@@ -42,7 +43,7 @@ if [ -z "$UNINSTALL" ]
 then
   mkdir -p "${PREFIX}/${LONG_PATH}" &&
   rm -f "${PREFIX}/${LONG_PATH}/toybox" &&
-  cp toybox"${TARGET:+-$TARGET}" ${PREFIX}/${LONG_PATH} || exit 1
+  cp toybox ${PREFIX}/${LONG_PATH} || exit 1
 else
   rm -f "${PREFIX}/${LONG_PATH}/toybox" 2>/dev/null
 fi
@@ -85,13 +86,13 @@ do
   # Create link
   if [ -z "$UNINSTALL" ]
   then
-    ln $DO_FORCE $LINK_TYPE ${DOTPATH}"toybox${TARGET:+-$TARGET}" $i || EXIT=1
+    ln $DO_FORCE $LINK_TYPE ${DOTPATH}toybox $i || EXIT=1
   else
     rm -f $i || EXIT=1
   fi
 done
 
-[ -z "$AIRLOCK" ] && exit $EXIT
+[ -z "$AIRLOCK" ] && exit 0
 
 # --airlock creates a single directory you can point the $PATH to for cross
 # compiling, which contains just toybox and symlinks to toolchain binaries.
@@ -105,13 +106,18 @@ done
 # The following are commands toybox should provide, but doesn't yet.
 # For now symlink the host version. This list must go away by 1.0.
 
-PENDING="expr git tr bash sh gzip   awk bison flex make ar"
-TOOLCHAIN="${TOOLCHAIN//,/ } as cc ld objdump  bc gcc"
+PENDING="dd diff expr ftpd less tr vi wget awk sh sha512sum sha256sum unxz xzcat bc bison flex make nm ar gzip"
 
-# Tools needed to build packages
-for i in $TOOLCHAIN $PENDING $HOST_EXTRA
-do
-  if [ ! -f "$i" ]
+# "gcc" should go away for llvm, but some things still hardwire it
+TOOLCHAIN="as cc ld gcc objdump"
+
+if [ ! -z "$AIRLOCK" ]
+then
+
+  # Tools needed to build packages
+  for i in $TOOLCHAIN $PENDING $HOST_EXTRA
+  do
+    if [ ! -f "$i" ]
   then
     # Loop through each instance, populating fallback directories (used by
     # things like distcc, which require multiple instances of the same binary
@@ -138,5 +144,9 @@ do
     fi
   fi
 done
+
+
+
+fi
 
 exit $EXIT
