@@ -676,14 +676,20 @@ struct getfattr_data {
   char *n;
 };
 
-struct getty_data {
-  char *f, *l, *I, *H;
-  long t;
+// toys/pending/getty.c
 
-  char *tty_name, buff[128];
-  int speeds[20], sc;
+struct getty_data {
+  char *issue_str;
+  char *login_str;
+  char *init_str;
+  char *host_str; 
+  long timeout;
+  
+  char *tty_name;  
+  int  speeds[20];
+  int  sc;              
   struct termios termios;
-  struct utsname uts;
+  char buff[128];
 };
 
 struct gitclone_data {
