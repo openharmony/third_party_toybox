@@ -82,8 +82,15 @@ static void showid(char *prefix, unsigned u, char *s)
   printf("%s%u(%s)", prefix, u, s);
 }
 
+#ifdef TOYBOX_OH_ADAPT
+void* dlopen_handle = NULL;
+#endif
 static void do_id(char *username)
 {
+#ifdef TOYBOX_OH_ADAPT
+  dlopen_handle = dlopen("libaccount_posix_adapter.z.so", RTLD_LAZY);
+  if (!dlopen_handle) error_exit("dlopen err libaccount_posix_adapter.z.so");
+#endif
   struct passwd *pw;
   struct group *grp;
   uid_t uid = getuid(), euid = geteuid();
@@ -93,10 +100,13 @@ static void do_id(char *username)
 
   // check if a username is given
   if (username) {
-    pw = getpwnam(username);
+    pw = xgetpwnam(username);
+  #ifdef TOYBOX_OH_ADAPT
+    if (!pw) pw = oh_getpwnam(username);
+  #endif
     if (!pw) {
       uid = atolx_range(username, 0, INT_MAX);
-      if ((pw = bufgetpwuid(uid))) username = pw->pw_name;
+      if ((pw = bufgetpwuid(uid)) || (pw = oh_getpwuid(uid))) username = pw->pw_name;
     }
     if (!pw) error_exit("no such user '%s'", username);
     uid = euid = pw->pw_uid;
@@ -118,7 +128,7 @@ static void do_id(char *username)
     showone("", grp->gr_name, grp->gr_gid, 0);
     for (i = 0; i<ngroups; i++) {
       if (groups[i] != egid) {
-        if ((grp=getgrgid(groups[i]))) showone(" ",grp->gr_name,grp->gr_gid,0);
+        if ((grp=getgrgid(groups[i])) || (grp=oh_getgrgid(groups[i]))) showone(" ",grp->gr_name,grp->gr_gid,0);
         else printf(" %u", groups[i]);
       }
     }
@@ -160,6 +170,10 @@ static void do_id(char *username)
   }
 
   xputc('\n');
+#ifdef TOYBOX_OH_ADAPT
+  dlclose(dlopen_handle);
+  dlopen_handle = NULL;
+#endif
 }
 
 void id_main(void)
