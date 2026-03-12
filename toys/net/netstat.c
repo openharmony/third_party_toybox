@@ -224,8 +224,13 @@ static void show_unix_sockets(void)
     if (state!=1 && FLAG(l)) continue;
 
     sprintf(toybuf, "[ %s]", flags ? "ACC " : "");
+#ifdef TOYBOX_OH_ADAPT
+    printf("unix  %-6ld %-11s %-10s %-13s %8lu ",
+      refcount, toybuf, types[type], states[state], inode);
+#else
     printf("unix  %-6ld %-11s %-10s %-13s %-8lu ",
       refcount, toybuf, types[type], states[state], inode);
+#endif
     if (FLAG(p)) {
       struct num_cache *nc = get_num_cache(TT.inodes, inode);
 
@@ -372,8 +377,13 @@ void netstat_main(void)
 
   if (FLAG(x)) {
     printf("Active UNIX domain sockets (%s)\n", type);
+#ifdef TOYBOX_OH_ADAPT
+    printf("Proto RefCnt Flags\t Type\t    State\t    %s Path\n",
+           FLAG(p) ? "PID/Program Name" : "I-Node");
+#else
     printf("Proto RefCnt Flags       Type       State         I-Node%sPath\n",
            FLAG(p) ? "   PID/Program Name     " : "   ");
+#endif
     show_unix_sockets();
   }
 
