@@ -9,6 +9,15 @@
 
 #include "toys.h"
 
+#ifdef TOYBOX_OH_ADAPT
+typedef struct passwd* (*oh_getpwuid_)(uid_t);
+typedef struct passwd* (*oh_getpwnam_)(char *);
+typedef struct group* (*oh_getgrgid_)(gid_t gid);
+extern void* dlopen_handle;
+#endif
+
+#define logger(fmt, ...) printf("[%s:%d %s]" fmt "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__);
+
 // strcpy and strncat with size checking. Size is the total space in "dest",
 // including null terminator. Exit if there's not enough space for the string
 // (including space for the null terminator), because silently truncating is
@@ -44,6 +53,10 @@ void _xexit(void)
 
 void xexit(void)
 {
+#ifdef TOYBOX_OH_ADAPT
+  dlclose(dlopen_handle);
+  dlopen_handle = NULL;
+#endif
   // Call toys.xexit functions in reverse order added.
   while (toys.xexit) {
     struct arg_list *al = llist_pop(&toys.xexit);
@@ -718,9 +731,50 @@ void xchroot(char *path)
   xchdir("/");
 }
 
+struct passwd *oh_getpwuid(uid_t uid)
+{
+#ifdef TOYBOX_OH_ADAPT
+  if (!dlopen_handle) return NULL;
+  oh_getpwuid_ func = (oh_getpwuid_)dlsym(dlopen_handle, "oh_getpwuid");
+  if (!func) return NULL;
+  return func(uid);
+#else
+  return NULL;
+#endif
+}
+
+struct passwd *oh_getpwnam(char *name)
+{
+#ifdef TOYBOX_OH_ADAPT
+  if (!dlopen_handle) return NULL;
+  oh_getpwuid_ func = (oh_getpwnam_)dlsym(dlopen_handle, "oh_getpwnam");
+  if (!func) return NULL;
+  const char *copy = strdup(name);
+  if (!copy) return NULL;
+  return func(copy);
+#else
+  return NULL;
+#endif
+}
+
+struct group *oh_getgrgid(gid_t gid)
+{
+#ifdef TOYBOX_OH_ADAPT
+  if (!dlopen_handle) return NULL;
+  oh_getgrgid_ func = (oh_getgrgid_)dlsym(dlopen_handle, "oh_getgrgid");
+  if (!func) return NULL;
+  return func(gid);
+#else
+  return NULL;
+#endif
+}
+
 struct passwd *xgetpwuid(uid_t uid)
 {
   struct passwd *pwd = getpwuid(uid);
+#ifdef TOYBOX_OH_ADAPT
+  if (!pwd) pwd = oh_getpwuid(uid);
+#endif
   if (!pwd) error_exit("bad uid %ld", (long)uid);
   return pwd;
 }
@@ -728,7 +782,9 @@ struct passwd *xgetpwuid(uid_t uid)
 struct group *xgetgrgid(gid_t gid)
 {
   struct group *group = getgrgid(gid);
-
+#ifdef TOYBOX_OH_ADAPT
+  if (!group) group = oh_getgrgid(gid);
+#endif
   if (!group) perror_exit("bad gid %ld", (long)gid);
   return group;
 }
@@ -764,6 +820,9 @@ unsigned xgetgid(char *name)
 struct passwd *xgetpwnam(char *name)
 {
   struct passwd *up = getpwnam(name);
+#ifdef TOYBOX_OH_ADAPT
+  if (!up) up = oh_getpwnam(name);
+#endif
 
   if (!up) perror_exit("bad user '%s'", name);
   return up;

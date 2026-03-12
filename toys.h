@@ -11,6 +11,7 @@
 // General posix-2008 headers
 #include <ctype.h>
 #include <dirent.h>
+#include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <grp.h>
