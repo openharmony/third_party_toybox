@@ -31,7 +31,8 @@
         "deps": {
             "components": [
                 "selinux",
-                "openssl"
+                "openssl",
+                "zlib"
             ],
             "third_party": []
         },
