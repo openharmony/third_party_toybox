@@ -213,6 +213,8 @@ if (defined(ohos_lite)) {
 
     include_dirs = [ "./" ]
 
+    external_deps = ["zlib:libz"]
+
     defines = [
       "_DEFAULT_SOURCE",
       "OHOS_LITE",
@@ -966,9 +968,11 @@ if (defined(ohos_lite)) {
       "TOYBOX_OH_ADAPT",
     ]
 
+    external_deps = ["zlib:libz"]
+
     if (build_selinux) {
       sources += [ "toys/other/chcon.c" ]
-      external_deps = [
+      external_deps += [
         "openssl:libcrypto_shared",
         "openssl:libssl_shared",
         "selinux:libselinux",
