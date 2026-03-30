@@ -183,9 +183,6 @@ void xparsedate(char *str, time_t *t, unsigned *nano, int endian);
 char *xgetdelim(FILE *fp, int delim);
 char *xgetline(FILE *fp);
 time_t xmktime(struct tm *tm, int utc);
-struct passwd *oh_getpwuid(uid_t uid);
-struct passwd *oh_getpwnam(char *name);
-struct group *oh_getgrgid(gid_t gid);
 
 // lib.c
 void verror_msg(char *msg, int err, va_list va);
