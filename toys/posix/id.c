@@ -133,7 +133,7 @@ static struct passwd *oh_getpwnam(char *name)
   return pw;
 }
 
-struct group *oh_getgrgid(gid_t gid)
+static struct group *oh_getgrgid(gid_t gid)
 {
   struct group *gr = getgrgid(gid);
   if (gr) return gr;
@@ -141,7 +141,7 @@ struct group *oh_getgrgid(gid_t gid)
   return oh_getgrgid_func(gid);
 }
 
-struct group *oh_xgetgrgid(gid_t gid)
+static struct group *oh_xgetgrgid(gid_t gid)
 {
   struct group *gr = getgrgid(gid);
   if (gr) return gr;
@@ -269,7 +269,9 @@ static void do_id(char *username)
       }
     }
     xputc('\n');
+#ifdef TOYBOX_OH_ADAPT
     do_id_deinit();
+#endif
     return;
   }
 
